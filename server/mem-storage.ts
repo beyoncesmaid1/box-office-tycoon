@@ -14,6 +14,9 @@ import {
   type FilmMilestone, type InsertFilmMilestone,
   type FilmRole, type InsertFilmRole,
   type Franchise, type InsertFranchise,
+  type GameSession, type InsertGameSession,
+  type GameSessionPlayer, type InsertGameSessionPlayer,
+  type GameActivityLog, type InsertGameActivityLog,
 } from "@shared/schema";
 import { IStorage } from "./storage";
 import * as fs from "fs";
@@ -39,6 +42,9 @@ export class MemStorage implements IStorage {
   private filmMilestones: Map<string, FilmMilestone> = new Map();
   private filmRoles: Map<string, FilmRole> = new Map();
   private franchises: Map<string, Franchise> = new Map();
+  private gameSessions: Map<string, GameSession> = new Map();
+  private gameSessionPlayers: Map<string, GameSessionPlayer> = new Map();
+  private gameActivityLogs: Map<string, GameActivityLog> = new Map();
 
   async getUser(id: string): Promise<User | undefined> {
     return this.users.get(id);
@@ -823,5 +829,158 @@ export class MemStorage implements IStorage {
     const updated = { ...f, ...updates } as Franchise;
     this.franchises.set(id, updated);
     return updated;
+  }
+
+  // ==================== MULTIPLAYER METHODS ====================
+
+  async updateUser(id: string, updates: Record<string, any>): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    const updated = { ...user, ...updates } as User;
+    this.users.set(id, updated);
+    return updated;
+  }
+
+  // Game Sessions
+  async getGameSession(id: string): Promise<GameSession | undefined> {
+    return this.gameSessions.get(id);
+  }
+
+  async getGameSessionByCode(code: string): Promise<GameSession | undefined> {
+    return Array.from(this.gameSessions.values()).find(s => s.code === code.toUpperCase());
+  }
+
+  async getPublicGameSessions(): Promise<GameSession[]> {
+    return Array.from(this.gameSessions.values()).filter(s => s.isPublic && s.status === 'lobby');
+  }
+
+  async getGameSessionsByUser(userId: string): Promise<GameSession[]> {
+    return Array.from(this.gameSessions.values()).filter(s => s.hostUserId === userId);
+  }
+
+  async createGameSession(session: InsertGameSession): Promise<GameSession> {
+    const id = generateId();
+    const now = Math.floor(Date.now() / 1000);
+    const newSession: GameSession = {
+      id,
+      name: session.name,
+      code: session.code,
+      hostUserId: session.hostUserId,
+      currentWeek: session.currentWeek ?? 1,
+      currentYear: session.currentYear ?? 2025,
+      maxPlayers: session.maxPlayers ?? 4,
+      isPublic: session.isPublic ?? false,
+      weekAdvanceMode: session.weekAdvanceMode ?? 'ready',
+      timerMinutes: session.timerMinutes ?? 5,
+      status: session.status ?? 'lobby',
+      createdAt: now,
+      startedAt: session.startedAt ?? null,
+      lastActivityAt: now,
+    };
+    this.gameSessions.set(id, newSession);
+    return newSession;
+  }
+
+  async updateGameSession(id: string, updates: Partial<InsertGameSession>): Promise<GameSession | undefined> {
+    const session = this.gameSessions.get(id);
+    if (!session) return undefined;
+    const updated = { ...session, ...updates } as GameSession;
+    this.gameSessions.set(id, updated);
+    return updated;
+  }
+
+  async deleteGameSession(id: string): Promise<void> {
+    this.gameSessions.delete(id);
+  }
+
+  // Game Session Players
+  async getGameSessionPlayer(id: string): Promise<GameSessionPlayer | undefined> {
+    return this.gameSessionPlayers.get(id);
+  }
+
+  async getGameSessionPlayerByUserAndSession(userId: string, gameSessionId: string): Promise<GameSessionPlayer | undefined> {
+    return Array.from(this.gameSessionPlayers.values()).find(
+      p => p.userId === userId && p.gameSessionId === gameSessionId
+    );
+  }
+
+  async getPlayersByGameSession(gameSessionId: string): Promise<GameSessionPlayer[]> {
+    return Array.from(this.gameSessionPlayers.values()).filter(p => p.gameSessionId === gameSessionId);
+  }
+
+  async getGameSessionsByPlayer(userId: string): Promise<GameSessionPlayer[]> {
+    return Array.from(this.gameSessionPlayers.values()).filter(p => p.userId === userId);
+  }
+
+  async createGameSessionPlayer(player: InsertGameSessionPlayer): Promise<GameSessionPlayer> {
+    const id = generateId();
+    const now = Math.floor(Date.now() / 1000);
+    const newPlayer: GameSessionPlayer = {
+      id,
+      gameSessionId: player.gameSessionId,
+      userId: player.userId,
+      studioId: player.studioId ?? null,
+      isReady: player.isReady ?? false,
+      isConnected: player.isConnected ?? false,
+      isHost: player.isHost ?? false,
+      joinedAt: now,
+      lastSeenAt: now,
+    };
+    this.gameSessionPlayers.set(id, newPlayer);
+    return newPlayer;
+  }
+
+  async updateGameSessionPlayer(id: string, updates: Partial<InsertGameSessionPlayer>): Promise<GameSessionPlayer | undefined> {
+    const player = this.gameSessionPlayers.get(id);
+    if (!player) return undefined;
+    const updated = { ...player, ...updates } as GameSessionPlayer;
+    this.gameSessionPlayers.set(id, updated);
+    return updated;
+  }
+
+  async deleteGameSessionPlayer(id: string): Promise<void> {
+    this.gameSessionPlayers.delete(id);
+  }
+
+  // Game Activity Log
+  async getGameActivityLog(id: string): Promise<GameActivityLog | undefined> {
+    return this.gameActivityLogs.get(id);
+  }
+
+  async getActivityLogBySession(gameSessionId: string, limit: number = 50): Promise<GameActivityLog[]> {
+    return Array.from(this.gameActivityLogs.values())
+      .filter(l => l.gameSessionId === gameSessionId)
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .slice(0, limit);
+  }
+
+  async createGameActivityLog(log: InsertGameActivityLog): Promise<GameActivityLog> {
+    const id = generateId();
+    const now = Math.floor(Date.now() / 1000);
+    const newLog: GameActivityLog = {
+      id,
+      gameSessionId: log.gameSessionId,
+      userId: log.userId ?? null,
+      studioId: log.studioId ?? null,
+      eventType: log.eventType,
+      eventData: log.eventData ?? {},
+      message: log.message,
+      gameWeek: log.gameWeek,
+      gameYear: log.gameYear,
+      createdAt: now,
+    };
+    this.gameActivityLogs.set(id, newLog);
+    return newLog;
+  }
+
+  // Studios by game session
+  async getStudiosByGameSession(gameSessionId: string): Promise<Studio[]> {
+    return Array.from(this.studios.values()).filter(s => (s as any).gameSessionId === gameSessionId);
+  }
+
+  async getStudioByUserAndSession(userId: string, gameSessionId: string): Promise<Studio | undefined> {
+    return Array.from(this.studios.values()).find(
+      s => (s as any).userId === userId && (s as any).gameSessionId === gameSessionId
+    );
   }
 }
