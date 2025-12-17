@@ -129,9 +129,17 @@ export function registerMultiplayerRoutes(app: Express) {
   app.post("/api/multiplayer/sessions", async (req: Request, res: Response) => {
     try {
       const { userId, name, maxPlayers, isPublic, weekAdvanceMode, timerMinutes } = req.body;
+      console.log("[Multiplayer] Create session request:", { userId, name, maxPlayers, isPublic });
 
       if (!userId || !name) {
         return res.status(400).json({ error: "userId and name required" });
+      }
+
+      // Verify user exists
+      const user = await storage.getUser(userId);
+      if (!user) {
+        console.error("[Multiplayer] User not found:", userId);
+        return res.status(404).json({ error: "User not found" });
       }
 
       // Generate unique code
@@ -141,6 +149,7 @@ export function registerMultiplayerRoutes(app: Express) {
         code = generateGameCode();
         attempts++;
       }
+      console.log("[Multiplayer] Generated code:", code);
 
       const session = await storage.createGameSession({
         name,
@@ -154,6 +163,7 @@ export function registerMultiplayerRoutes(app: Express) {
         currentWeek: 1,
         currentYear: 2025,
       });
+      console.log("[Multiplayer] Session created:", session.id);
 
       // Add host as first player
       await storage.createGameSessionPlayer({
@@ -163,11 +173,12 @@ export function registerMultiplayerRoutes(app: Express) {
         isReady: false,
         isConnected: false,
       });
+      console.log("[Multiplayer] Host added as player");
 
       res.status(201).json({ session });
-    } catch (error) {
-      console.error("Create session error:", error);
-      res.status(500).json({ error: "Failed to create session" });
+    } catch (error: any) {
+      console.error("[Multiplayer] Create session error:", error.message, error.stack);
+      res.status(500).json({ error: "Failed to create session: " + error.message });
     }
   });
 

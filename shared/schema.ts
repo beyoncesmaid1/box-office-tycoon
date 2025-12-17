@@ -188,7 +188,15 @@ export const insertUserSchema = createInsertSchema(users).pick({
   displayName: true,
 });
 
+export const updateUserSchema = createInsertSchema(users).pick({
+  displayName: true,
+  avatarUrl: true,
+  isOnline: true,
+  lastSeenAt: true,
+}).partial();
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type UpdateUser = z.infer<typeof updateUserSchema>;
 export type User = typeof users.$inferSelect;
 
 // Genre type for type safety
