@@ -272,6 +272,14 @@ export function registerMultiplayerRoutes(app: Express) {
         return res.status(404).json({ error: "Session not found" });
       }
 
+      // Check if already in session (allow rejoining)
+      const existing = await storage.getGameSessionPlayerByUserAndSession(userId, id);
+      if (existing) {
+        // Already a player - just return success (allows rejoining)
+        return res.json({ message: "Rejoined session" });
+      }
+
+      // Only check status and player count for new joins
       if (session.status !== "lobby") {
         return res.status(400).json({ error: "Game already in progress" });
       }
@@ -279,12 +287,6 @@ export function registerMultiplayerRoutes(app: Express) {
       const players = await storage.getPlayersByGameSession(id);
       if (players.length >= session.maxPlayers) {
         return res.status(400).json({ error: "Session is full" });
-      }
-
-      // Check if already in session
-      const existing = await storage.getGameSessionPlayerByUserAndSession(userId, id);
-      if (existing) {
-        return res.status(400).json({ error: "Already in session" });
       }
 
       const player = await storage.createGameSessionPlayer({

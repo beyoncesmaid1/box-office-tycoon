@@ -118,13 +118,38 @@ export function MultiplayerLobby({ onStartGame, onBack }: MultiplayerLobbyProps)
       : null
   );
 
-  // Load sessions on mount
+  // Load sessions on mount and auto-rejoin active session
   useEffect(() => {
     if (user) {
       loadPublicSessions();
       loadMySessions();
+      autoRejoinSession();
     }
   }, [user]);
+
+  const autoRejoinSession = async () => {
+    if (!user) return;
+    try {
+      const res = await fetch(`/api/multiplayer/my-sessions?userId=${user.id}`);
+      const data = await res.json();
+      const activeSessions = data.sessions || [];
+      
+      // Find the most recent active or lobby session
+      const rejoinableSession = activeSessions.find(
+        (s: GameSession) => s.status === 'lobby' || s.status === 'active'
+      );
+      
+      if (rejoinableSession) {
+        // Fetch full session data
+        const sessionRes = await fetch(`/api/multiplayer/sessions/${rejoinableSession.id}`);
+        const sessionData = await sessionRes.json();
+        setActiveSession(sessionData.session);
+        setPlayers(sessionData.players || []);
+      }
+    } catch (error) {
+      console.error("Failed to auto-rejoin session:", error);
+    }
+  };
 
   const loadPublicSessions = async () => {
     try {
@@ -240,6 +265,7 @@ export function MultiplayerLobby({ onStartGame, onBack }: MultiplayerLobbyProps)
     if (!user) return;
     setIsLoading(true);
     try {
+      // Allow rejoining if already a player (for started games)
       const res = await fetch(`/api/multiplayer/sessions/${session.id}/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -252,6 +278,14 @@ export function MultiplayerLobby({ onStartGame, onBack }: MultiplayerLobbyProps)
         const data = await sessionRes.json();
         setActiveSession(data.session);
         setPlayers(data.players || []);
+        
+        // If game is already started and we have a studio, launch the game
+        if (data.session.status === 'active') {
+          const myPlayer = data.players?.find((p: Player) => p.userId === user.id);
+          if (myPlayer?.studioId) {
+            onStartGame(session.id, myPlayer.studioId);
+          }
+        }
       } else {
         const err = await res.json();
         toast({ title: "Error", description: err.error, variant: "destructive" });
@@ -307,11 +341,19 @@ export function MultiplayerLobby({ onStartGame, onBack }: MultiplayerLobbyProps)
         body: JSON.stringify({ userId: user.id }),
       });
 
-      if (!res.ok) {
+      if (res.ok) {
+        const data = await res.json();
+        // WebSocket will handle the game_started event, but we can also handle it here
+        toast({ 
+          title: "Game Starting!", 
+          description: "Initializing game world..." 
+        });
+      } else {
         const err = await res.json();
         toast({ title: "Error", description: err.error, variant: "destructive" });
       }
     } catch (error) {
+      console.error("Start game error:", error);
       toast({ title: "Error", description: "Failed to start game", variant: "destructive" });
     } finally {
       setIsLoading(false);
