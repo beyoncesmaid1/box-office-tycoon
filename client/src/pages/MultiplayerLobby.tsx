@@ -31,6 +31,7 @@ interface Player {
   isReady: boolean;
   isConnected: boolean;
   studioName?: string;
+  studioId?: string;
 }
 
 interface ChatMessage {
@@ -159,9 +160,16 @@ export function MultiplayerLobby({ onStartGame, onBack }: MultiplayerLobbyProps)
   };
 
   const createGame = async () => {
-    if (!user || !newGameName.trim()) return;
+    if (!user || !newGameName.trim()) {
+      console.log("Create game blocked:", { user, newGameName });
+      if (!newGameName.trim()) {
+        toast({ title: "Error", description: "Please enter a game name", variant: "destructive" });
+      }
+      return;
+    }
     setIsLoading(true);
     try {
+      console.log("Creating game:", { userId: user.id, name: newGameName.trim() });
       const res = await fetch("/api/multiplayer/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -173,6 +181,7 @@ export function MultiplayerLobby({ onStartGame, onBack }: MultiplayerLobbyProps)
         }),
       });
       const data = await res.json();
+      console.log("Create game response:", data);
       if (data.session) {
         setActiveSession(data.session);
         setNewGameName("");
@@ -180,8 +189,11 @@ export function MultiplayerLobby({ onStartGame, onBack }: MultiplayerLobbyProps)
           title: "Game Created!",
           description: `Share code: ${data.session.code}`,
         });
+      } else if (data.error) {
+        toast({ title: "Error", description: data.error, variant: "destructive" });
       }
     } catch (error) {
+      console.error("Create game error:", error);
       toast({ title: "Error", description: "Failed to create game", variant: "destructive" });
     } finally {
       setIsLoading(false);
@@ -565,7 +577,7 @@ export function MultiplayerLobby({ onStartGame, onBack }: MultiplayerLobbyProps)
                         <div>
                           <p className="font-medium flex items-center gap-2">
                             {session.name}
-                            {session.isHost && <Crown className="w-4 h-4 text-yellow-500" />}
+                            {session.hostUserId === user?.id && <Crown className="w-4 h-4 text-yellow-500" />}
                           </p>
                           <p className="text-sm text-muted-foreground">
                             Week {session.currentWeek}, {session.currentYear} • {session.status}
