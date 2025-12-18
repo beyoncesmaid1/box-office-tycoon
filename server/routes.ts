@@ -3662,6 +3662,11 @@ export async function registerRoutes(
           
           const newGross = Math.floor(lastWeek * hold);
           
+          // Debug: Log box office calculation for player films
+          if (!allStudios.find(s => s.id === film.studioId)?.isAI) {
+            console.log(`[BOX-OFFICE] "${film.title}": lastWeek=$${lastWeek}, audienceScore=${film.audienceScore}, hold=${hold.toFixed(2)}, newGross=$${newGross}`);
+          }
+          
           // Always record weekly box office (even if $0) so week count advances properly
           const newWeeklyBoxOffice = [...film.weeklyBoxOffice, newGross];
           const newTotalBoxOffice = film.totalBoxOffice + newGross;
