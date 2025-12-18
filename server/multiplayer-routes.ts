@@ -637,5 +637,74 @@ export function registerMultiplayerRoutes(app: Express) {
     }
   });
 
+  // Get all films in a multiplayer session (from all players and AI studios)
+  app.get("/api/multiplayer/sessions/:id/films", async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      
+      const session = await storage.getGameSession(id);
+      if (!session) {
+        return res.status(404).json({ error: "Session not found" });
+      }
+
+      // Get all studios in this session (player studios + AI studios)
+      const allStudios = await storage.getAllStudios();
+      const sessionStudios = allStudios.filter(s => s.gameSessionId === id);
+      
+      // Get all films from these studios
+      const allFilms: any[] = [];
+      for (const studio of sessionStudios) {
+        const studioFilms = await storage.getFilmsByStudio(studio.id);
+        // Add studio info to each film
+        const filmsWithStudio = studioFilms.map(film => ({
+          ...film,
+          studioName: studio.name,
+          isAI: studio.isAI,
+          isOwnFilm: false, // Will be set by frontend
+        }));
+        allFilms.push(...filmsWithStudio);
+      }
+
+      res.json({ films: allFilms, studios: sessionStudios });
+    } catch (error) {
+      console.error("Get session films error:", error);
+      res.status(500).json({ error: "Failed to get session films" });
+    }
+  });
+
+  // Get all studios in a multiplayer session
+  app.get("/api/multiplayer/sessions/:id/studios", async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      
+      const session = await storage.getGameSession(id);
+      if (!session) {
+        return res.status(404).json({ error: "Session not found" });
+      }
+
+      // Get all studios in this session
+      const allStudios = await storage.getAllStudios();
+      const sessionStudios = allStudios.filter(s => s.gameSessionId === id);
+      
+      // Get player info for each studio
+      const players = await storage.getPlayersByGameSession(id);
+      const studiosWithPlayers = await Promise.all(
+        sessionStudios.map(async (studio) => {
+          const player = players.find(p => p.studioId === studio.id);
+          const user = player ? await storage.getUser(player.userId) : null;
+          return {
+            ...studio,
+            playerName: user?.displayName || user?.username || (studio.isAI ? studio.name : 'Unknown'),
+          };
+        })
+      );
+
+      res.json({ studios: studiosWithPlayers });
+    } catch (error) {
+      console.error("Get session studios error:", error);
+      res.status(500).json({ error: "Failed to get session studios" });
+    }
+  });
+
   console.log("[Multiplayer] Routes registered");
 }

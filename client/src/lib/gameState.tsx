@@ -50,6 +50,8 @@ export interface GameState {
   totalEarnings: number;
   totalAwards: number;
   isLoading: boolean;
+  multiplayerSessionId?: string | null;
+  isMultiplayer: boolean;
 }
 
 interface GameContextType {
@@ -277,6 +279,8 @@ export function GameProvider({ children, studioId, multiplayerSessionId, userId,
     totalEarnings: studio?.totalEarnings || 0,
     totalAwards: studio?.totalAwards || 0,
     isLoading: studioLoading || filmsLoading,
+    multiplayerSessionId,
+    isMultiplayer,
   };
 
   const advanceWeek = async () => {

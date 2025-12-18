@@ -725,12 +725,29 @@ export function BoxOfficeDetail() {
   const [expandedFilmId, setExpandedFilmId] = useState<string | null>(null);
   const [territoryFilter, setTerritoryFilter] = useState<string>('ALL');
   
-  const { data: allFilms = [] } = useQuery<FilmType[]>({
+  // In multiplayer, fetch films from the session endpoint to see all players' films
+  const { data: sessionFilmsData } = useQuery<{ films: FilmType[]; studios: Studio[] }>({
+    queryKey: ['/api/multiplayer/sessions', state.multiplayerSessionId, 'films'],
+    queryFn: async () => {
+      const res = await fetch(`/api/multiplayer/sessions/${state.multiplayerSessionId}/films`);
+      return res.json();
+    },
+    enabled: state.isMultiplayer && !!state.multiplayerSessionId,
+  });
+
+  // Single player: use the regular endpoints
+  const { data: singlePlayerFilms = [] } = useQuery<FilmType[]>({
     queryKey: ['/api/all-films', state.studioId],
+    enabled: !state.isMultiplayer,
   });
-  const { data: allStudios = [] } = useQuery<Studio[]>({
+  const { data: singlePlayerStudios = [] } = useQuery<Studio[]>({
     queryKey: ['/api/studios', state.studioId],
+    enabled: !state.isMultiplayer,
   });
+
+  // Use multiplayer data if available, otherwise single player
+  const allFilms = state.isMultiplayer ? (sessionFilmsData?.films || []) : singlePlayerFilms;
+  const allStudios = state.isMultiplayer ? (sessionFilmsData?.studios || []) : singlePlayerStudios;
 
   const studioMap = new Map(allStudios.map(s => [s.id, s.name]));
 
