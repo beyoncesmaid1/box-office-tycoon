@@ -1,5 +1,5 @@
 import { Switch, Route, useLocation } from "wouter";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -85,6 +85,72 @@ function AppContent() {
   const [view, setView] = useState<AppView>("menu");
   const [activeStudio, setActiveStudio] = useState<string | null>(null);
   const [multiplayerSessionId, setMultiplayerSessionId] = useState<string | null>(null);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
+
+  // Check for active multiplayer session on app load
+  useEffect(() => {
+    const checkActiveSession = async () => {
+      if (!user) {
+        setIsCheckingSession(false);
+        return;
+      }
+
+      try {
+        // Check localStorage for saved session
+        const savedSessionId = localStorage.getItem('multiplayerSessionId');
+        const savedStudioId = localStorage.getItem('multiplayerStudioId');
+        
+        if (savedSessionId && savedStudioId) {
+          // Verify the session is still active
+          const res = await fetch(`/api/multiplayer/sessions/${savedSessionId}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.session?.status === 'active') {
+              // Verify user is still a player with this studio
+              const myPlayer = data.players?.find((p: any) => p.userId === user.id);
+              if (myPlayer && myPlayer.studioId === savedStudioId) {
+                console.log('[App] Restoring active multiplayer session');
+                setMultiplayerSessionId(savedSessionId);
+                setActiveStudio(savedStudioId);
+                setView("game");
+                navigate("/");
+                setIsCheckingSession(false);
+                return;
+              }
+            }
+          }
+          // Session no longer valid, clear localStorage
+          localStorage.removeItem('multiplayerSessionId');
+          localStorage.removeItem('multiplayerStudioId');
+        }
+      } catch (error) {
+        console.error('[App] Error checking active session:', error);
+      }
+      setIsCheckingSession(false);
+    };
+
+    checkActiveSession();
+  }, [user]);
+
+  // Save session to localStorage when it changes
+  useEffect(() => {
+    if (multiplayerSessionId && activeStudio) {
+      localStorage.setItem('multiplayerSessionId', multiplayerSessionId);
+      localStorage.setItem('multiplayerStudioId', activeStudio);
+    }
+  }, [multiplayerSessionId, activeStudio]);
+
+  // Show loading while checking for active session
+  if (isCheckingSession && user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Editor view
   if (view === "editor") {
@@ -160,6 +226,9 @@ function AppContent() {
   // Game view
   return (
     <GameProvider studioId={activeStudio} onQuitGame={() => {
+      // Clear localStorage when quitting multiplayer game
+      localStorage.removeItem('multiplayerSessionId');
+      localStorage.removeItem('multiplayerStudioId');
       setActiveStudio(null);
       setMultiplayerSessionId(null);
       setView("menu");
