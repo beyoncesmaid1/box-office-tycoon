@@ -347,11 +347,25 @@ export function MultiplayerLobby({ onStartGame, onBack }: MultiplayerLobbyProps)
 
       if (res.ok) {
         const data = await res.json();
-        // WebSocket will handle the game_started event, but we can also handle it here
+        console.log("[StartGame] Response:", data);
         toast({ 
           title: "Game Starting!", 
           description: "Initializing game world..." 
         });
+        
+        // Handle game start directly from the response instead of waiting for WebSocket
+        if (data.players) {
+          const myPlayer = data.players.find((p: Player) => p.userId === user.id);
+          console.log("[StartGame] My player:", myPlayer);
+          if (myPlayer?.studioId) {
+            // Small delay to let the toast show
+            setTimeout(() => {
+              onStartGame(activeSession.id, myPlayer.studioId);
+            }, 500);
+          } else {
+            console.error("[StartGame] No studioId found for player");
+          }
+        }
       } else {
         const err = await res.json();
         toast({ title: "Error", description: err.error, variant: "destructive" });
