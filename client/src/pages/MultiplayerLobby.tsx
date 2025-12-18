@@ -250,8 +250,11 @@ export function MultiplayerLobby({ onStartGame, onBack }: MultiplayerLobbyProps)
       });
 
       if (joinRes.ok) {
-        setActiveSession(data.session);
-        setPlayers(data.players || []);
+        // Fetch full session data after joining to get updated players list
+        const sessionRes = await fetch(`/api/multiplayer/sessions/${data.session.id}`);
+        const sessionData = await sessionRes.json();
+        setActiveSession(sessionData.session);
+        setPlayers(sessionData.players || []);
         setJoinCode("");
         toast({ title: "Joined!", description: `Welcome to ${data.session.name}` });
       } else {

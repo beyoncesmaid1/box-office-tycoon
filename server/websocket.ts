@@ -193,16 +193,23 @@ export function setupWebSocket(httpServer: Server) {
 // Broadcast message to all clients in a game session
 export function broadcastToSession(gameSessionId: string, message: any, excludeClientKey?: string) {
   const sessionClients = gameSessionClients.get(gameSessionId);
-  if (!sessionClients) return;
+  if (!sessionClients) {
+    console.log(`[WS] No clients found for session ${gameSessionId}`);
+    return;
+  }
 
   const messageStr = JSON.stringify(message);
-  for (const clientKey of sessionClients) {
+  let sentCount = 0;
+  const clientKeys = Array.from(sessionClients);
+  for (const clientKey of clientKeys) {
     if (excludeClientKey && clientKey === excludeClientKey) continue;
     const client = clients.get(clientKey);
     if (client && client.ws.readyState === WebSocket.OPEN) {
       client.ws.send(messageStr);
+      sentCount++;
     }
   }
+  console.log(`[WS] Broadcast ${message.type} to ${sentCount}/${sessionClients.size} clients in session ${gameSessionId}`);
 }
 
 // Check if all players in a session are ready to advance
