@@ -4292,6 +4292,13 @@ export async function registerRoutes(
         return filmStudio && (filmStudio.id === playerId || filmStudio.playerGameId === playerId);
       });
       
+      // Debug: Log castIds for films with cast
+      filtered.forEach(film => {
+        if (film.castIds && film.castIds.length > 0) {
+          console.log(`[DEBUG] Film "${film.title}" (${film.id}) castIds:`, film.castIds);
+        }
+      });
+      
       // Ensure all films have release weeks AND years assigned
       const currentWeek = playerStudio.currentWeek;
       const currentYear = playerStudio.currentYear;

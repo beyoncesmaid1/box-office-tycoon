@@ -656,12 +656,18 @@ export function registerMultiplayerRoutes(app: Express) {
       for (const studio of sessionStudios) {
         const studioFilms = await storage.getFilmsByStudio(studio.id);
         // Add studio info to each film
-        const filmsWithStudio = studioFilms.map(film => ({
-          ...film,
-          studioName: studio.name,
-          isAI: studio.isAI,
-          isOwnFilm: false, // Will be set by frontend
-        }));
+        const filmsWithStudio = studioFilms.map(film => {
+          // Debug: Log castIds for films with cast
+          if (film.castIds && film.castIds.length > 0) {
+            console.log(`[DEBUG-MP] Film "${film.title}" (${film.id}) from studio "${studio.name}" castIds:`, film.castIds);
+          }
+          return {
+            ...film,
+            studioName: studio.name,
+            isAI: studio.isAI,
+            isOwnFilm: false, // Will be set by frontend
+          };
+        });
         allFilms.push(...filmsWithStudio);
       }
 
