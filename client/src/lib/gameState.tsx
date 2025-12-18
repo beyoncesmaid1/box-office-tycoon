@@ -82,8 +82,9 @@ interface GameContextType {
 
 export const GameContext = createContext<GameContextType | null>(null);
 
-export function GameProvider({ children, studioId, onQuitGame }: { children: ReactNode; studioId: string; onQuitGame: () => void; }) {
+export function GameProvider({ children, studioId, multiplayerSessionId, userId, onQuitGame }: { children: ReactNode; studioId: string; multiplayerSessionId?: string | null; userId?: string; onQuitGame: () => void; }) {
   const queryClient = useQueryClient();
+  const isMultiplayer = !!multiplayerSessionId;
 
   // Fetch studio
   const { data: studio, isLoading: studioLoading } = useQuery<Studio>({
@@ -102,12 +103,22 @@ export function GameProvider({ children, studioId, onQuitGame }: { children: Rea
     queryKey: ['/api/talent'],
   });
 
-  // Advance week mutation
+  // Advance week mutation - uses multiplayer endpoint if in a multiplayer game
   const advanceWeekMutation = useMutation({
     mutationFn: async () => {
       if (!studio?.id) throw new Error('No studio');
-      const result = await apiRequest('POST', `/api/studio/${studio.id}/advance-week`);
-      return result.json();
+      
+      if (isMultiplayer && multiplayerSessionId && userId) {
+        // Use multiplayer endpoint - this syncs all players
+        const result = await apiRequest('POST', `/api/multiplayer/sessions/${multiplayerSessionId}/advance-week`, {
+          userId,
+        });
+        return result.json();
+      } else {
+        // Single player - advance just this studio
+        const result = await apiRequest('POST', `/api/studio/${studio.id}/advance-week`);
+        return result.json();
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/studio', studioId] });

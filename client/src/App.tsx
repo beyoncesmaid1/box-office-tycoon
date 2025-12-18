@@ -225,14 +225,19 @@ function AppContent() {
 
   // Game view
   return (
-    <GameProvider studioId={activeStudio} onQuitGame={() => {
-      // Clear localStorage when quitting multiplayer game
-      localStorage.removeItem('multiplayerSessionId');
-      localStorage.removeItem('multiplayerStudioId');
-      setActiveStudio(null);
-      setMultiplayerSessionId(null);
-      setView("menu");
-    }}>
+    <GameProvider 
+      studioId={activeStudio} 
+      multiplayerSessionId={multiplayerSessionId}
+      userId={user?.id}
+      onQuitGame={() => {
+        // Clear localStorage when quitting multiplayer game
+        localStorage.removeItem('multiplayerSessionId');
+        localStorage.removeItem('multiplayerStudioId');
+        setActiveStudio(null);
+        setMultiplayerSessionId(null);
+        setView("menu");
+      }}
+    >
       <TooltipProvider>
         <GameLayout />
         <Toaster />
