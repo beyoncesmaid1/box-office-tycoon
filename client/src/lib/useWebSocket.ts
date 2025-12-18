@@ -20,9 +20,26 @@ export function useWebSocket(options: UseWebSocketOptions | null) {
   const [isConnected, setIsConnected] = useState(false);
   const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Store callbacks in refs to avoid recreating connect function
+  const onMessageRef = useRef(onMessage);
+  const onConnectRef = useRef(onConnect);
+  const onDisconnectRef = useRef(onDisconnect);
+  
+  // Update refs when callbacks change (without triggering reconnection)
+  useEffect(() => {
+    onMessageRef.current = onMessage;
+    onConnectRef.current = onConnect;
+    onDisconnectRef.current = onDisconnect;
+  }, [onMessage, onConnect, onDisconnect]);
 
   const connect = useCallback(() => {
     if (!userId || !gameSessionId || !username) return;
+    
+    // Don't create a new connection if one already exists and is open/connecting
+    if (wsRef.current && (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING)) {
+      return;
+    }
 
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host}/ws`;
@@ -40,14 +57,14 @@ export function useWebSocket(options: UseWebSocketOptions | null) {
         username,
       }));
       setIsConnected(true);
-      onConnect?.();
+      onConnectRef.current?.();
     };
 
     ws.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data);
         setLastMessage(message);
-        onMessage?.(message);
+        onMessageRef.current?.(message);
       } catch (error) {
         console.error("[WS] Failed to parse message:", error);
       }
@@ -56,7 +73,7 @@ export function useWebSocket(options: UseWebSocketOptions | null) {
     ws.onclose = () => {
       console.log("[WS] Disconnected");
       setIsConnected(false);
-      onDisconnect?.();
+      onDisconnectRef.current?.();
 
       // Attempt to reconnect after 3 seconds
       reconnectTimeoutRef.current = setTimeout(() => {
@@ -69,12 +86,12 @@ export function useWebSocket(options: UseWebSocketOptions | null) {
     ws.onerror = (error) => {
       console.error("[WS] Error:", error);
     };
-  }, [userId, gameSessionId, username, onMessage, onConnect, onDisconnect]);
+  }, [userId, gameSessionId, username]); // Only depend on connection params, not callbacks
 
   useEffect(() => {
-    if (options) {
-      connect();
-    }
+    if (!options) return;
+    
+    connect();
 
     return () => {
       if (reconnectTimeoutRef.current) {
@@ -82,9 +99,10 @@ export function useWebSocket(options: UseWebSocketOptions | null) {
       }
       if (wsRef.current) {
         wsRef.current.close();
+        wsRef.current = null;
       }
     };
-  }, [connect, options]);
+  }, [userId, gameSessionId, username]); // Only reconnect when these core values change
 
   const send = useCallback((message: WebSocketMessage) => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
