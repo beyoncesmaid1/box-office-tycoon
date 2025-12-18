@@ -20,6 +20,17 @@ export function useWebSocket(options: UseWebSocketOptions | null) {
   const [isConnected, setIsConnected] = useState(false);
   const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Store callbacks in refs to avoid recreating connect function
+  const onMessageRef = useRef(onMessage);
+  const onConnectRef = useRef(onConnect);
+  const onDisconnectRef = useRef(onDisconnect);
+  
+  useEffect(() => {
+    onMessageRef.current = onMessage;
+    onConnectRef.current = onConnect;
+    onDisconnectRef.current = onDisconnect;
+  }, [onMessage, onConnect, onDisconnect]);
 
   const connect = useCallback(() => {
     if (!userId || !gameSessionId || !username) return;
@@ -45,14 +56,14 @@ export function useWebSocket(options: UseWebSocketOptions | null) {
         username,
       }));
       setIsConnected(true);
-      onConnect?.();
+      onConnectRef.current?.();
     };
 
     ws.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data);
         setLastMessage(message);
-        onMessage?.(message);
+        onMessageRef.current?.(message);
       } catch (error) {
         console.error("[WS] Failed to parse message:", error);
       }
@@ -61,7 +72,7 @@ export function useWebSocket(options: UseWebSocketOptions | null) {
     ws.onclose = () => {
       console.log("[WS] Disconnected");
       setIsConnected(false);
-      onDisconnect?.();
+      onDisconnectRef.current?.();
 
       // Attempt to reconnect after 3 seconds
       reconnectTimeoutRef.current = setTimeout(() => {
@@ -74,7 +85,7 @@ export function useWebSocket(options: UseWebSocketOptions | null) {
     ws.onerror = (error) => {
       console.error("[WS] Error:", error);
     };
-  }, [userId, gameSessionId, username, onMessage, onConnect, onDisconnect]);
+  }, [userId, gameSessionId, username]);
 
   useEffect(() => {
     if (!options) return;
