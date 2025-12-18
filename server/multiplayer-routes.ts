@@ -559,28 +559,45 @@ export function registerMultiplayerRoutes(app: Express) {
       // The ready system is used in the lobby before game starts
       // In-game, we allow any player to advance (could add voting later)
 
-      // Calculate new week/year
-      let newWeek = session.currentWeek + 1;
-      let newYear = session.currentYear;
-      if (newWeek > 52) {
-        newWeek = 1;
-        newYear += 1;
+      // Get the requesting player's studio to use for AI processing
+      const requestingPlayer = players.find(p => p.userId === userId);
+      if (!requestingPlayer?.studioId) {
+        return res.status(400).json({ error: "Player has no studio" });
       }
 
-      // Update session
+      // Call the single-player advance-week endpoint internally
+      // This runs all the AI film creation, box office, etc. logic
+      const advanceResponse = await fetch(`http://localhost:${process.env.PORT || 5000}/api/studio/${requestingPlayer.studioId}/advance-week`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!advanceResponse.ok) {
+        const error = await advanceResponse.json();
+        return res.status(500).json({ error: error.error || "Failed to advance week" });
+      }
+
+      const advanceData = await advanceResponse.json();
+      const newWeek = advanceData.studio?.currentWeek || session.currentWeek + 1;
+      const newYear = advanceData.studio?.currentYear || session.currentYear;
+
+      // Update session to match
       await storage.updateGameSession(id, {
         currentWeek: newWeek,
         currentYear: newYear,
         lastActivityAt: Math.floor(Date.now() / 1000),
       });
 
-      // Update all player studios to match session time
+      // Update all OTHER player studios to match session time
+      // (the requesting player's studio was already updated by the advance-week call)
       const studios = await storage.getStudiosByGameSession(id);
       for (const studio of studios) {
-        await storage.updateStudio(studio.id, {
-          currentWeek: newWeek,
-          currentYear: newYear,
-        });
+        if (studio.id !== requestingPlayer.studioId) {
+          await storage.updateStudio(studio.id, {
+            currentWeek: newWeek,
+            currentYear: newYear,
+          });
+        }
       }
 
       // Reset ready status for all players
@@ -608,7 +625,8 @@ export function registerMultiplayerRoutes(app: Express) {
       res.json({ 
         success: true, 
         week: newWeek, 
-        year: newYear 
+        year: newYear,
+        studio: advanceData.studio,
       });
     } catch (error) {
       console.error("Advance week error:", error);
