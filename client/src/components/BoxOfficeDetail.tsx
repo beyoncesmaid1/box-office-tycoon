@@ -532,6 +532,11 @@ function ExpandedFilmDetail({ film, studioName, onClose }: { film: FilmType; stu
                       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Cast</p>
                       <div className="grid grid-cols-1 gap-3">
                         {(() => {
+                          // Debug: Log castIds and talent data
+                          console.log(`[FRONTEND] Film "${film.title}" castIds:`, film.castIds);
+                          console.log(`[FRONTEND] All talent count:`, allTalent.length);
+                          console.log(`[FRONTEND] Film roles:`, filmRoles);
+                          
                           const importanceOrder = { 'lead': 0, 'supporting': 1, 'minor': 2, 'cameo': 3 };
                           const uniqueCastIds = Array.from(new Set(film.castIds));
                           const sortedCastIds = uniqueCastIds.sort((a, b) => {
@@ -550,6 +555,10 @@ function ExpandedFilmDetail({ film, studioName, onClose }: { film: FilmType; stu
                           return sortedCastIds.map((castId, index) => {
                             const actor = allTalent.find(t => t.id === castId);
                             const roles = filmRoles.filter(r => r.actorId === castId);
+                            
+                            // Debug: Log actor lookup
+                            console.log(`[FRONTEND] Looking for actor with ID ${castId}:`, actor);
+                            
                             return actor ? (
                               <div key={`cast-${castId}-${index}`} className="flex items-center gap-3 bg-black/30 p-3 rounded-lg">
                                 {/* Actor Profile Picture */}
