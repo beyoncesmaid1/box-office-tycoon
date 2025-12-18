@@ -62,16 +62,12 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Run database migrations at startup if DATABASE_URL is set
+  // Skip migrations at startup - run them manually or via a separate command
+  // The drizzle-kit push was causing Railway to timeout
   if (process.env.DATABASE_URL) {
-    try {
-      console.log("Running database migrations...");
-      execSync("npx drizzle-kit push", { stdio: "inherit" });
-      console.log("Database migrations complete.");
-    } catch (error) {
-      console.error("Database migration failed:", error);
-      // Continue anyway - tables might already exist
-    }
+    console.log("Database URL detected, using PostgreSQL storage");
+  } else {
+    console.log("Warning: No DATABASE_URL, using in-memory storage");
   }
 
   await registerRoutes(httpServer, app);
