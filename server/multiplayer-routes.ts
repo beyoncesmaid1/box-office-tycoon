@@ -549,17 +549,15 @@ export function registerMultiplayerRoutes(app: Express) {
 
       const players = await storage.getPlayersByGameSession(id);
 
-      // Check authorization based on mode
-      if (session.weekAdvanceMode === "host" && session.hostUserId !== userId) {
-        return res.status(403).json({ error: "Only host can advance week" });
+      // Verify user is a player in this session
+      const isPlayer = players.some(p => p.userId === userId);
+      if (!isPlayer) {
+        return res.status(403).json({ error: "You are not a player in this session" });
       }
 
-      if (session.weekAdvanceMode === "ready") {
-        const allReady = players.every(p => p.isReady);
-        if (!allReady) {
-          return res.status(400).json({ error: "Not all players are ready" });
-        }
-      }
+      // For now, any player can advance the week
+      // The ready system is used in the lobby before game starts
+      // In-game, we allow any player to advance (could add voting later)
 
       // Calculate new week/year
       let newWeek = session.currentWeek + 1;
