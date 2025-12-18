@@ -425,13 +425,27 @@ export function registerMultiplayerRoutes(app: Express) {
         eventData: {},
       });
 
-      // Notify all players
+      // Get updated players with studioIds
+      const updatedPlayers = await storage.getPlayersByGameSession(id);
+      const playersWithStudios = await Promise.all(
+        updatedPlayers.map(async (p) => {
+          const user = await storage.getUser(p.userId);
+          return {
+            ...p,
+            username: user?.username,
+            displayName: user?.displayName,
+          };
+        })
+      );
+
+      // Notify all players with updated player data including studioIds
       broadcastToSession(id, {
         type: "game_started",
         session: await storage.getGameSession(id),
+        players: playersWithStudios,
       });
 
-      res.json({ success: true });
+      res.json({ success: true, players: playersWithStudios });
     } catch (error) {
       console.error("Start game error:", error);
       res.status(500).json({ error: "Failed to start game" });
