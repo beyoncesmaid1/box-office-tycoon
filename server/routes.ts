@@ -2677,8 +2677,14 @@ export async function registerRoutes(
       });
 
       // Also sync all AI studios to the same week/year
+      // For multiplayer, use gameSessionId to find shared AI studios
       const allStudios = await storage.getAllStudios();
-      const aiStudios = allStudios.filter(s => s.isAI && s.playerGameId === id);
+      const isMultiplayer = !!studio.gameSessionId;
+      const aiStudios = allStudios.filter(s => s.isAI && (
+        isMultiplayer 
+          ? s.gameSessionId === studio.gameSessionId 
+          : s.playerGameId === id
+      ));
       for (const aiStudio of aiStudios) {
         await storage.updateStudio(aiStudio.id, {
           currentWeek,
@@ -2709,8 +2715,14 @@ export async function registerRoutes(
       const allStudios = await storage.getAllStudios();
       
       // Get all films for this studio and AI studios
+      // For multiplayer, use gameSessionId to find shared AI studios
       const studioFilms = await storage.getFilmsByStudio(id);
-      const aiStudios = allStudios.filter(s => s.isAI && s.playerGameId === id);
+      const isMultiplayer = !!studio.gameSessionId;
+      const aiStudios = allStudios.filter(s => s.isAI && (
+        isMultiplayer 
+          ? s.gameSessionId === studio.gameSessionId 
+          : s.playerGameId === id
+      ));
       const aiFilmIds = new Set<string>();
       for (const aiStudio of aiStudios) {
         const aiFilms = await storage.getFilmsByStudio(aiStudio.id);
@@ -2856,12 +2868,18 @@ export async function registerRoutes(
       let budgetChange = 0;
 
       // Get all studios and films, filter to only this game
+      // For multiplayer, use gameSessionId to share AI studios across all players
       let allStudios = await storage.getAllStudios();
-      let aiStudios = allStudios.filter(s => s.isAI && s.playerGameId === id);
+      const isMultiplayer = !!studio.gameSessionId;
+      let aiStudios = allStudios.filter(s => s.isAI && (
+        isMultiplayer 
+          ? s.gameSessionId === studio.gameSessionId 
+          : s.playerGameId === id
+      ));
       
       // Auto-create AI studios if they don't exist (for existing saves)
       if (aiStudios.length === 0) {
-        console.log(`[advance-week] Creating AI studios for player game ${id}`);
+        console.log(`[advance-week] Creating AI studios for ${isMultiplayer ? 'multiplayer session' : 'player game'} ${isMultiplayer ? studio.gameSessionId : id}`);
         const budgets = [1000000000, 1000000000, 1000000000, 1000000000, 1000000000, 1000000000, 1000000000];
         for (let i = 0; i < aiStudioNames.length; i++) {
           await storage.createStudio({
@@ -2875,12 +2893,17 @@ export async function registerRoutes(
             totalAwards: 0,
             isAI: true,
             strategy: aiStrategies[i],
-            playerGameId: id,
+            playerGameId: isMultiplayer ? undefined : id,
+            gameSessionId: isMultiplayer ? studio.gameSessionId : undefined,
           });
         }
         // Re-fetch ALL studios after creating them - this is critical!
         allStudios = await storage.getAllStudios();
-        aiStudios = allStudios.filter(s => s.isAI && s.playerGameId === id);
+        aiStudios = allStudios.filter(s => s.isAI && (
+          isMultiplayer 
+            ? s.gameSessionId === studio.gameSessionId 
+            : s.playerGameId === id
+        ));
       }
       
       const allFilms = await storage.getAllFilms();
