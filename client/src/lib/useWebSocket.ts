@@ -14,12 +14,16 @@ interface UseWebSocketOptions {
   onDisconnect?: () => void;
 }
 
+const RECONNECT_DELAY = 3000; // 3 seconds
+const MAX_RECONNECT_ATTEMPTS = 5;
+
 export function useWebSocket(options: UseWebSocketOptions | null) {
   const { userId, gameSessionId, username, onMessage, onConnect, onDisconnect } = options || {};
   const wsRef = useRef<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectAttempts = useRef(0);
   
   // Store callbacks in refs to avoid recreating connect function
   const onMessageRef = useRef(onMessage);
@@ -35,20 +39,25 @@ export function useWebSocket(options: UseWebSocketOptions | null) {
 
   const connect = useCallback(() => {
     if (!userId || !gameSessionId || !username) return;
-    
+
     // Don't create a new connection if one already exists and is open/connecting
     if (wsRef.current && (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING)) {
+      console.log('[WS] Connection already exists, reusing');
       return;
     }
 
+    console.log(`[WS] Connecting to WebSocket... (attempt ${reconnectAttempts.current + 1})`);
+
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host}/ws`;
-
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
     ws.onopen = () => {
-      console.log("[WS] Connected");
+      console.log('[WS] Connected, authenticating...');
+      // Reset reconnect attempts on successful connection
+      reconnectAttempts.current = 0;
+      
       // Authenticate with the server
       ws.send(JSON.stringify({
         type: "auth",
@@ -56,37 +65,66 @@ export function useWebSocket(options: UseWebSocketOptions | null) {
         gameSessionId,
         username,
       }));
-      setIsConnected(true);
-      onConnectRef.current?.();
+
+      // Set a timeout to check if authentication was successful
+      const authTimeout = setTimeout(() => {
+        if (ws.readyState === WebSocket.OPEN && !isConnected) {
+          console.error('[WS] Authentication timeout');
+          ws.close();
+        }
+      }, 5000);
+
+      // Clear the timeout on successful authentication
+      const onAuthSuccess = () => {
+        clearTimeout(authTimeout);
+        setIsConnected(true);
+        onConnectRef.current?.();
+      };
+
+      // Override the message handler to check for auth success
+      const originalOnMessage = ws.onmessage;
+      ws.onmessage = (event) => {
+        try {
+          const message = JSON.parse(event.data);
+          console.log('[WS] Received message:', message.type, message);
+          
+          if (message.type === 'session_state') {
+            onAuthSuccess();
+          }
+          
+          setLastMessage(message);
+          onMessageRef.current?.(message);
+        } catch (error) {
+          console.error('[WS] Failed to parse message:', error);
+        }
+      };
     };
 
-    ws.onmessage = (event) => {
-      try {
-        const message = JSON.parse(event.data);
-        setLastMessage(message);
-        onMessageRef.current?.(message);
-      } catch (error) {
-        console.error("[WS] Failed to parse message:", error);
-      }
-    };
-
-    ws.onclose = () => {
-      console.log("[WS] Disconnected");
+    ws.onclose = (event) => {
+      console.log(`[WS] Disconnected (code: ${event.code}, reason: ${event.reason || 'no reason provided'})`);
       setIsConnected(false);
       onDisconnectRef.current?.();
 
-      // Attempt to reconnect after 3 seconds
-      reconnectTimeoutRef.current = setTimeout(() => {
-        if (userId && gameSessionId) {
-          connect();
+      // Only attempt to reconnect if this wasn't an intentional disconnect
+      if (event.code !== 1000 && event.code !== 1005) { // 1000 = Normal closure, 1005 = No status
+        if (reconnectAttempts.current < MAX_RECONNECT_ATTEMPTS) {
+          const delay = RECONNECT_DELAY * Math.pow(2, reconnectAttempts.current); // Exponential backoff
+          console.log(`[WS] Reconnecting in ${delay}ms... (attempt ${reconnectAttempts.current + 1}/${MAX_RECONNECT_ATTEMPTS})`);
+          
+          reconnectTimeoutRef.current = setTimeout(() => {
+            reconnectAttempts.current += 1;
+            connect();
+          }, delay);
+        } else {
+          console.error(`[WS] Max reconnection attempts (${MAX_RECONNECT_ATTEMPTS}) reached`);
         }
-      }, 3000);
+      }
     };
 
     ws.onerror = (error) => {
-      console.error("[WS] Error:", error);
+      console.error('[WS] WebSocket error:', error);
     };
-  }, [userId, gameSessionId, username]); // Only depend on connection params, not callbacks
+  }, [userId, gameSessionId, username]);
 
   useEffect(() => {
     if (!options) return;
@@ -98,11 +136,10 @@ export function useWebSocket(options: UseWebSocketOptions | null) {
         clearTimeout(reconnectTimeoutRef.current);
       }
       if (wsRef.current) {
-        wsRef.current.close();
-        wsRef.current = null;
+        wsRef.current.close(1000, "Component unmounted");
       }
     };
-  }, [userId, gameSessionId, username]); // Only reconnect when these core values change
+  }, [connect, userId, gameSessionId, username]);
 
   const send = useCallback((message: WebSocketMessage) => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {

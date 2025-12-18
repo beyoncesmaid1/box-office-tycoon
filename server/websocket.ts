@@ -10,14 +10,48 @@ interface ConnectedClient {
   username: string;
 }
 
-const clients: Map<string, ConnectedClient> = new Map(); // keyed by odule
+const clients: Map<string, ConnectedClient> = new Map(); // keyed by userId:gameSessionId
 const gameSessionClients: Map<string, Set<string>> = new Map(); // gameSessionId -> Set of client keys
+const PING_INTERVAL = 30000; // 30 seconds
+
+// Helper function to log connection state
+function logConnectionState() {
+  console.log('\n[WS] Current connection state:');
+  console.log(`[WS] Total connected clients: ${clients.size}`);
+  gameSessionClients.forEach((clientsSet, sessionId) => {
+    console.log(`[WS] Session ${sessionId}: ${clientsSet.size} clients`);
+    clientsSet.forEach(clientKey => {
+      const client = clients.get(clientKey);
+      console.log(`  - ${client?.username || 'unknown'} (${client?.userId || 'unknown'})`);
+    });
+  });
+  console.log(''); // Add a newline for readability
+}
 
 export function setupWebSocket(httpServer: Server) {
   const wss = new WebSocketServer({ server: httpServer, path: "/ws" });
 
   wss.on("connection", (ws, req) => {
     let clientKey: string | null = null;
+    let pingInterval: NodeJS.Timeout;
+
+    // Set up ping/pong
+    const setupPing = () => {
+      pingInterval = setInterval(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+          try {
+            ws.ping();
+          } catch (error) {
+            console.error('Error sending ping:', error);
+            ws.terminate();
+          }
+        }
+      }, PING_INTERVAL);
+    };
+
+    ws.on("pong", () => {
+      // Connection is alive
+    });
 
     ws.on("message", async (data) => {
       try {
@@ -25,14 +59,21 @@ export function setupWebSocket(httpServer: Server) {
         
         switch (message.type) {
           case "auth": {
-            // Client authenticates with userId and gameSessionId
             const { userId, gameSessionId, username } = message;
             if (!userId || !gameSessionId) {
               ws.send(JSON.stringify({ type: "error", message: "Missing userId or gameSessionId" }));
               return;
             }
 
-            clientKey = `${userId}:${gameSessionId}`;
+            // Clean up any existing connection for this user in this session
+            const existingClientKey = `${userId}:${gameSessionId}`;
+            const existingClient = clients.get(existingClientKey);
+            if (existingClient) {
+              console.log(`[WS] Closing existing connection for user ${userId} in session ${gameSessionId}`);
+              existingClient.ws.close(1000, "New connection from same user");
+            }
+
+            clientKey = existingClientKey;
             clients.set(clientKey, { ws, userId, gameSessionId, username: username || "Player" });
 
             // Add to game session tracking
@@ -40,6 +81,13 @@ export function setupWebSocket(httpServer: Server) {
               gameSessionClients.set(gameSessionId, new Set());
             }
             gameSessionClients.get(gameSessionId)!.add(clientKey);
+
+            // Log connection
+            console.log(`[WS] Client connected: ${username} to session ${gameSessionId}`);
+            logConnectionState();
+
+            // Set up ping after auth
+            setupPing();
 
             // Update player connection status
             const player = await storage.getGameSessionPlayerByUserAndSession(userId, gameSessionId);
@@ -65,8 +113,6 @@ export function setupWebSocket(httpServer: Server) {
               session,
               players,
             }));
-
-            console.log(`[WS] Client connected: ${username} to session ${gameSessionId}`);
             break;
           }
 
@@ -152,33 +198,35 @@ export function setupWebSocket(httpServer: Server) {
       }
     });
 
-    ws.on("close", async () => {
+    ws.on("close", () => {
+      console.log(`[WS] Client disconnected: ${clientKey}`);
       if (clientKey) {
         const client = clients.get(clientKey);
         if (client) {
-          // Update player connection status
-          const player = await storage.getGameSessionPlayerByUserAndSession(client.userId, client.gameSessionId);
-          if (player) {
-            await storage.updateGameSessionPlayer(player.id, { 
-              isConnected: false,
-              lastSeenAt: Math.floor(Date.now() / 1000)
-            });
+          // Remove from game session tracking
+          const sessionClients = gameSessionClients.get(client.gameSessionId);
+          if (sessionClients) {
+            sessionClients.delete(clientKey);
+            console.log(`[WS] Removed client from session ${client.gameSessionId}, now has ${sessionClients.size} clients`);
           }
-
-          // Notify others
-          broadcastToSession(client.gameSessionId, {
-            type: "player_disconnected",
-            userId: client.userId,
-            username: client.username,
-          }, clientKey);
-
-          // Remove from tracking
-          gameSessionClients.get(client.gameSessionId)?.delete(clientKey);
+          
+          // Update player connection status
+          storage.getGameSessionPlayerByUserAndSession(client.userId, client.gameSessionId)
+            .then(player => {
+              if (player) {
+                return storage.updateGameSessionPlayer(player.id, { 
+                  isConnected: false,
+                  lastSeenAt: Math.floor(Date.now() / 1000)
+                });
+              }
+            })
+            .catch(console.error);
+          
+          // Remove from clients map
           clients.delete(clientKey);
-
-          console.log(`[WS] Client disconnected: ${client.username}`);
         }
       }
+      clearInterval(pingInterval);
     });
 
     ws.on("error", (error) => {
@@ -195,21 +243,46 @@ export function broadcastToSession(gameSessionId: string, message: any, excludeC
   const sessionClients = gameSessionClients.get(gameSessionId);
   if (!sessionClients) {
     console.log(`[WS] No clients found for session ${gameSessionId}`);
+    logConnectionState();
     return;
   }
 
-  const messageStr = JSON.stringify(message);
-  let sentCount = 0;
   const clientKeys = Array.from(sessionClients);
-  for (const clientKey of clientKeys) {
-    if (excludeClientKey && clientKey === excludeClientKey) continue;
+  let sentCount = 0;
+  const now = Date.now();
+
+  clientKeys.forEach(clientKey => {
+    if (excludeClientKey && clientKey === excludeClientKey) return;
+    
     const client = clients.get(clientKey);
-    if (client && client.ws.readyState === WebSocket.OPEN) {
-      client.ws.send(messageStr);
-      sentCount++;
+    if (!client) {
+      console.log(`[WS] Client ${clientKey} not found in clients map`);
+      sessionClients.delete(clientKey);
+      return;
     }
+
+    if (client.ws.readyState === WebSocket.OPEN) {
+      try {
+        client.ws.send(JSON.stringify(message));
+        sentCount++;
+      } catch (error) {
+        console.error(`[WS] Error sending to client ${clientKey}:`, error);
+        sessionClients.delete(clientKey);
+        clients.delete(clientKey);
+      }
+    } else if (client.ws.readyState === WebSocket.CLOSED) {
+      console.log(`[WS] Removing closed connection for ${clientKey}`);
+      sessionClients.delete(clientKey);
+      clients.delete(clientKey);
+    } else {
+      console.log(`[WS] Client ${clientKey} not ready (state: ${client.ws.readyState})`);
+    }
+  });
+
+  console.log(`[WS] Broadcast ${message.type} to ${sentCount}/${clientKeys.length} clients in session ${gameSessionId}`);
+  if (sentCount < clientKeys.length) {
+    logConnectionState();
   }
-  console.log(`[WS] Broadcast ${message.type} to ${sentCount}/${sessionClients.size} clients in session ${gameSessionId}`);
 }
 
 // Check if all players in a session are ready to advance
