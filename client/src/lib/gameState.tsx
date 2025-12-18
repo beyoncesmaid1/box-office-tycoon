@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, type ReactNode } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from './queryClient';
 import { getOrCreateDeviceId } from './deviceId';
@@ -85,6 +85,59 @@ export const GameContext = createContext<GameContextType | null>(null);
 export function GameProvider({ children, studioId, multiplayerSessionId, userId, onQuitGame }: { children: ReactNode; studioId: string; multiplayerSessionId?: string | null; userId?: string; onQuitGame: () => void; }) {
   const queryClient = useQueryClient();
   const isMultiplayer = !!multiplayerSessionId;
+  const wsRef = useRef<WebSocket | null>(null);
+
+  // WebSocket connection for multiplayer sync
+  useEffect(() => {
+    if (!isMultiplayer || !multiplayerSessionId || !userId) return;
+
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      console.log("[GameState WS] Connected for multiplayer sync");
+      // Authenticate with the server
+      ws.send(JSON.stringify({
+        type: "auth",
+        userId,
+        gameSessionId: multiplayerSessionId,
+        username: "player", // Not used for game sync
+      }));
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+        if (message.type === "week_advanced") {
+          console.log("[GameState WS] Week advanced to", message.week, message.year);
+          // Refresh all game data when week advances
+          queryClient.invalidateQueries({ queryKey: ['/api/studio', studioId] });
+          queryClient.invalidateQueries({ queryKey: ['/api/studio', studioId, 'films'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/all-films', studioId] });
+          queryClient.invalidateQueries({ queryKey: ['/api/studios', studioId] });
+          queryClient.invalidateQueries({ queryKey: ['/api/streaming-deals'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/streaming-deals/service'] });
+          queryClient.invalidateQueries({ queryKey: [`/api/emails/unread-count?playerGameId=${studioId}`] });
+        }
+      } catch (error) {
+        console.error("[GameState WS] Failed to parse message:", error);
+      }
+    };
+
+    ws.onclose = () => {
+      console.log("[GameState WS] Disconnected");
+    };
+
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+    };
+  }, [isMultiplayer, multiplayerSessionId, userId, studioId, queryClient]);
 
   // Fetch studio
   const { data: studio, isLoading: studioLoading } = useQuery<Studio>({
