@@ -556,8 +556,12 @@ function ExpandedFilmDetail({ film, studioName, onClose }: { film: FilmType; stu
                             const actor = allTalent.find(t => t.id === castId);
                             const roles = filmRoles.filter(r => r.actorId === castId);
                             
-                            // Debug: Log actor lookup
-                            console.log(`[FRONTEND] Looking for actor with ID ${castId}:`, actor);
+                            // Debug: Log actor lookup and role matching
+                            console.log(`[FRONTEND] Actor ${actor?.name} (${castId}):`, {
+                              actor: actor,
+                              matchingRoles: roles,
+                              allRolesForFilm: filmRoles
+                            });
                             
                             return actor ? (
                               <div key={`cast-${castId}-${index}`} className="flex items-center gap-3 bg-black/30 p-3 rounded-lg">
