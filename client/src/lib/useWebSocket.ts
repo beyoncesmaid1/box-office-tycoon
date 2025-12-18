@@ -20,25 +20,9 @@ export function useWebSocket(options: UseWebSocketOptions | null) {
   const [isConnected, setIsConnected] = useState(false);
   const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
-  // Store callbacks in refs to avoid recreating connect function
-  const onMessageRef = useRef(onMessage);
-  const onConnectRef = useRef(onConnect);
-  const onDisconnectRef = useRef(onDisconnect);
-  
-  useEffect(() => {
-    onMessageRef.current = onMessage;
-    onConnectRef.current = onConnect;
-    onDisconnectRef.current = onDisconnect;
-  }, [onMessage, onConnect, onDisconnect]);
 
   const connect = useCallback(() => {
     if (!userId || !gameSessionId || !username) return;
-    
-    // Don't create a new connection if one already exists and is open/connecting
-    if (wsRef.current && (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING)) {
-      return;
-    }
 
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host}/ws`;
@@ -56,14 +40,14 @@ export function useWebSocket(options: UseWebSocketOptions | null) {
         username,
       }));
       setIsConnected(true);
-      onConnectRef.current?.();
+      onConnect?.();
     };
 
     ws.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data);
         setLastMessage(message);
-        onMessageRef.current?.(message);
+        onMessage?.(message);
       } catch (error) {
         console.error("[WS] Failed to parse message:", error);
       }
@@ -72,7 +56,7 @@ export function useWebSocket(options: UseWebSocketOptions | null) {
     ws.onclose = () => {
       console.log("[WS] Disconnected");
       setIsConnected(false);
-      onDisconnectRef.current?.();
+      onDisconnect?.();
 
       // Attempt to reconnect after 3 seconds
       reconnectTimeoutRef.current = setTimeout(() => {
@@ -85,12 +69,12 @@ export function useWebSocket(options: UseWebSocketOptions | null) {
     ws.onerror = (error) => {
       console.error("[WS] Error:", error);
     };
-  }, [userId, gameSessionId, username]);
+  }, [userId, gameSessionId, username, onMessage, onConnect, onDisconnect]);
 
   useEffect(() => {
-    if (!options) return;
-    
-    connect();
+    if (options) {
+      connect();
+    }
 
     return () => {
       if (reconnectTimeoutRef.current) {
@@ -98,10 +82,9 @@ export function useWebSocket(options: UseWebSocketOptions | null) {
       }
       if (wsRef.current) {
         wsRef.current.close();
-        wsRef.current = null;
       }
     };
-  }, [userId, gameSessionId, username]); // Only reconnect when these core values change
+  }, [connect, options]);
 
   const send = useCallback((message: WebSocketMessage) => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {

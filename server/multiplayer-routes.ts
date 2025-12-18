@@ -272,14 +272,6 @@ export function registerMultiplayerRoutes(app: Express) {
         return res.status(404).json({ error: "Session not found" });
       }
 
-      // Check if already in session (allow rejoining)
-      const existing = await storage.getGameSessionPlayerByUserAndSession(userId, id);
-      if (existing) {
-        // Already a player - just return success (allows rejoining)
-        return res.json({ message: "Rejoined session" });
-      }
-
-      // Only check status and player count for new joins
       if (session.status !== "lobby") {
         return res.status(400).json({ error: "Game already in progress" });
       }
@@ -287,6 +279,12 @@ export function registerMultiplayerRoutes(app: Express) {
       const players = await storage.getPlayersByGameSession(id);
       if (players.length >= session.maxPlayers) {
         return res.status(400).json({ error: "Session is full" });
+      }
+
+      // Check if already in session
+      const existing = await storage.getGameSessionPlayerByUserAndSession(userId, id);
+      if (existing) {
+        return res.status(400).json({ error: "Already in session" });
       }
 
       const player = await storage.createGameSessionPlayer({
@@ -482,29 +480,18 @@ export function registerMultiplayerRoutes(app: Express) {
 
   // Toggle ready status
   app.post("/api/multiplayer/sessions/:id/ready", async (req: Request, res: Response) => {
-    const startTime = Date.now();
     try {
       const { id } = req.params;
       const { userId, isReady } = req.body;
 
-      console.log(`[Ready] Start - userId: ${userId}, isReady: ${isReady}`);
-      
-      const t1 = Date.now();
       const player = await storage.getGameSessionPlayerByUserAndSession(userId, id);
-      console.log(`[Ready] getPlayer took ${Date.now() - t1}ms`);
-      
       if (!player) {
         return res.status(404).json({ error: "Not in session" });
       }
 
-      const t2 = Date.now();
       await storage.updateGameSessionPlayer(player.id, { isReady });
-      console.log(`[Ready] updatePlayer took ${Date.now() - t2}ms`);
 
-      const t3 = Date.now();
       const user = await storage.getUser(userId);
-      console.log(`[Ready] getUser took ${Date.now() - t3}ms`);
-      
       broadcastToSession(id, {
         type: isReady ? "player_ready" : "player_unready",
         userId,
@@ -512,15 +499,9 @@ export function registerMultiplayerRoutes(app: Express) {
       });
 
       // Check if all ready
-      const t4 = Date.now();
       const session = await storage.getGameSession(id);
-      console.log(`[Ready] getSession took ${Date.now() - t4}ms`);
-      
       if (session?.status === "active") {
-        const t5 = Date.now();
         const players = await storage.getPlayersByGameSession(id);
-        console.log(`[Ready] getPlayers took ${Date.now() - t5}ms`);
-        
         const allReady = players.every(p => p.isReady);
         
         if (allReady) {
@@ -531,10 +512,8 @@ export function registerMultiplayerRoutes(app: Express) {
         }
       }
 
-      console.log(`[Ready] Total request took ${Date.now() - startTime}ms`);
       res.json({ success: true });
     } catch (error) {
-      console.error("[Ready] Error:", error);
       res.status(500).json({ error: "Failed to update ready status" });
     }
   });

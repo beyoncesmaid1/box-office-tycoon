@@ -100,10 +100,14 @@ export function MultiplayerLobby({ onStartGame, onBack }: MultiplayerLobbyProps)
                 ]);
                 break;
               case "game_started":
-                // Find our studio and start the game
-                const myPlayer = players.find((p) => p.userId === user?.id);
-                if (myPlayer?.studioId) {
-                  onStartGame(activeSession!.id, myPlayer.studioId);
+                // Use the players data from the message which has updated studioIds
+                const updatedPlayers = message.players || players;
+                const myPlayer = updatedPlayers.find((p: Player) => p.userId === user?.id);
+                console.log("[WS] game_started received, myPlayer:", myPlayer);
+                if (myPlayer?.studioId && activeSession) {
+                  onStartGame(activeSession.id, myPlayer.studioId);
+                } else {
+                  console.error("[WS] Cannot start game - missing studioId or session", { myPlayer, activeSession });
                 }
                 break;
               case "all_ready":
