@@ -299,12 +299,12 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(films);
   }
 
-  async createFilm(insertFilm: InsertFilm): Promise<Film> {
+  async createFilm(insertFilm: InsertFilm | any): Promise<Film> {
     const [film] = await db.insert(films).values(insertFilm).returning();
     return film;
   }
 
-  async updateFilm(id: string, updates: Partial<InsertFilm>): Promise<Film | undefined> {
+  async updateFilm(id: string, updates: Partial<InsertFilm> | any): Promise<Film | undefined> {
     const [film] = await db.update(films).set(updates).where(eq(films.id, id)).returning();
     return film;
   }
@@ -1170,7 +1170,7 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(filmRoles).where(eq(filmRoles.filmId, filmId));
   }
 
-  async createFilmRole(role: InsertFilmRole): Promise<FilmRole> {
+  async createFilmRole(role: InsertFilmRole | any): Promise<FilmRole> {
     const [created] = await db.insert(filmRoles).values(role).returning();
     return created;
   }
@@ -1204,7 +1204,7 @@ export class DatabaseStorage implements IStorage {
     return await this.getFranchise(film.franchiseId);
   }
 
-  async createFranchise(franchise: InsertFranchise): Promise<Franchise> {
+  async createFranchise(franchise: InsertFranchise | any): Promise<Franchise> {
     const [created] = await db.insert(franchises).values(franchise).returning();
     return created;
   }
