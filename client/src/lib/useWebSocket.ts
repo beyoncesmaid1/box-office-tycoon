@@ -23,6 +23,11 @@ export function useWebSocket(options: UseWebSocketOptions | null) {
 
   const connect = useCallback(() => {
     if (!userId || !gameSessionId || !username) return;
+    
+    // Don't create a new connection if one already exists and is open/connecting
+    if (wsRef.current && (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING)) {
+      return;
+    }
 
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host}/ws`;
@@ -72,9 +77,9 @@ export function useWebSocket(options: UseWebSocketOptions | null) {
   }, [userId, gameSessionId, username, onMessage, onConnect, onDisconnect]);
 
   useEffect(() => {
-    if (options) {
-      connect();
-    }
+    if (!options) return;
+    
+    connect();
 
     return () => {
       if (reconnectTimeoutRef.current) {
@@ -82,9 +87,10 @@ export function useWebSocket(options: UseWebSocketOptions | null) {
       }
       if (wsRef.current) {
         wsRef.current.close();
+        wsRef.current = null;
       }
     };
-  }, [connect, options]);
+  }, [userId, gameSessionId, username]); // Only reconnect when these core values change
 
   const send = useCallback((message: WebSocketMessage) => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
