@@ -2181,7 +2181,7 @@ export async function registerRoutes(
           if (!film.synopsis || film.synopsis === '') {
             try {
               const synopsis = await generateAIFilmSynopsis(film.id, film.title, film.genre);
-              await storage.updateFilm(film.id, { synopsis });
+              await storage.updateFilm(film.id, { synopsis } as any);
               updated++;
               console.log(`[BACKFILL] Generated synopsis for "${film.title}"`);
             } catch (err) {
@@ -2364,7 +2364,7 @@ export async function registerRoutes(
             await storage.updateFilm(film.id, {
               weeksInCurrentPhase: newWeeksInPhase,
               phase: newPhase,
-            });
+            } as any);
           }
         }
 
@@ -2395,7 +2395,7 @@ export async function registerRoutes(
             await storage.updateFilm(film.id, {
               weeklyBoxOffice: newWeeklyBoxOffice,
               totalBoxOffice: newTotalBoxOffice,
-            });
+            } as any);
           }
         }
 
@@ -2408,7 +2408,7 @@ export async function registerRoutes(
             const successfulFilms = aiFilms.filter(f => 
               f.phase === 'released' && 
               (f.totalBoxOffice || 0) >= 200000000 && // Films with $200M+ box office
-              !f.prequelId // Not already a sequel
+              !(f as any).prequelId // Not already a sequel
             );
             
             let title: string;
@@ -2422,7 +2422,7 @@ export async function registerRoutes(
               const prequelFilm = successfulFilms[Math.floor(Math.random() * successfulFilms.length)];
               
               // Count existing sequels for this franchise
-              const existingSequels = aiFilms.filter(f => f.prequelId === prequelFilm.id).length;
+              const existingSequels = aiFilms.filter(f => (f as any).prequelId === prequelFilm.id).length;
               const sequelNumber = existingSequels + 2; // 2 for first sequel, 3 for second, etc.
               
               // Max 4 sequels per franchise
@@ -3322,7 +3322,7 @@ export async function registerRoutes(
             filmUpdatePromises.push(storage.updateFilm(film.id, {
               phase: currentPhase,
               weeksInCurrentPhase: weeksInPhase,
-            }));
+            } as any));
         }
       }
       
@@ -3678,7 +3678,7 @@ export async function registerRoutes(
             weeklyBoxOfficeByCountry: newWeeklyByCountry,
             totalBoxOffice: newTotalBoxOffice,
             totalBoxOfficeByCountry: newTotalByCountry,
-          }));
+          } as any));
           
           // Only credit studio if there's actual earnings
           if (newGross > 0 && film.studioId === id) {
@@ -6760,7 +6760,7 @@ export async function registerRoutes(
           totalRevenue: originalFilm.totalBoxOffice,
           createdWeek: currentWeek,
           createdYear: currentYear,
-        });
+        } as any);
         await storage.updateFilm(id, { franchiseId: franchise.id });
       }
       
@@ -6779,7 +6779,7 @@ export async function registerRoutes(
         marketingBudget: Math.floor(originalFilm.marketingBudget * 1.1),
         createdAtWeek: currentWeek,
         createdAtYear: currentYear,
-      });
+      } as any);
       
       // Copy film roles from original film (without assigning actors)
       const originalRoles = await storage.getFilmRolesByFilm(id);
@@ -6841,7 +6841,7 @@ export async function registerRoutes(
           totalRevenue: originalFilm.totalBoxOffice || 0,
           createdWeek: currentWeek,
           createdYear: currentYear,
-        });
+        } as any);
         await storage.updateFilm(originalFilmId, { franchiseId: franchise.id });
       }
       
