@@ -81,14 +81,17 @@ type AppView = "menu" | "editor" | "multiplayer-auth" | "multiplayer-lobby" | "g
 
 function AppContent() {
   const [, navigate] = useLocation();
-  const { user } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const [view, setView] = useState<AppView>("menu");
   const [activeStudio, setActiveStudio] = useState<string | null>(null);
   const [multiplayerSessionId, setMultiplayerSessionId] = useState<string | null>(null);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
 
-  // Check for active multiplayer session on app load
+  // Check for active multiplayer session on app load (wait for auth to finish loading first)
   useEffect(() => {
+    // Don't check until auth is done loading
+    if (isAuthLoading) return;
+    
     const checkActiveSession = async () => {
       if (!user) {
         setIsCheckingSession(false);
@@ -130,7 +133,7 @@ function AppContent() {
     };
 
     checkActiveSession();
-  }, [user]);
+  }, [user, isAuthLoading]);
 
   // Save session to localStorage when it changes
   useEffect(() => {
