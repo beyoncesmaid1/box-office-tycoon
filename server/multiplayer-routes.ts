@@ -567,14 +567,17 @@ export function registerMultiplayerRoutes(app: Express) {
 
       // Call the single-player advance-week endpoint internally
       // This runs all the AI film creation, box office, etc. logic
-      const advanceResponse = await fetch(`http://localhost:${process.env.PORT || 5000}/api/studio/${requestingPlayer.studioId}/advance-week`, {
+      // Use 127.0.0.1 instead of localhost to avoid IPv6 issues on Railway
+      const port = process.env.PORT || 5000;
+      const advanceResponse = await fetch(`http://127.0.0.1:${port}/api/studio/${requestingPlayer.studioId}/advance-week`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
 
       if (!advanceResponse.ok) {
-        const error = await advanceResponse.json();
-        return res.status(500).json({ error: error.error || "Failed to advance week" });
+        const errorText = await advanceResponse.text();
+        console.error("[Multiplayer] Advance week failed:", errorText);
+        return res.status(500).json({ error: "Failed to advance week" });
       }
 
       const advanceData = await advanceResponse.json();
