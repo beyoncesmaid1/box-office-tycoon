@@ -325,6 +325,8 @@ function HireTalentModal({ film, open, onOpenChange }: { film: any; open: boolea
       'scifi': 'skillScifi',
       'animation': 'skillAnimation',
       'romance': 'skillRomance',
+      'fantasy': 'skillFantasy',
+      'musicals': 'skillMusicals',
     };
     const skillKey = genreMap[film.genre];
     return skillKey ? (talent[skillKey] as number) || 50 : 50;
@@ -740,6 +742,8 @@ function EditPostProductionModal({ film, open, onOpenChange }: { film: any; open
       'scifi': 'skillScifi',
       'animation': 'skillAnimation',
       'romance': 'skillRomance',
+      'fantasy': 'skillFantasy',
+      'musicals': 'skillMusicals',
     };
     const skillKey = genreMap[film.genre];
     return skillKey ? (tal[skillKey] as number) || 50 : 50;
