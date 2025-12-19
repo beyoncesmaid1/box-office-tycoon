@@ -84,6 +84,8 @@ export interface IStorage {
   getStreamingDealsByService(streamingServiceId: string): Promise<StreamingDeal[]>;
   createStreamingDeal(deal: InsertStreamingDeal): Promise<StreamingDeal>;
   updateStreamingDeal(id: string, updates: Partial<InsertStreamingDeal>): Promise<StreamingDeal | undefined>;
+  deleteStreamingDeal(id: string): Promise<void>;
+  deleteStreamingDealsByFilm(filmId: string): Promise<void>;
   
   // Emails
   getEmail(id: string): Promise<Email | undefined>;
@@ -803,6 +805,14 @@ export class DatabaseStorage implements IStorage {
   async updateStreamingDeal(id: string, updates: Partial<InsertStreamingDeal>): Promise<StreamingDeal | undefined> {
     const [updated] = await db.update(streamingDeals).set(updates).where(eq(streamingDeals.id, id)).returning();
     return updated;
+  }
+
+  async deleteStreamingDeal(id: string): Promise<void> {
+    await db.delete(streamingDeals).where(eq(streamingDeals.id, id));
+  }
+
+  async deleteStreamingDealsByFilm(filmId: string): Promise<void> {
+    await db.delete(streamingDeals).where(eq(streamingDeals.filmId, filmId));
   }
 
   // Emails

@@ -2599,6 +2599,9 @@ export async function registerRoutes(
 
       // Delete all films for this studio and their dependent records
       await Promise.all(studioFilms.map(async (film) => {
+        // Delete all streaming deals for this film first (foreign key constraint)
+        await storage.deleteStreamingDealsByFilm(film.id);
+        
         // Delete all award nominations for this film
         const nominations = await storage.getNominationsByFilm(film.id);
         await Promise.all(nominations.map(n => storage.deleteAwardNomination(n.id)));
@@ -2624,7 +2627,10 @@ export async function registerRoutes(
         // Delete AI studio films and their records
         const aiFilms = await storage.getFilmsByStudio(aiStudio.id);
         await Promise.all(aiFilms.map(async (film) => {
-          // Delete award nominations first
+          // Delete streaming deals first (foreign key constraint)
+          await storage.deleteStreamingDealsByFilm(film.id);
+          
+          // Delete award nominations
           const nominations = await storage.getNominationsByFilm(film.id);
           await Promise.all(nominations.map(n => storage.deleteAwardNomination(n.id)));
           
