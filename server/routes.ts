@@ -3414,8 +3414,15 @@ export async function registerRoutes(
           // Check if this is truly opening week - no weekly data exists yet
           const isOpeningWeek = actualWeeksOut === 0;
           
-          // Skip films that have been running for 24+ weeks (theatrical run complete)
+          // Mark films that have reached 24 weeks as archived (theatrical run complete)
           if (actualWeeksOut >= 24) {
+            if (film.status !== 'archived') {
+              await storage.updateFilm(film.id, {
+                status: 'archived',
+                archivedWeek: newWeek,
+                archivedYear: newYear,
+              });
+            }
             continue;
           }
           
