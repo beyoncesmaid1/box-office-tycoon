@@ -2082,6 +2082,10 @@ export async function registerRoutes(
   // Register multiplayer routes
   registerMultiplayerRoutes(app);
   
+  // Run database migrations before seeding
+  const { runMigrations } = await import("./db");
+  await runMigrations();
+  
   // Seed talent data on startup
   await storage.seedTalent();
 
