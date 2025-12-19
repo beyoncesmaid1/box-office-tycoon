@@ -5694,10 +5694,16 @@ export async function registerRoutes(
           .map(deal => deal.streamingServiceId)
       );
       
-      // Filter emails: remove expired ones and streaming offers from services with active deals
+      // Filter emails: remove expired ones, festival emails, and streaming offers from services with active deals
       const filteredEmails = allEmails.filter(email => {
         // Skip archived emails
         if (email.isArchived) return false;
+        
+        // Skip festival emails (removed feature) - archive them
+        if (email.type === 'festival' || email.type === 'festival_invite') {
+          storage.updateEmail(email.id, { isArchived: true });
+          return false;
+        }
         
         // Check expiration
         if (email.expiresWeek && email.expiresYear) {
@@ -5736,8 +5742,58 @@ export async function registerRoutes(
       if (!playerGameId || typeof playerGameId !== 'string') {
         return res.status(400).json({ error: "playerGameId is required" });
       }
-      const count = await storage.getUnreadEmailCount(playerGameId);
-      res.json({ count });
+      
+      // Get all emails and apply the same filtering as the email list endpoint
+      const allEmails = await storage.getEmailsByPlayer(playerGameId);
+      const studio = await storage.getStudio(playerGameId);
+      
+      if (!studio) {
+        res.json({ count: 0 });
+        return;
+      }
+      
+      const currentWeekTotal = studio.currentYear * 52 + studio.currentWeek;
+      
+      // Get active streaming deals to filter out streaming service emails
+      const streamingDeals = await storage.getStreamingDealsByPlayer(playerGameId);
+      const activeStreamingServiceIds = new Set(
+        streamingDeals
+          .filter(deal => deal.isActive)
+          .map(deal => deal.streamingServiceId)
+      );
+      
+      // Count only unread emails that pass the same filters as the email list
+      const unreadCount = allEmails.filter(email => {
+        // Must be unread
+        if (email.isRead) return false;
+        
+        // Skip archived emails
+        if (email.isArchived) return false;
+        
+        // Skip festival emails (removed feature)
+        if (email.type === 'festival' || email.type === 'festival_invite') return false;
+        
+        // Check expiration
+        if (email.expiresWeek && email.expiresYear) {
+          const expiresWeekTotal = email.expiresYear * 52 + email.expiresWeek;
+          if (currentWeekTotal > expiresWeekTotal) {
+            return false;
+          }
+        }
+        
+        // Filter out streaming offers from services the player already has deals with
+        if (email.type === 'streaming_offer' && email.actionData) {
+          const actionData = email.actionData as Record<string, unknown>;
+          const streamingServiceId = actionData.streamingServiceId as string;
+          if (activeStreamingServiceIds.has(streamingServiceId)) {
+            return false;
+          }
+        }
+        
+        return true;
+      }).length;
+      
+      res.json({ count: unreadCount });
     } catch (error) {
       console.error("Error fetching unread count:", error);
       res.status(500).json({ error: "Failed to fetch unread count" });
