@@ -3505,14 +3505,23 @@ export async function registerRoutes(
               const audienceScore = (film.audienceScore || 7) * 10; // Convert to 0-100 scale
               let hold = 0.38 + (audienceScore / 100) * 0.41;
               
+              // Check if film is on a streaming service - apply faster decay
+              const filmStreamingDeals = await storage.getStreamingDealsByFilm(film.id);
+              const hasActiveStreamingDeal = filmStreamingDeals.some(deal => deal.isActive);
+              if (hasActiveStreamingDeal) {
+                // Films on streaming drop 25-35% faster at box office
+                hold = hold * 0.70; // Reduce hold by 30%
+                console.error(`[STREAMING DECAY] ${film.title} is on streaming - applying faster decay`);
+              }
+              
               // Apply ±15% randomness
               const randomMultiplier = 1 + (Math.random() - 0.5) * 0.30;
               hold = hold * randomMultiplier;
               
-              // Bound hold between 20% and 85%
-              hold = Math.max(0.20, Math.min(0.85, hold));
+              // Bound hold between 15% and 85% (lower minimum for streaming films)
+              hold = Math.max(hasActiveStreamingDeal ? 0.15 : 0.20, Math.min(0.85, hold));
               
-              console.error(`[DECAY] ${film.title} week ${actualWeeksOut}: lastWeekGross=${Math.round(lastWeekGross)}, audienceScore=${audienceScore}, hold=${hold.toFixed(3)}`);
+              console.error(`[DECAY] ${film.title} week ${actualWeeksOut}: lastWeekGross=${Math.round(lastWeekGross)}, audienceScore=${audienceScore}, hold=${hold.toFixed(3)}${hasActiveStreamingDeal ? ' (streaming)' : ''}`);
               
               globalWeeklyGross = Math.floor(lastWeekGross * hold);
             }
@@ -5717,7 +5726,53 @@ export async function registerRoutes(
         return res.status(400).json({ error: "playerGameId is required" });
       }
       const allEmails = await storage.getEmailsByPlayer(playerGameId);
-      res.json(allEmails);
+      
+      // Get current week/year to filter expired emails
+      const studio = await storage.getStudio(playerGameId);
+      if (!studio) {
+        return res.json(allEmails);
+      }
+      
+      const currentWeekTotal = studio.currentYear * 52 + studio.currentWeek;
+      
+      // Get active streaming deals to filter out streaming service emails
+      const streamingDeals = await storage.getStreamingDealsByPlayer(playerGameId);
+      const activeStreamingServiceIds = new Set(
+        streamingDeals
+          .filter(deal => deal.isActive)
+          .map(deal => deal.streamingServiceId)
+      );
+      
+      // Filter emails: remove expired ones and streaming offers from services with active deals
+      const filteredEmails = allEmails.filter(email => {
+        // Skip archived emails
+        if (email.isArchived) return false;
+        
+        // Check expiration
+        if (email.expiresWeek && email.expiresYear) {
+          const expiresWeekTotal = email.expiresYear * 52 + email.expiresWeek;
+          if (currentWeekTotal > expiresWeekTotal) {
+            // Mark as archived asynchronously
+            storage.updateEmail(email.id, { isArchived: true });
+            return false;
+          }
+        }
+        
+        // Filter out streaming offers from services the player already has deals with
+        if (email.type === 'streaming_offer' && email.actionData) {
+          const actionData = email.actionData as Record<string, unknown>;
+          const streamingServiceId = actionData.streamingServiceId as string;
+          if (activeStreamingServiceIds.has(streamingServiceId)) {
+            // Archive this email since player already has a deal with this service
+            storage.updateEmail(email.id, { isArchived: true });
+            return false;
+          }
+        }
+        
+        return true;
+      });
+      
+      res.json(filteredEmails);
     } catch (error) {
       console.error("Error fetching emails:", error);
       res.status(500).json({ error: "Failed to fetch emails" });
@@ -5801,6 +5856,25 @@ export async function registerRoutes(
       
       if (!email.hasAction) {
         return res.status(400).json({ error: "Email has no action" });
+      }
+      
+      // Check if email is already archived (already acted upon)
+      if (email.isArchived) {
+        return res.status(400).json({ error: "This offer has already been accepted or expired" });
+      }
+      
+      // Check if email has expired
+      if (email.expiresWeek && email.expiresYear) {
+        const studio = await storage.getStudio(email.playerGameId);
+        if (studio) {
+          const currentWeekTotal = studio.currentYear * 52 + studio.currentWeek;
+          const expiresWeekTotal = email.expiresYear * 52 + email.expiresWeek;
+          if (currentWeekTotal > expiresWeekTotal) {
+            // Mark as archived since it's expired
+            await storage.updateEmail(id, { isArchived: true });
+            return res.status(400).json({ error: "This offer has expired" });
+          }
+        }
       }
       
       const actionData = email.actionData as Record<string, unknown>;
