@@ -1080,7 +1080,7 @@ async function processAIStreamingAcquisitions(
     }
     
     if (dealsCreated > 0) {
-      console.log(`[AI-STREAMING] Created ${dealsCreated} new streaming deals (processed ${filmsProcessed} films, skipped ${filmsSkipped})`);
+      // Streaming deals created
     }
   } catch (error) {
     console.error('[AI-STREAMING] Error in processAIStreamingAcquisitions:', error);
@@ -1093,19 +1093,13 @@ async function processStreamingViews(
   currentWeek: number,
   currentYear: number
 ): Promise<void> {
-  console.log(`[STREAMING-VIEWS] Processing views for playerGameId: ${playerGameId}`);
-  
   // Get all active streaming deals for player and AI studios
   const allStudios = await storage.getAllStudios();
   const relevantStudios = allStudios.filter(s => s.id === playerGameId || s.playerGameId === playerGameId);
   
-  console.log(`[STREAMING-VIEWS] Found ${relevantStudios.length} relevant studios`);
-  
   for (const studio of relevantStudios) {
     const deals = await storage.getStreamingDealsByPlayer(studio.id);
     const activeDeals = deals.filter(d => d.isActive);
-    
-    console.log(`[STREAMING-VIEWS] Studio ${studio.name} (${studio.id}): ${deals.length} deals, ${activeDeals.length} active`);
     
     for (const deal of activeDeals) {
       const film = await storage.getFilm(deal.filmId || '');
@@ -1149,8 +1143,6 @@ async function processStreamingViews(
       const maxWeeks = licenseYears * 52;
       const isExpired = newWeeksActive >= maxWeeks;
       
-      console.log(`[STREAMING-VIEWS] Updating deal ${deal.id} for "${film.title}": weeklyViews=${weeklyViews}, totalViews=${totalViews}, weeksActive=${newWeeksActive}`);
-      
       await storage.updateStreamingDeal(deal.id, {
         weeklyViews: newViews,
         totalViews,
@@ -1180,7 +1172,6 @@ async function processStreamingViews(
         );
         if (renewalEmail) {
           await storage.createEmail(renewalEmail);
-          console.log(`[STREAMING-RENEWAL] Sent renewal offer for "${film.title}" to ${service.name}`);
         }
       }
     }
@@ -1191,8 +1182,6 @@ async function processStreamingViews(
     const allTVDeals = await storage.getAllTVDeals();
     // Filter to only active deals that belong to this player's game
     const activeTVDeals = allTVDeals.filter(d => d.isActive && d.playerGameId === playerGameId);
-    
-    console.log(`[STREAMING-VIEWS] Processing ${activeTVDeals.length} active TV deals for player ${playerGameId}`);
     
     for (const tvDeal of activeTVDeals) {
       const tvShow = await storage.getTVShow(tvDeal.tvShowId);
@@ -1259,8 +1248,6 @@ async function processStreamingViews(
         weeklyRevenue,
         weeksActive: newWeeksActive,
       });
-      
-      console.log(`[TV-STREAMING-VIEWS] Updated "${tvShow.title}": weeklyViews=${weeklyViews}, totalViews=${newShowTotalViews}, weeksStreaming=${newWeeksStreaming}`);
     }
   } catch (tvError) {
     console.error('[STREAMING-VIEWS] TV show view processing error:', tvError);
@@ -3027,8 +3014,6 @@ export async function registerRoutes(
           totalAudienceScore: Math.round(rawAudienceScore * 100) / 100
         };
         
-        console.log(`[CRITIC-SCORE] ${film.title}: base=${randomBase.toFixed(2)} swing=${hugeCriticSwing.toFixed(2)} quality=${qualityBoost.toFixed(2)} genre=${genreBonus} director=${directorImpact.criticScore.toFixed(2)} budget=${budgetImpact.toFixed(2)} vfx=${vfxImpact.toFixed(2)} cast=${castQuality.criticScore.toFixed(2)} divisive=${divisivePenalty.toFixed(2)} TOTAL=${rawCriticScore.toFixed(2)} FINAL=${Math.min(100, Math.max(20, Math.floor(rawCriticScore)))}`);
-        console.log(`[AUDIENCE-SCORE] ${film.title}: base=${randomBase.toFixed(2)} swing=${hugeAudienceSwing.toFixed(2)} quality=${qualityBoost.toFixed(2)} genre=${audienceGenreBonus} director=${directorImpact.audienceScore.toFixed(2)} cast=${castQuality.audienceScore.toFixed(2)} TOTAL=${rawAudienceScore.toFixed(2)} FINAL=${Math.min(10, Math.max(2, Math.round((rawAudienceScore / 10) * 10) / 10))}`);
         
         return {
           criticScore: Math.min(100, Math.max(20, Math.floor(rawCriticScore))),
