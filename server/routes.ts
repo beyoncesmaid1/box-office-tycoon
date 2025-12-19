@@ -5909,8 +5909,10 @@ export async function registerRoutes(
             filmTitle,
           });
         } else {
-          // Regular production deal - add funds to budget
+          // Regular production deal or co-production deal
           const dealAmount = actionData.offerAmount as number;
+          const dealType = actionData.dealType as string;
+          const company = actionData.company as string;
           
           const studio = await storage.getStudio(email.playerGameId);
           if (studio) {
@@ -5919,12 +5921,29 @@ export async function registerRoutes(
               totalEarnings: studio.totalEarnings + dealAmount,
             });
             
+            // For co-production deals, create a record to track international rights
+            if (dealType === 'co-production' && company) {
+              await storage.createCoProductionDeal({
+                playerGameId: email.playerGameId,
+                partnerName: company,
+                investmentAmount: dealAmount,
+                internationalRightsPercent: 100, // Partner gets all international rights
+                startWeek: studio.currentWeek,
+                startYear: studio.currentYear,
+                isActive: true,
+              });
+            }
+            
             // Archive the email
             await storage.updateEmail(id, { isArchived: true });
             
+            const message = dealType === 'co-production' 
+              ? `Co-production deal accepted! ${formatMoney(dealAmount)} added to budget. ${company} will receive international distribution rights on your next film.`
+              : `Production deal accepted! ${formatMoney(dealAmount)} added to budget.`;
+            
             res.json({ 
               success: true, 
-              message: `Production deal accepted! ${formatMoney(dealAmount)} added to budget.`,
+              message,
               dealAmount 
             });
           } else {

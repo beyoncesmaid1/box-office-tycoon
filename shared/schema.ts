@@ -822,3 +822,21 @@ export const activityEventTypeEnum = z.enum([
   'studio_milestone'
 ]);
 export type ActivityEventType = z.infer<typeof activityEventTypeEnum>;
+
+// Co-Production Deals - tracks international distribution rights given to partners
+export const coProductionDeals = pgTable("co_production_deals", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  playerGameId: varchar("player_game_id").notNull(),
+  partnerName: text("partner_name").notNull(),
+  investmentAmount: bigint("investment_amount", { mode: "number" }).notNull(),
+  internationalRightsPercent: integer("international_rights_percent").notNull().default(100),
+  startWeek: integer("start_week").notNull(),
+  startYear: integer("start_year").notNull(),
+  filmId: varchar("film_id").references(() => films.id), // Film this deal applies to (null until assigned)
+  isActive: boolean("is_active").notNull().default(true),
+  isUsed: boolean("is_used").notNull().default(false), // True once applied to a film
+});
+
+export const insertCoProductionDealSchema = createInsertSchema(coProductionDeals).omit({ id: true });
+export type InsertCoProductionDeal = z.infer<typeof insertCoProductionDealSchema>;
+export type CoProductionDeal = typeof coProductionDeals.$inferSelect;

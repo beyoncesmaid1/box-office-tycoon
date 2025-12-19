@@ -21,6 +21,7 @@ import {
   type TVDeal, type InsertTVDeal,
   type TVNetwork, type InsertTVNetwork,
   type SlateFinancingDeal, type InsertSlateFinancingDeal,
+  type CoProductionDeal, type InsertCoProductionDeal,
   type GameSession, type InsertGameSession,
   type GameSessionPlayer, type InsertGameSessionPlayer,
   type GameActivityLog, type InsertGameActivityLog,
@@ -28,6 +29,7 @@ import {
   awardShows, awardCategories, awardNominations, awardCeremonies,
   filmReleases, filmMilestones, filmRoles, franchises, marketplaceScripts,
   tvShows, tvSeasons, tvEpisodes, tvDeals, tvNetworks, slateFinancingDeals,
+  coProductionDeals,
   gameSessions, gameSessionPlayers, gameActivityLog
 } from "@shared/schema";
 import { db, hasDatabase } from "./db";
@@ -203,6 +205,13 @@ export interface IStorage {
   getActiveSlateFinancingDeals(playerGameId: string): Promise<SlateFinancingDeal[]>;
   createSlateFinancingDeal(deal: InsertSlateFinancingDeal): Promise<SlateFinancingDeal>;
   updateSlateFinancingDeal(id: string, updates: Partial<InsertSlateFinancingDeal>): Promise<SlateFinancingDeal | undefined>;
+  
+  // Co-Production Deals
+  getCoProductionDeal(id: string): Promise<CoProductionDeal | undefined>;
+  getCoProductionDealsByPlayer(playerGameId: string): Promise<CoProductionDeal[]>;
+  getActiveCoProductionDeals(playerGameId: string): Promise<CoProductionDeal[]>;
+  createCoProductionDeal(deal: InsertCoProductionDeal): Promise<CoProductionDeal>;
+  updateCoProductionDeal(id: string, updates: Partial<InsertCoProductionDeal>): Promise<CoProductionDeal | undefined>;
   
   // Game Sessions (Multiplayer)
   getGameSession(id: string): Promise<GameSession | undefined>;
@@ -3316,6 +3325,32 @@ export class DatabaseStorage implements IStorage {
 
   async updateSlateFinancingDeal(id: string, updates: Partial<InsertSlateFinancingDeal>): Promise<SlateFinancingDeal | undefined> {
     const [deal] = await db.update(slateFinancingDeals).set(updates).where(eq(slateFinancingDeals.id, id)).returning();
+    return deal;
+  }
+
+  // Co-Production Deals
+  async getCoProductionDeal(id: string): Promise<CoProductionDeal | undefined> {
+    const [deal] = await db.select().from(coProductionDeals).where(eq(coProductionDeals.id, id));
+    return deal;
+  }
+
+  async getCoProductionDealsByPlayer(playerGameId: string): Promise<CoProductionDeal[]> {
+    return await db.select().from(coProductionDeals).where(eq(coProductionDeals.playerGameId, playerGameId));
+  }
+
+  async getActiveCoProductionDeals(playerGameId: string): Promise<CoProductionDeal[]> {
+    return await db.select().from(coProductionDeals).where(
+      and(eq(coProductionDeals.playerGameId, playerGameId), eq(coProductionDeals.isActive, true), eq(coProductionDeals.isUsed, false))
+    );
+  }
+
+  async createCoProductionDeal(deal: InsertCoProductionDeal): Promise<CoProductionDeal> {
+    const [newDeal] = await db.insert(coProductionDeals).values(deal).returning();
+    return newDeal;
+  }
+
+  async updateCoProductionDeal(id: string, updates: Partial<InsertCoProductionDeal>): Promise<CoProductionDeal | undefined> {
+    const [deal] = await db.update(coProductionDeals).set(updates).where(eq(coProductionDeals.id, id)).returning();
     return deal;
   }
 
