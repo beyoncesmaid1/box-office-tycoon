@@ -6561,13 +6561,12 @@ export async function registerRoutes(
         });
         
         // Update role with cast talent
-        console.error(`HIRE: Starting role update - roleId=${roleId}, talentId=${talentId}, filmId=${filmId}`);
-        console.error(`HIRE: Role before update:`, role);
+        console.log(`[CASTING-BUG] Hiring ${talentData.name} (${talentId}) for role "${role.roleName}" (${roleId})`);
         const updatedRole = await storage.updateFilmRole(roleId, {
           actorId: talentId,
           isCast: true,
         });
-        console.error(`HIRE: Role after update:`, updatedRole);
+        console.log(`[CASTING-BUG] After update: Role "${updatedRole?.roleName}" now has actorId: ${updatedRole?.actorId}`);
         
         // Re-fetch the CURRENT film to get latest talentBudget (in case other actors were hired)
         const currentFilm = await storage.getFilm(filmId);
