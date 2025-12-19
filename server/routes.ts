@@ -6270,11 +6270,25 @@ export async function registerRoutes(
       if (req.body.askingPrice !== undefined) updates.askingPrice = req.body.askingPrice;
       if (req.body.boxOfficeAvg !== undefined) updates.boxOfficeAvg = req.body.boxOfficeAvg;
       if (req.body.awards !== undefined) updates.awards = req.body.awards;
-      if (req.body.genres !== undefined) updates.genres = typeof req.body.genres === 'object' && req.body.genres !== null ? req.body.genres : {};
       if (req.body.isActive !== undefined) updates.isActive = req.body.isActive;
       if (req.body.imageUrl !== undefined) updates.imageUrl = req.body.imageUrl;
       if (req.body.birthYear !== undefined) updates.birthYear = req.body.birthYear;
       if (req.body.popularity !== undefined) updates.popularity = req.body.popularity;
+      
+      // Convert genres object to individual skill columns
+      if (req.body.genres !== undefined && typeof req.body.genres === 'object' && req.body.genres !== null) {
+        const genres = req.body.genres;
+        if (genres.action !== undefined) updates.skillAction = genres.action;
+        if (genres.drama !== undefined) updates.skillDrama = genres.drama;
+        if (genres.comedy !== undefined) updates.skillComedy = genres.comedy;
+        if (genres.thriller !== undefined) updates.skillThriller = genres.thriller;
+        if (genres.horror !== undefined) updates.skillHorror = genres.horror;
+        if (genres.scifi !== undefined) updates.skillScifi = genres.scifi;
+        if (genres.animation !== undefined) updates.skillAnimation = genres.animation;
+        if (genres.romance !== undefined) updates.skillRomance = genres.romance;
+        if (genres.fantasy !== undefined) updates.skillFantasy = genres.fantasy;
+        if (genres.musicals !== undefined) updates.skillMusicals = genres.musicals;
+      }
       
       // If name is being changed, check for duplicates
       if (updates.name && updates.name !== existing.name) {

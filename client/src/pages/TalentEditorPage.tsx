@@ -169,12 +169,25 @@ export default function TalentEditorPage({ onBack }: { onBack: () => void }) {
   const handleEdit = (talent: Talent) => {
     setIsCreating(false);
     setSelectedTalent(talent);
+    // Convert individual skill columns to genres object for the form
+    const genres: Record<string, number> = {};
+    if (talent.skillAction !== undefined && talent.skillAction !== 50) genres.action = talent.skillAction;
+    if (talent.skillDrama !== undefined && talent.skillDrama !== 50) genres.drama = talent.skillDrama;
+    if (talent.skillComedy !== undefined && talent.skillComedy !== 50) genres.comedy = talent.skillComedy;
+    if (talent.skillThriller !== undefined && talent.skillThriller !== 50) genres.thriller = talent.skillThriller;
+    if (talent.skillHorror !== undefined && talent.skillHorror !== 50) genres.horror = talent.skillHorror;
+    if (talent.skillScifi !== undefined && talent.skillScifi !== 50) genres.scifi = talent.skillScifi;
+    if (talent.skillAnimation !== undefined && talent.skillAnimation !== 50) genres.animation = talent.skillAnimation;
+    if (talent.skillRomance !== undefined && talent.skillRomance !== 50) genres.romance = talent.skillRomance;
+    if (talent.skillFantasy !== undefined && talent.skillFantasy !== 50) genres.fantasy = talent.skillFantasy;
+    if (talent.skillMusicals !== undefined && talent.skillMusicals !== 50) genres.musicals = talent.skillMusicals;
+    
     setFormData({
       name: talent.name,
       type: talent.type as 'actor' | 'director' | 'writer' | 'composer',
       gender: talent.gender as 'male' | 'female' | 'unknown',
       nationality: talent.nationality,
-      genres: (talent.genres as Record<string, number>) || {},
+      genres,
       imageUrl: talent.imageUrl || '',
       birthYear: talent.birthYear,
       popularity: talent.popularity,
