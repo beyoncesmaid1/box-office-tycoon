@@ -371,7 +371,7 @@ function ExpandedFilmDetail({ film, studioName, onClose }: { film: FilmType; stu
   });
   
   const budgetExcludingMarketing = (film.totalBudget || 0) - (film.marketingBudget || 0);
-  const profit = film.totalBoxOffice * 0.5 - budgetExcludingMarketing;
+  const profit = film.totalBoxOffice * 0.7 - budgetExcludingMarketing;
   const isProfitable = profit > 0;
   
   // Fetch talent data for crew/cast display
@@ -705,7 +705,7 @@ function ExpandedFilmDetail({ film, studioName, onClose }: { film: FilmType; stu
                 <div>
                   <p className="text-sm text-muted-foreground">Profit / Loss</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Budget: {formatMoney((film.totalBudget || 0) - (film.marketingBudget || 0))} | Studio Share: 50%
+                    Budget: {formatMoney((film.totalBudget || 0) - (film.marketingBudget || 0))} | Studio Share: 70%
                   </p>
                 </div>
                 <p className={`font-display text-2xl flex items-center gap-2 ${isProfitable ? 'text-green-500' : 'text-red-500'}`}>
