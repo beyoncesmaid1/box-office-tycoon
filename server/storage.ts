@@ -66,6 +66,7 @@ export interface IStorage {
   getAllTalent(): Promise<Talent[]>;
   createTalent(t: InsertTalent): Promise<Talent>;
   updateTalent(id: string, updates: Partial<InsertTalent>): Promise<Talent | undefined>;
+  updateTalentSkillsDirect(id: string, skillFantasy: number, skillMusicals: number): Promise<void>;
   deleteTalent(id: string): Promise<void>;
   isTalentInUse(id: string): Promise<boolean>;
   seedTalent(): Promise<void>;
@@ -345,6 +346,11 @@ export class DatabaseStorage implements IStorage {
   async updateTalent(id: string, updates: Partial<InsertTalent>): Promise<Talent | undefined> {
     const [t] = await db.update(talent).set(updates).where(eq(talent.id, id)).returning();
     return t;
+  }
+
+  async updateTalentSkillsDirect(id: string, skillFantasy: number, skillMusicals: number): Promise<void> {
+    // Use raw SQL to ensure columns are updated even if Drizzle schema is out of sync
+    await db.execute(sql`UPDATE talent SET skill_fantasy = ${skillFantasy}, skill_musicals = ${skillMusicals} WHERE id = ${id}`);
   }
 
   async deleteTalent(id: string): Promise<void> {

@@ -6304,19 +6304,9 @@ export async function registerRoutes(
         const skillFantasy = 30 + Math.floor(Math.random() * 61);
         const skillMusicals = 30 + Math.floor(Math.random() * 61);
         
-        console.log(`[Randomize Skills] Updating ${t.name}: fantasy=${skillFantasy}, musicals=${skillMusicals}`);
-        
-        const result = await storage.updateTalent(t.id, {
-          skillFantasy,
-          skillMusicals,
-        } as any);
-        
-        if (result) {
-          console.log(`[Randomize Skills] Updated ${t.name}: new fantasy=${result.skillFantasy}, new musicals=${result.skillMusicals}`);
-          updated++;
-        } else {
-          console.log(`[Randomize Skills] Failed to update ${t.name}`);
-        }
+        // Use direct SQL to ensure columns are updated
+        await storage.updateTalentSkillsDirect(t.id, skillFantasy, skillMusicals);
+        updated++;
       }
       
       res.json({ success: true, message: `Randomized fantasy/musicals skills for ${updated} talent` });

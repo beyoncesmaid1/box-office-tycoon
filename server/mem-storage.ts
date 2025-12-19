@@ -274,6 +274,15 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
+  async updateTalentSkillsDirect(id: string, skillFantasy: number, skillMusicals: number): Promise<void> {
+    const t = this.talentMap.get(id);
+    if (t) {
+      t.skillFantasy = skillFantasy;
+      t.skillMusicals = skillMusicals;
+      this.talentMap.set(id, t);
+    }
+  }
+
   async deleteTalent(id: string): Promise<void> {
     this.talentMap.delete(id);
   }
