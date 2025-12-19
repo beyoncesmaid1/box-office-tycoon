@@ -3398,10 +3398,26 @@ export async function registerRoutes(
           
           console.log(`[BOX OFFICE] ${film.title}: prodBudget=${productionBudgetAtRelease}, marketBudget=${marketingBudgetAtRelease}, weeksOut=${weeksOut}, hasWeeklyData=${film.weeklyBoxOffice.length}`);
           
-          // If no weekly data exists yet, treat as opening week regardless of weeksOut
-          const hasOpeningData = film.weeklyBoxOffice.length === 0;
+          // Validate that weeksOut matches weeklyBoxOffice.length
+          // weeksOut should equal weeklyBoxOffice.length (0 entries = week 0, 1 entry = week 1, etc.)
+          const expectedWeeksOut = film.weeklyBoxOffice.length;
+          if (weeksOut !== expectedWeeksOut) {
+            console.error(`[BOX OFFICE MISMATCH] ${film.title}: weeksOut=${weeksOut} but weeklyBoxOffice.length=${expectedWeeksOut} - using weeklyBoxOffice.length for consistency`);
+          }
           
-          if (weeksOut === 0 || hasOpeningData) {
+          // Use weeklyBoxOffice.length as the source of truth for how many weeks the film has been out
+          // This prevents issues where release date calculations don't match actual recorded data
+          const actualWeeksOut = film.weeklyBoxOffice.length;
+          
+          // Check if this is truly opening week - no weekly data exists yet
+          const isOpeningWeek = actualWeeksOut === 0;
+          
+          // Skip films that have been running for 24+ weeks (theatrical run complete)
+          if (actualWeeksOut >= 24) {
+            continue;
+          }
+          
+          if (isOpeningWeek) {
             // Opening weekend - calculate global opening using PRODUCTION INVESTMENT BUDGET (production + talent + crew + composer + VFX)
             // NOTE: Marketing is handled separately as its own multiplier
             const qualityFactor = (film.scriptQuality || 70) / 100;
@@ -3462,33 +3478,30 @@ export async function registerRoutes(
               (0.5 + qualityFactor * 0.8) * genreMultiplier * audienceBoost * sequelBoost * holidayModifier;
             
             console.log(`[OPENING] ${film.title} (${film.genre}): investmentBudget=${Math.round(investmentBudget)}, marketingMult=${marketingMultiplier.toFixed(2)}, audienceScore=${film.audienceScore}, audienceBoost=${audienceBoost.toFixed(2)}, randomLuck=${randomLuck.toFixed(2)}, sequelBoost=${sequelBoost.toFixed(2)}, holidayMod=${holidayModifier.toFixed(2)}${holiday ? ` (${holiday.name})` : ''}, gross=${Math.round(globalWeeklyGross)}`);
-          } else if (weeksOut < 0) {
-            // Before release week - no box office
-            globalWeeklyGross = 0;
-          } else if (weeksOut > 0) {
-            // Subsequent weeks - apply decay with quality/genre modifiers
+          } else {
+            // Subsequent weeks (actualWeeksOut > 0) - apply decay with quality/genre modifiers
             const lastWeekGross = film.weeklyBoxOffice[film.weeklyBoxOffice.length - 1] || 0;
             
             // If somehow no previous gross, just return 0 for this week
             if (!lastWeekGross || isNaN(lastWeekGross)) {
               globalWeeklyGross = 0;
             } else {
-            // Simple audience score-based decay system
-            // Formula: hold = 0.38 + (audienceScore / 100) * 0.41
-            // 70% → 67% hold → 3.0x legs, 80% → 71% → 3.4x, 90% → 75% → 4.0x, 100% → 79% → 4.8x
-            const audienceScore = (film.audienceScore || 7) * 10; // Convert to 0-100 scale
-            let hold = 0.38 + (audienceScore / 100) * 0.41;
-            
-            // Apply ±15% randomness
-            const randomMultiplier = 1 + (Math.random() - 0.5) * 0.30;
-            hold = hold * randomMultiplier;
-            
-            // Bound hold between 20% and 85%
-            hold = Math.max(0.20, Math.min(0.85, hold));
-            
-            console.error(`[DECAY] ${film.title} week ${weeksOut}: lastWeekGross=${Math.round(lastWeekGross)}, audienceScore=${audienceScore}, hold=${hold.toFixed(3)}`);
-            
-            globalWeeklyGross = Math.floor(lastWeekGross * hold);
+              // Simple audience score-based decay system
+              // Formula: hold = 0.38 + (audienceScore / 100) * 0.41
+              // 70% → 67% hold → 3.0x legs, 80% → 71% → 3.4x, 90% → 75% → 4.0x, 100% → 79% → 4.8x
+              const audienceScore = (film.audienceScore || 7) * 10; // Convert to 0-100 scale
+              let hold = 0.38 + (audienceScore / 100) * 0.41;
+              
+              // Apply ±15% randomness
+              const randomMultiplier = 1 + (Math.random() - 0.5) * 0.30;
+              hold = hold * randomMultiplier;
+              
+              // Bound hold between 20% and 85%
+              hold = Math.max(0.20, Math.min(0.85, hold));
+              
+              console.error(`[DECAY] ${film.title} week ${actualWeeksOut}: lastWeekGross=${Math.round(lastWeekGross)}, audienceScore=${audienceScore}, hold=${hold.toFixed(3)}`);
+              
+              globalWeeklyGross = Math.floor(lastWeekGross * hold);
             }
           }
           
