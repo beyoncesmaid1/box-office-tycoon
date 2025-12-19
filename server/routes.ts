@@ -6560,22 +6560,44 @@ export async function registerRoutes(
           busyUntilYear,
         });
         
-        // Update role with cast talent
-        console.log(`[CASTING-BUG] Hiring ${talentData.name} (${talentId}) for role "${role.roleName}" (${roleId})`);
+        // First, check if this role is already assigned to a different actor
+        const currentRole = await storage.getFilmRole(roleId);
+        if (currentRole?.actorId && currentRole.actorId !== talentId) {
+          // Remove this role from the previous actor's assignments
+          const previousActorId = currentRole.actorId;
+          const currentFilm = await storage.getFilm(filmId);
+          const currentCastIds = currentFilm?.castIds || [];
+          
+          // Update the film to remove the previous actor if they have no other roles
+          const filmRoles = await storage.getFilmRolesByFilm(filmId);
+          const actorHasOtherRoles = filmRoles.some(
+            r => r.actorId === previousActorId && r.id !== roleId && r.isCast
+          );
+          
+          let newCastIds = [...currentCastIds];
+          if (!actorHasOtherRoles) {
+            newCastIds = currentCastIds.filter(id => id !== previousActorId);
+          }
+          
+          await storage.updateFilm(filmId, {
+            castIds: newCastIds
+          });
+        }
+        
+        // Now assign the new actor to the role
         const updatedRole = await storage.updateFilmRole(roleId, {
           actorId: talentId,
           isCast: true,
         });
-        console.log(`[CASTING-BUG] After update: Role "${updatedRole?.roleName}" now has actorId: ${updatedRole?.actorId}`);
         
         // Re-fetch the CURRENT film to get latest talentBudget (in case other actors were hired)
         const currentFilm = await storage.getFilm(filmId);
-        console.error(`HIRE: Current film state:`, { castIds: currentFilm?.castIds, talentBudget: currentFilm?.talentBudget });
-        
-        // Add talent to film's castIds and update talent budget
+        // Add talent to film's castIds if not already present
         const currentCastIds = currentFilm?.castIds || [];
-        console.error(`HIRE: Current castIds:`, currentCastIds, `Adding talentId: ${talentId}`);
-        const newCastIds = currentCastIds.includes(talentId) ? currentCastIds : [...currentCastIds, talentId];
+        const newCastIds = currentCastIds.includes(talentId) 
+          ? currentCastIds 
+          : [...currentCastIds, talentId];
+          
         const newTalentBudget = (currentFilm?.talentBudget || 0) + offeredSalary;
         
         const updatedFilm = await storage.updateFilm(filmId, {
