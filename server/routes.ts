@@ -6346,13 +6346,17 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Film not found" });
       }
 
-      const roles = await storage.getFilmRolesByFilm(filmId);
+      let roles = await storage.getFilmRolesByFilm(filmId);
       const castIds = film.castIds || [];
+      const allTalent = await storage.getAllTalent();
       
       let synced = 0;
+      let created = 0;
+      
       for (const castId of castIds) {
         const existingRole = roles.find(r => r.actorId === castId);
         if (!existingRole) {
+          // First try to find an unassigned role
           const unassignedRole = roles.find(r => !r.actorId && !r.isCast);
           if (unassignedRole) {
             await storage.updateFilmRole(unassignedRole.id, {
@@ -6360,11 +6364,33 @@ export async function registerRoutes(
               isCast: true,
             });
             synced++;
+          } else {
+            // No unassigned role - create a new one for this actor
+            const actor = allTalent.find(t => t.id === castId);
+            const actorName = actor?.name || 'Unknown';
+            
+            // Determine importance based on existing roles count
+            const assignedRolesCount = roles.filter(r => r.actorId).length;
+            let importance: 'lead' | 'supporting' | 'minor' = 'supporting';
+            if (assignedRolesCount === 0) importance = 'lead';
+            else if (assignedRolesCount >= 2) importance = 'minor';
+            
+            // Create a new role for this actor
+            const newRole = await storage.createFilmRole({
+              filmId,
+              roleName: `Character (${actorName})`,
+              importance,
+              isCast: true,
+              actorId: castId,
+            });
+            created++;
+            // Update local roles array to track for next iteration
+            roles = [...roles, newRole];
           }
         }
       }
 
-      res.json({ success: true, synced, message: `Synchronized ${synced} roles` });
+      res.json({ success: true, synced, created, message: `Synchronized ${synced} roles, created ${created} new roles` });
     } catch (error) {
       console.error("Error syncing film roles:", error);
       res.status(500).json({ error: "Failed to sync film roles" });
