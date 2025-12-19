@@ -3313,10 +3313,10 @@ export async function registerRoutes(
               globalWeeklyGross = 0;
             } else {
               // Simple audience score-based decay system
-              // Formula: hold = 0.38 + (audienceScore / 100) * 0.41
-              // 70% → 67% hold → 3.0x legs, 80% → 71% → 3.4x, 90% → 75% → 4.0x, 100% → 79% → 4.8x
+              // Formula: hold = 0.30 + (audienceScore / 100) * 0.35
+              // 70% → 54.5% hold → 2.2x legs, 80% → 58% → 2.4x, 90% → 61.5% → 2.6x, 100% → 65% → 2.9x
               const audienceScore = (film.audienceScore || 7) * 10; // Convert to 0-100 scale
-              let hold = 0.38 + (audienceScore / 100) * 0.41;
+              let hold = 0.30 + (audienceScore / 100) * 0.35;
               
               // Check if film is on a streaming service - apply faster decay
               const filmStreamingDeals = await storage.getStreamingDealsByFilm(film.id);
@@ -3326,8 +3326,8 @@ export async function registerRoutes(
                 hold = hold * 0.70; // Reduce hold by 30%
               }
               
-              // Apply ±15% randomness
-              const randomMultiplier = 1 + (Math.random() - 0.5) * 0.30;
+              // Apply ±10% randomness
+              const randomMultiplier = 1 + (Math.random() - 0.5) * 0.20;
               hold = hold * randomMultiplier;
               
               // Bound hold between 15% and 85% (lower minimum for streaming films)
