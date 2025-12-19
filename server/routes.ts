@@ -3313,10 +3313,10 @@ export async function registerRoutes(
               globalWeeklyGross = 0;
             } else {
               // Simple audience score-based decay system
-              // Formula: hold = 0.35 + (audienceScore / 100) * 0.38
-              // 70% → 61.6% hold → 2.6x legs, 80% → 65.4% → 2.9x, 90% → 69.2% → 3.2x, 100% → 73% → 3.7x
+              // Formula: hold = 0.25 + (audienceScore / 100) * 0.50
+              // 50% → 50% hold → 2.0x legs, 70% → 60% → 2.5x, 85% → 67.5% → 3.1x, 100% → 75% → 4.0x
               const audienceScore = (film.audienceScore || 7) * 10; // Convert to 0-100 scale
-              let hold = 0.35 + (audienceScore / 100) * 0.38;
+              let hold = 0.25 + (audienceScore / 100) * 0.50;
               
               // Check if film is on a streaming service - apply faster decay
               const filmStreamingDeals = await storage.getStreamingDealsByFilm(film.id);
