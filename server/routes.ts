@@ -904,83 +904,6 @@ ${talent.name}`,
   };
 }
 
-async function generateAwardsCampaignEmail(
-  film: Film,
-  playerGameId: string,
-  currentWeek: number,
-  currentYear: number
-): Promise<InsertEmail | null> {
-  // Awards season is weeks 44-52 and 1-8
-  const isAwardsSeason = currentWeek >= 44 || currentWeek <= 8;
-  if (!isAwardsSeason) return null;
-  
-  // Only for released films with good scores
-  if (film.phase !== 'released') return null;
-  const criticScore = film.criticScore || 0;
-  const audienceScore = film.audienceScore || 0;
-  if (criticScore < 80 || audienceScore < 7.5) return null;
-  
-  // 15% chance during awards season
-  if (Math.random() > 0.15) return null;
-  
-  const campaignCost = Math.round(5000000 + Math.random() * 15000000);
-  
-  const awardShows = [
-    { name: 'Academy Awards', org: 'AMPAS' },
-    { name: 'Golden Globe Awards', org: 'Hollywood Foreign Press' },
-    { name: 'Screen Actors Guild Awards', org: 'SAG-AFTRA' },
-    { name: 'Critics\' Choice Awards', org: 'Critics Choice Association' },
-    { name: 'BAFTA Film Awards', org: 'British Academy' },
-  ];
-  
-  const show = awardShows[Math.floor(Math.random() * awardShows.length)];
-  
-  return {
-    playerGameId,
-    sender: 'Awards Campaign Team',
-    senderTitle: 'For Your Consideration',
-    subject: `${show.name} Campaign for "${film.title}"`,
-    body: `CONFIDENTIAL - AWARDS STRATEGY MEMO
-
-Film: "${film.title}"
-Current Scores: ${criticScore}% Critics / ${audienceScore.toFixed(1)} Audience
-
-The strong critical reception of "${film.title}" makes it a viable candidate for ${show.name} consideration. Our analysis suggests the following categories are within reach:
-
-- Best Picture
-- Best Director
-${film.genre === 'drama' ? '- Best Original Screenplay\n' : ''}${criticScore >= 85 ? '- Best Cinematography\n' : ''}- Best Original Score
-
-Recommended campaign investment: ${formatMoney(campaignCost)}
-
-This budget covers:
-- Industry screenings in LA and NY
-- For Your Consideration advertising
-- Awards circuit events and Q&As
-- Screener distribution to voting members
-
-The window for maximum impact is closing. Early momentum is crucial for maintaining buzz through the voting period.
-
-Please advise on how you would like to proceed.
-
-Best,
-Awards Campaign Team`,
-    type: 'awards',
-    sentWeek: currentWeek,
-    sentYear: currentYear,
-    hasAction: true,
-    actionLabel: 'Launch Campaign',
-    actionData: {
-      filmId: film.id,
-      filmTitle: film.title,
-      awardShow: show.name,
-      campaignCost,
-    },
-    isRead: false,
-    isArchived: false,
-  };
-}
-
 // Generate streaming production deal offers (direct-to-streaming films with deadlines)
 async function generateStreamingProductionDealEmail(
   studio: Studio,
@@ -1481,13 +1404,6 @@ async function generateWeeklyEmails(
     await storage.createEmail(streamingProdDealEmail);
   }
   
-  // Generate awards campaign emails
-  for (const film of playerFilms) {
-    const email = await generateAwardsCampaignEmail(film, playerGameId, currentWeek, currentYear);
-    if (email) {
-      await storage.createEmail(email);
-    }
-  }
 }
 
 // Process award show nominations and ceremonies
@@ -5699,8 +5615,8 @@ export async function registerRoutes(
         // Skip archived emails
         if (email.isArchived) return false;
         
-        // Skip festival emails (removed feature) - archive them
-        if (email.type === 'festival' || email.type === 'festival_invite') {
+        // Skip festival and awards campaign emails (removed features) - archive them
+        if (email.type === 'festival' || email.type === 'festival_invite' || email.type === 'awards' || email.type === 'award_campaign') {
           storage.updateEmail(email.id, { isArchived: true });
           return false;
         }
@@ -5770,8 +5686,8 @@ export async function registerRoutes(
         // Skip archived emails
         if (email.isArchived) return false;
         
-        // Skip festival emails (removed feature)
-        if (email.type === 'festival' || email.type === 'festival_invite') return false;
+        // Skip festival and awards campaign emails (removed features)
+        if (email.type === 'festival' || email.type === 'festival_invite' || email.type === 'awards' || email.type === 'award_campaign') return false;
         
         // Check expiration
         if (email.expiresWeek && email.expiresYear) {

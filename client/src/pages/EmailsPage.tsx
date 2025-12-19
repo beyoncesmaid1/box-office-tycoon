@@ -6,7 +6,6 @@ import {
   Trash2, 
   RefreshCw, 
   Inbox, 
-  Award,
   Film,
   Tv,
   DollarSign,
@@ -27,21 +26,18 @@ import type { Email } from '@shared/schema';
 const typeIcons: Record<string, typeof Mail> = {
   streaming_offer: Tv,
   production_deal: Film,
-  award_campaign: Award,
   general: Mail,
 };
 
 const typeColors: Record<string, string> = {
   streaming_offer: 'bg-blue-500',
   production_deal: 'bg-green-500',
-  award_campaign: 'bg-yellow-500',
   general: 'bg-gray-500',
 };
 
 const typeLabels: Record<string, string> = {
   streaming_offer: 'Streaming Offer',
   production_deal: 'Production Deal',
-  award_campaign: 'Awards Campaign',
   general: 'General',
 };
 
