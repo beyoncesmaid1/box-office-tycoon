@@ -1328,9 +1328,7 @@ async function processAITVShowCreation(
         budget: aiStudio.budget - seasonBudget,
       });
       
-      console.log(`[AI-TV-ONGOING] ${aiStudio.name} created TV show: ${tvTitle} on ${targetService.name}`);
     } catch (createError) {
-      console.error(`[AI-TV-ONGOING] Failed to create TV show for ${aiStudio.name}:`, createError);
     }
   }
 }
@@ -6298,13 +6296,6 @@ export async function registerRoutes(
       const { filmId } = req.params;
       const roles = await storage.getFilmRolesByFilm(filmId);
       
-      // Debug: Log what roles are being returned
-      const film = await storage.getFilm(filmId);
-      console.log(`[ROLES-DEBUG] Film "${film?.title}" (${filmId}):`, {
-        roleCount: roles.length,
-        roles: roles.map(r => ({ id: r.id, roleName: r.roleName, actorId: r.actorId, isCast: r.isCast })),
-        filmCastIds: film?.castIds
-      });
       
       res.json(roles);
     } catch (error) {

@@ -356,20 +356,6 @@ function HeroBanner({ film, studioName, isYours, onExpand }: { film: FilmType; s
 }
 
 function ExpandedFilmDetail({ film, studioName, onClose }: { film: FilmType; studioName: string; onClose: () => void }) {
-  console.log('📽️ Film Details Loaded:', {
-    title: film.title,
-    totalBudget: film.totalBudget,
-    productionBudget: film.productionBudget,
-    marketingBudget: film.marketingBudget,
-    talentBudget: film.talentBudget,
-    setsBudget: film.setsBudget,
-    costumesBudget: film.costumesBudget,
-    stuntsBudget: film.stuntsBudget,
-    makeupBudget: film.makeupBudget,
-    practicalEffectsBudget: film.practicalEffectsBudget,
-    soundCrewBudget: film.soundCrewBudget,
-  });
-  
   const budgetExcludingMarketing = (film.totalBudget || 0) - (film.marketingBudget || 0);
   const profit = film.totalBoxOffice * 0.7 - budgetExcludingMarketing;
   const isProfitable = profit > 0;
