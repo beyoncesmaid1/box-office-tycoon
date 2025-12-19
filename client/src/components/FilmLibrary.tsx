@@ -21,7 +21,7 @@ interface FilmCardProps {
 }
 
 function FilmCard({ film, onClick }: FilmCardProps) {
-  const profit = film.totalBoxOffice * 0.5 - film.totalBudget;
+  const profit = film.totalBoxOffice * 0.7 - film.totalBudget;
   const isProfitable = profit > 0;
   
   // Genre-based fallback posters
@@ -83,7 +83,7 @@ function FilmCard({ film, onClick }: FilmCardProps) {
 }
 
 function FilmListRow({ film, onClick }: FilmCardProps) {
-  const profit = film.totalBoxOffice * 0.5 - film.totalBudget;
+  const profit = film.totalBoxOffice * 0.7 - film.totalBudget;
   const isProfitable = profit > 0;
   
   // Genre-based fallback posters
@@ -321,7 +321,7 @@ export function FilmLibrary() {
 
   // Stats
   const totalGross = allFilms.reduce((acc, f) => acc + f.totalBoxOffice, 0);
-  const totalProfit = allFilms.reduce((acc, f) => acc + (f.totalBoxOffice * 0.5 - f.totalBudget), 0);
+  const totalProfit = allFilms.reduce((acc, f) => acc + (f.totalBoxOffice * 0.7 - f.totalBudget), 0);
   const avgRating = allFilms.length > 0 
     ? allFilms.reduce((acc, f) => acc + f.audienceScore, 0) / allFilms.length 
     : 0;
