@@ -2860,8 +2860,8 @@ export async function registerRoutes(
         }
         
         return {
-          criticScore: Math.min(12, Math.max(-12, criticScore / Math.max(1, film.castIds.length))),
-          audienceScore: Math.min(8, Math.max(-8, audienceScore / Math.max(1, film.castIds.length)))
+          criticScore: Math.min(8, Math.max(-8, criticScore / Math.max(1, film.castIds.length))),
+          audienceScore: Math.min(6, Math.max(-6, audienceScore / Math.max(1, film.castIds.length)))
         };
       };
       
@@ -2900,8 +2900,8 @@ export async function registerRoutes(
         }
         
         return {
-          criticScore: Math.min(15, Math.max(-15, criticScore)),
-          audienceScore: Math.min(8, Math.max(-8, audienceScore))
+          criticScore: Math.min(10, Math.max(-10, criticScore)),
+          audienceScore: Math.min(6, Math.max(-6, audienceScore))
         };
       };
       
@@ -2971,9 +2971,15 @@ export async function registerRoutes(
       
       const calculateScores = async (film: typeof saveFilms[0]) => {
         const qualityBoost = (film.scriptQuality - 80) * 0.35;
-        const randomBase = 65 + Math.random() * 15;
-        const hugeCriticSwing = (Math.random() - 0.5) * 15;
-        const hugeAudienceSwing = (Math.random() - 0.5) * 12;
+        // Lower base range: 50-65 instead of 65-80
+        const randomBase = 50 + Math.random() * 15;
+        // Increased variance: ±12 instead of ±7.5
+        const hugeCriticSwing = (Math.random() - 0.5) * 24;
+        const hugeAudienceSwing = (Math.random() - 0.5) * 18;
+        
+        // Divisive factor: 15% chance of being a polarizing film that critics either love or hate
+        const isDivisive = Math.random() < 0.15;
+        const divisivePenalty = isDivisive ? (Math.random() - 0.5) * 20 : 0;
         
         // Calculate all components
         const castQuality = calculateCastQuality(film, film.genre);
@@ -2992,7 +2998,7 @@ export async function registerRoutes(
         else if (film.genre === 'musicals') { genreBonus = 3; audienceGenreBonus = 1; }
         
         const rawCriticScore = randomBase + hugeCriticSwing + qualityBoost + genreBonus + 
-                              directorImpact.criticScore + budgetImpact + vfxImpact + castQuality.criticScore;
+                              directorImpact.criticScore + budgetImpact + vfxImpact + castQuality.criticScore + divisivePenalty;
         const rawAudienceScore = randomBase + hugeAudienceSwing + qualityBoost + audienceGenreBonus + 
                                directorImpact.audienceScore + budgetImpact + vfxImpact + castQuality.audienceScore;
         
@@ -3005,6 +3011,7 @@ export async function registerRoutes(
           budgetImpact: Math.round(budgetImpact * 100) / 100,
           vfxImpact: Math.round(vfxImpact * 100) / 100,
           castCriticQuality: Math.round(castQuality.criticScore * 100) / 100,
+          divisivePenalty: Math.round(divisivePenalty * 100) / 100,
           totalCriticScore: Math.round(rawCriticScore * 100) / 100
         };
 
@@ -3020,7 +3027,7 @@ export async function registerRoutes(
           totalAudienceScore: Math.round(rawAudienceScore * 100) / 100
         };
         
-        console.log(`[CRITIC-SCORE] ${film.title}: base=${randomBase.toFixed(2)} swing=${hugeCriticSwing.toFixed(2)} quality=${qualityBoost.toFixed(2)} genre=${genreBonus} director=${directorImpact.criticScore.toFixed(2)} budget=${budgetImpact.toFixed(2)} vfx=${vfxImpact.toFixed(2)} cast=${castQuality.criticScore.toFixed(2)} TOTAL=${rawCriticScore.toFixed(2)} FINAL=${Math.min(100, Math.max(20, Math.floor(rawCriticScore)))}`);
+        console.log(`[CRITIC-SCORE] ${film.title}: base=${randomBase.toFixed(2)} swing=${hugeCriticSwing.toFixed(2)} quality=${qualityBoost.toFixed(2)} genre=${genreBonus} director=${directorImpact.criticScore.toFixed(2)} budget=${budgetImpact.toFixed(2)} vfx=${vfxImpact.toFixed(2)} cast=${castQuality.criticScore.toFixed(2)} divisive=${divisivePenalty.toFixed(2)} TOTAL=${rawCriticScore.toFixed(2)} FINAL=${Math.min(100, Math.max(20, Math.floor(rawCriticScore)))}`);
         console.log(`[AUDIENCE-SCORE] ${film.title}: base=${randomBase.toFixed(2)} swing=${hugeAudienceSwing.toFixed(2)} quality=${qualityBoost.toFixed(2)} genre=${audienceGenreBonus} director=${directorImpact.audienceScore.toFixed(2)} cast=${castQuality.audienceScore.toFixed(2)} TOTAL=${rawAudienceScore.toFixed(2)} FINAL=${Math.min(10, Math.max(2, Math.round((rawAudienceScore / 10) * 10) / 10))}`);
         
         return {
