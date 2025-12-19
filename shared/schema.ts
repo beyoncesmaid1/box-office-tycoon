@@ -292,7 +292,6 @@ export const emailTypeEnum = z.enum([
   'streaming_renewal',    // Renewal offer for expiring streaming deal with good views
   'production_deal',      // Pitch for a new production deal
   'award_campaign',       // Film award campaign information
-  'festival_invite',      // Festival circuit invitation
   'general'               // General game notifications
 ]);
 export type EmailType = z.infer<typeof emailTypeEnum>;

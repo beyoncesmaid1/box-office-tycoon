@@ -9,7 +9,6 @@ import {
   Award,
   Film,
   Tv,
-  Calendar,
   DollarSign,
   ArrowLeft,
   Check,
@@ -29,7 +28,6 @@ const typeIcons: Record<string, typeof Mail> = {
   streaming_offer: Tv,
   production_deal: Film,
   award_campaign: Award,
-  festival_invite: Calendar,
   general: Mail,
 };
 
@@ -37,7 +35,6 @@ const typeColors: Record<string, string> = {
   streaming_offer: 'bg-blue-500',
   production_deal: 'bg-green-500',
   award_campaign: 'bg-yellow-500',
-  festival_invite: 'bg-purple-500',
   general: 'bg-gray-500',
 };
 
@@ -45,7 +42,6 @@ const typeLabels: Record<string, string> = {
   streaming_offer: 'Streaming Offer',
   production_deal: 'Production Deal',
   award_campaign: 'Awards Campaign',
-  festival_invite: 'Festival',
   general: 'General',
 };
 
@@ -237,7 +233,7 @@ function EmptyInbox() {
       </div>
       <h3 className="font-display text-xl mb-2">Your Inbox is Empty</h3>
       <p className="text-muted-foreground max-w-md">
-        When streaming platforms, award committees, or film festivals want to reach you, their messages will appear here.
+        When streaming platforms, award committees, or production companies want to reach you, their messages will appear here.
       </p>
     </div>
   );

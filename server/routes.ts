@@ -60,16 +60,6 @@ const streamingServiceData = [
   },
 ];
 
-// Festival data for email generation
-const filmFestivals = [
-  { name: 'Cannes Film Festival', location: 'France', prestige: 5, preferredGenres: ['drama', 'thriller'] },
-  { name: 'Venice Film Festival', location: 'Italy', prestige: 5, preferredGenres: ['drama', 'romance'] },
-  { name: 'SXSW Film Festival', location: 'USA', prestige: 3, preferredGenres: ['comedy', 'horror', 'scifi'] },
-  { name: 'Fantastic Fest', location: 'USA', prestige: 3, preferredGenres: ['horror', 'scifi', 'action', 'fantasy'] },
-  { name: 'Sundance Musical Festival', location: 'USA', prestige: 4, preferredGenres: ['musicals', 'comedy', 'drama'] },
-  { name: 'Anime Expo', location: 'USA', prestige: 3, preferredGenres: ['fantasy', 'animation', 'scifi'] },
-];
-
 // Production company names for deal emails
 const productionCompanies = [
   'Legendary Pictures', 'Blumhouse Productions', 'A24', 'Annapurna Pictures',
@@ -85,12 +75,6 @@ const streamingExecs = [
   { name: 'Emily Watson', title: 'Head of Strategic Partnerships' },
   { name: 'David Kim', title: 'Senior Content Executive' },
   { name: 'Jennifer Adams', title: 'VP of Original Content' },
-];
-
-const festivalExecs = [
-  { name: 'François Dupont', title: 'Programming Director' },
-  { name: 'Maria Rossi', title: 'Festival Curator' },
-  { name: 'James Mitchell', title: 'Selection Committee Chair' },
 ];
 
 const GENRES = ['action', 'comedy', 'drama', 'horror', 'scifi', 'romance', 'thriller', 'animation', 'fantasy', 'musicals'];
@@ -676,62 +660,6 @@ ${service.name}`,
       renewalAmount: renewalFee,
       renewalYears: renewalYears,
     },
-    isRead: false,
-    isArchived: false,
-  };
-}
-
-async function generateFestivalEmail(
-  film: Film,
-  playerGameId: string,
-  currentWeek: number,
-  currentYear: number
-): Promise<InsertEmail | null> {
-  // Only for films in pre-production or production with high quality
-  if (!['pre-production', 'production', 'post-production'].includes(film.phase)) return null;
-  const scriptQuality = film.scriptQuality || 70;
-  if (scriptQuality < 75) return null;
-  
-  // Only 10% chance per week
-  if (Math.random() > 0.10) return null;
-  
-  // Pick a festival that matches the genre
-  const matchingFestivals = filmFestivals.filter(f => 
-    f.preferredGenres.includes(film.genre) || Math.random() > 0.7
-  );
-  if (matchingFestivals.length === 0) return null;
-  
-  const festival = matchingFestivals[Math.floor(Math.random() * matchingFestivals.length)];
-  const exec = festivalExecs[Math.floor(Math.random() * festivalExecs.length)];
-  
-  return {
-    playerGameId,
-    sender: festival.name,
-    senderTitle: exec.name + ', ' + exec.title,
-    subject: `${festival.name} - Official Selection Consideration`,
-    body: `Dear Filmmaker,
-
-On behalf of the ${festival.name}, I am writing to express our interest in "${film.title}" for consideration in our upcoming festival.
-
-We have been following your studio's work with admiration, and the project description for "${film.title}" has captured the attention of our selection committee.
-
-The ${festival.name} in ${festival.location} has a long tradition of showcasing exceptional ${film.genre} films, and we believe your project could be a strong fit for our program.
-
-If you are interested in submitting "${film.title}" for official selection, please note the following:
-- World or North American premiere status is preferred
-- Films must be completed before the festival dates
-- Acceptance includes travel accommodations for key talent
-
-We look forward to potentially welcoming you and your film to ${festival.location}.
-
-Warm regards,
-${exec.name}
-${exec.title}
-${festival.name}`,
-    type: 'festival',
-    sentWeek: currentWeek,
-    sentYear: currentYear,
-    hasAction: false,
     isRead: false,
     isArchived: false,
   };
@@ -1535,14 +1463,6 @@ async function generateWeeklyEmails(
     }
   }
   
-  // Generate festival invitations
-  for (const film of playerFilms) {
-    const email = await generateFestivalEmail(film, playerGameId, currentWeek, currentYear);
-    if (email) {
-      await storage.createEmail(email);
-    }
-  }
-  
   // Generate production deals (from production companies)
   const prodDealEmail = await generateProductionDealEmail(studio, playerGameId, currentWeek, currentYear);
   if (prodDealEmail) {
@@ -2068,7 +1988,6 @@ const genreReviewPatterns: Record<string, { criticBase: number; audienceBase: nu
 const awardTiers = {
   cinematicAwards: ['Palme d\'Or', 'Golden Bear', 'Golden Lion', 'Best Picture', 'Best Director'],
   majorAwards: ['Best Screenplay', 'Best Acting', 'Best Visual Effects', 'Best Score'],
-  festivalAwards: ['Audience Award', 'Jury Prize', 'Directing Award'],
 };
 
 // Calculate production phase durations based on genre and VFX needs
