@@ -195,6 +195,8 @@ export interface IStorage {
   createTVDeal(deal: InsertTVDeal): Promise<TVDeal>;
   updateTVDeal(id: string, updates: Partial<InsertTVDeal>): Promise<TVDeal | undefined>;
   deleteTVDeal(id: string): Promise<void>;
+  deleteTVDealsByShow(tvShowId: string): Promise<void>;
+  deleteTVDealsByPlayer(playerGameId: string): Promise<void>;
   
   // TV Networks
   getTVNetwork(id: string): Promise<TVNetwork | undefined>;
@@ -3217,6 +3219,14 @@ export class DatabaseStorage implements IStorage {
 
   async deleteTVDeal(id: string): Promise<void> {
     await db.delete(tvDeals).where(eq(tvDeals.id, id));
+  }
+
+  async deleteTVDealsByShow(tvShowId: string): Promise<void> {
+    await db.delete(tvDeals).where(eq(tvDeals.tvShowId, tvShowId));
+  }
+
+  async deleteTVDealsByPlayer(playerGameId: string): Promise<void> {
+    await db.delete(tvDeals).where(eq(tvDeals.playerGameId, playerGameId));
   }
 
   // TV Networks

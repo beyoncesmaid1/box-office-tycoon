@@ -2649,6 +2649,11 @@ export async function registerRoutes(
           // Delete film
           await storage.deleteFilm(film.id);
         }));
+        
+        // Delete TV deals for AI studio's TV shows before deleting the studio
+        const aiTVShows = await storage.getTVShowsByStudio(aiStudio.id);
+        await Promise.all(aiTVShows.map(show => storage.deleteTVDealsByShow(show.id)));
+        
         // Delete the AI studio
         await storage.deleteStudio(aiStudio.id);
       }));
