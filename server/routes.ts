@@ -2847,12 +2847,18 @@ export async function registerRoutes(
   });
 
   app.post("/api/studio/:id/advance-week", async (req, res) => {
-    console.log(`[ADVANCE-WEEK-START] Endpoint called with id: ${req.params.id}`);
     try {
       const { id } = req.params;
-      const studio = await storage.getStudio(id);
+      
+      // OPTIMIZATION: Parallelize initial data fetches
+      const [studio, initialStudios, initialFilms, allTalent] = await Promise.all([
+        storage.getStudio(id),
+        storage.getAllStudios(),
+        storage.getAllFilms(),
+        storage.getAllTalent()
+      ]);
+      
       if (!studio) {
-        console.log(`[ADVANCE-WEEK-ERROR] Studio not found: ${id}`);
         return res.status(404).json({ error: "Studio not found" });
       }
 
@@ -2862,14 +2868,13 @@ export async function registerRoutes(
         newWeek = 1;
         newYear += 1;
       }
-      console.log(`[ADVANCE-WEEK] Studio ${studio.name}: week ${studio.currentWeek}/${studio.currentYear} → ${newWeek}/${newYear}`);
 
-      const studioFilms = await storage.getFilmsByStudio(id);
+      const studioFilms = initialFilms.filter(f => f.studioId === id);
       let budgetChange = 0;
 
       // Get all studios and films, filter to only this game
       // For multiplayer, use gameSessionId to share AI studios across all players
-      let allStudios = await storage.getAllStudios();
+      let allStudios = initialStudios;
       const isMultiplayer = !!studio.gameSessionId;
       let aiStudios = allStudios.filter(s => s.isAI && (
         isMultiplayer 
@@ -2879,12 +2884,12 @@ export async function registerRoutes(
       
       // Auto-create AI studios if they don't exist (for existing saves)
       if (aiStudios.length === 0) {
-        console.log(`[advance-week] Creating AI studios for ${isMultiplayer ? 'multiplayer session' : 'player game'} ${isMultiplayer ? studio.gameSessionId : id}`);
         const budgets = [1000000000, 1000000000, 1000000000, 1000000000, 1000000000, 1000000000, 1000000000];
-        for (let i = 0; i < aiStudioNames.length; i++) {
-          await storage.createStudio({
+        // OPTIMIZATION: Create AI studios in parallel
+        await Promise.all(aiStudioNames.map((name, i) => 
+          storage.createStudio({
             deviceId: studio.deviceId,
-            name: aiStudioNames[i],
+            name,
             budget: budgets[i],
             currentWeek: studio.currentWeek,
             currentYear: studio.currentYear,
@@ -2895,8 +2900,8 @@ export async function registerRoutes(
             strategy: aiStrategies[i],
             playerGameId: isMultiplayer ? undefined : id,
             gameSessionId: isMultiplayer ? studio.gameSessionId : undefined,
-          });
-        }
+          })
+        ));
         // Re-fetch ALL studios after creating them - this is critical!
         allStudios = await storage.getAllStudios();
         aiStudios = allStudios.filter(s => s.isAI && (
@@ -2906,7 +2911,8 @@ export async function registerRoutes(
         ));
       }
       
-      const allFilms = await storage.getAllFilms();
+      // OPTIMIZATION: Reuse cached allFilms instead of fetching again
+      const allFilms = initialFilms;
       // Filter to ALL films that are not yet released (both player films and all AI films)
       // This ensures all films advance through phases properly
       const saveFilms = allFilms.filter(f => f.phase !== 'released' && f.status !== 'archived');
@@ -2928,8 +2934,7 @@ export async function registerRoutes(
         return 1.0;
       };
       
-      // Helper to calculate scores - now async to support fame calculations
-      const allTalent = await storage.getAllTalent();
+      // allTalent already fetched in parallel at the start
       const allVFXStudios = vfxStudios;
       
       // Genre-specific budget weights (impact on scores)
@@ -3159,9 +3164,7 @@ export async function registerRoutes(
         const filmStudio = allStudios.find(s => s.id === film.studioId);
         const isAIStudio = filmStudio?.isAI === true;
         
-        if (isAIStudio) {
-          console.log(`[AI-FILM-TRACKING] "${film.title}" (${film.genre}) - Current phase: ${film.phase}, weeksInPhase: ${film.weeksInCurrentPhase}, hasEditedPostProduction: ${film.hasEditedPostProduction}`);
-        }
+        // Removed verbose AI film tracking log for performance
         
         if (film.phase !== 'released') {
           // Normal phase progression - no more force-releasing based on stale releaseWeek
@@ -3186,7 +3189,6 @@ export async function registerRoutes(
                 // AI films automatically advance from filmed to post-production
                 currentPhase = 'post-production';
                 weeksInPhase = 0;
-                console.log(`[AI-FILM-ADVANCE] "${film.title}" auto-advancing from filmed to post-production`);
               } else if (film.hasEditedPostProduction === true) {
                 // Player films only advance when they've edited post-production
                 currentPhase = 'post-production';
@@ -3841,7 +3843,6 @@ export async function registerRoutes(
         
         if (newBudget < AI_MINIMUM_BUDGET) {
           const topUp = AI_MINIMUM_BUDGET + Math.floor(Math.random() * 50000000);
-          console.log(`[AI-BUDGET] ${aiStudio.name} topped up from $${Math.floor(newBudget/1000000)}M to $${Math.floor(topUp/1000000)}M`);
           newBudget = topUp;
         }
         
@@ -3858,18 +3859,13 @@ export async function registerRoutes(
       
       // Execute all studio updates in parallel
       await Promise.all(studioUpdatePromises);
-      console.log(`[advance-week] SAVED: week ${newWeek}, year ${newYear}`);
-
       // AI logic: create and release films (sequential to avoid budget race conditions)
-      console.log(`[AI-LOOP] Processing ${aiStudiosWithWeeks.length} AI studios for film creation`);
       for (const {id: aiStudioId, oldStudio: aiStudio, aiNewWeek, aiNewYear, updatedBudget} of aiStudiosWithWeeks) {
         // AI creates new films every 4 weeks with 75% chance (week 4, 8, 12, 16, etc.)
         const isMultipleOf4 = aiNewWeek % 4 === 0;
         const randomRoll = Math.random();
         const meetsRandomChance = randomRoll < 0.75;
         const hasSufficientBudget = updatedBudget > 15000000;
-        
-        console.log(`[AI-CHECK] ${aiStudio.name} (week ${aiNewWeek}): isMultipleOf4=${isMultipleOf4}, random=${randomRoll.toFixed(2)}<0.75=${meetsRandomChance}, budget=${Math.floor(updatedBudget/1000000)}M>15M=${hasSufficientBudget}`);
         
         if (isMultipleOf4 && meetsRandomChance && hasSufficientBudget) {
           const genre = GENRES[Math.floor(Math.random() * GENRES.length)] as keyof typeof filmTitles;
@@ -3921,10 +3917,7 @@ export async function registerRoutes(
           const departmentBudgetTotal = setsBudget + costumesBudget + stuntsBudget + makeupBudget + practicalEffectsBudget + soundCrewBudget;
           const totalCost = prodBudget + marketBudget + departmentBudgetTotal;
 
-          console.log(`[AI-FILM] ${aiStudio.name} check: cost $${Math.floor(totalCost/1000000)}M vs budget $${Math.floor(aiStudio.budget/1000000)}M`);
-
           if (aiStudio.budget >= totalCost) {
-            console.log(`[AI-FILM] ${aiStudio.name} APPROVED - creating "${title}"`);
             // Generate phase durations based on genre and production needs
             const phaseDurations = calculatePhaseDurations(genre, Math.floor(prodBudget), false);
             const { devWeeks, preWeeks, prodWeeks, postWeeks } = phaseDurations;
@@ -3968,7 +3961,6 @@ export async function registerRoutes(
                 hasHiredTalent: true,
                 hasEditedPostProduction: true,
               });
-              console.log(`[AI-FILM-SAVED] ${title} (${genre}) for ${aiStudio.name}`);
 
               // Generate roles and hire talent for the AI film
               try {
@@ -3976,12 +3968,10 @@ export async function registerRoutes(
                 const talentCost = await hireAITalent(newFilm.id, genre, aiStudio);
                 // Deduct talent cost from AI studio budget
                 aiStudioBudgetChanges.set(aiStudio.id, (aiStudioBudgetChanges.get(aiStudio.id) || 0) - talentCost);
-                console.log(`[AI-TALENT] ${aiStudio.name} hired talent for "${title}" - cost: $${talentCost}`);
                 
                 // Generate synopsis after talent is assigned
                 const synopsis = await generateAIFilmSynopsis(newFilm.id, title, genre);
                 await storage.updateFilm(newFilm.id, { synopsis });
-                console.log(`[AI-SYNOPSIS] Generated synopsis for "${title}"`);
               } catch (talentErr) {
                 console.error(`[AI-TALENT-ERROR] Failed to hire talent for ${title}:`, talentErr);
               }
@@ -4141,55 +4131,23 @@ export async function registerRoutes(
         }
       }
 
-      // Generate weekly emails for the player
-      try {
-        const updatedFilms = await storage.getAllFilms();
-        const playerFilmsForEmails = updatedFilms.filter(f => f.studioId === id);
-        await generateWeeklyEmails(id, studio, playerFilmsForEmails, newWeek, newYear);
-      } catch (emailError) {
-        console.error('[advance-week] Email generation error:', emailError);
-        // Don't fail the week advance if emails fail
-      }
+      // OPTIMIZATION: Fetch films once for both emails and awards
+      const finalFilms = await storage.getAllFilms();
+      const playerFilmsForEmails = finalFilms.filter(f => f.studioId === id);
       
-      // Process award show nominations and ceremonies
-      try {
-        const allFilmsForAwards = await storage.getAllFilms();
-        const awardsResult = await processAwardCeremonies(id, allFilmsForAwards, newWeek, newYear);
-        if (awardsResult.nominations.length > 0) {
-          console.log(`[advance-week] Nominations announced for: ${awardsResult.nominations.join(', ')}`);
-        }
-        if (awardsResult.winners.length > 0) {
-          console.log(`[advance-week] Ceremony completed for: ${awardsResult.winners.join(', ')}`);
-        }
-      } catch (awardsError) {
-        console.error('[advance-week] Awards processing error:', awardsError);
-        // Don't fail the week advance if awards processing fails
-      }
-      
-      // Process AI studios licensing films to streaming services
-      try {
-        console.log(`[advance-week] About to call processAIStreamingAcquisitions for ${id}`);
-        await processAIStreamingAcquisitions(id, newWeek, newYear);
-        console.log(`[advance-week] Finished processAIStreamingAcquisitions`);
-      } catch (streamingError) {
-        console.error('[advance-week] AI streaming acquisitions error:', streamingError);
-      }
-      
-      // Process streaming deal views and revenue
-      try {
-        console.log(`[advance-week] Starting streaming views processing for studio ${id}, week ${newWeek}, year ${newYear}`);
-        await processStreamingViews(id, newWeek, newYear);
-        console.log(`[advance-week] Finished streaming views processing`);
-      } catch (viewsError) {
-        console.error('[advance-week] Streaming views processing error:', viewsError);
-      }
-      
-      // Process AI TV Show creation (ongoing, not just preload)
-      try {
-        await processAITVShowCreation(id, newWeek, newYear);
-      } catch (tvError) {
-        console.error('[advance-week] AI TV show creation error:', tvError);
-      }
+      // OPTIMIZATION: Run independent end-of-week processes in parallel
+      await Promise.all([
+        // Generate weekly emails
+        generateWeeklyEmails(id, studio, playerFilmsForEmails, newWeek, newYear).catch(() => {}),
+        // Process awards
+        processAwardCeremonies(id, finalFilms, newWeek, newYear).catch(() => {}),
+        // Process AI streaming acquisitions
+        processAIStreamingAcquisitions(id, newWeek, newYear).catch(() => {}),
+        // Process streaming views
+        processStreamingViews(id, newWeek, newYear).catch(() => {}),
+        // Process AI TV shows
+        processAITVShowCreation(id, newWeek, newYear).catch(() => {})
+      ]);
 
       const updatedStudio = await storage.getStudio(id);
       res.json(updatedStudio);
