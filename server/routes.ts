@@ -3126,18 +3126,15 @@ export async function registerRoutes(
             // Check if production-complete film has territory releases scheduled (player films only)
             if (currentPhase === 'production-complete') {
               const releases = await storage.getFilmReleasesByFilm(film.id);
-              console.error(`[RELEASE-DEBUG] ${film.title}: production-complete check - found ${releases?.length || 0} territory releases`);
               if (releases && releases.length > 0) {
                 currentPhase = 'awaiting-release';
                 weeksInPhase = 0;
-                console.error(`[RELEASE-DEBUG] ${film.title}: transitioning to awaiting-release`);
               }
             }
             
             // Check if awaiting-release film has reached its earliest release date
             if (currentPhase === 'awaiting-release') {
               const releases = await storage.getFilmReleasesByFilm(film.id);
-              console.error(`[RELEASE-DEBUG] ${film.title}: awaiting-release check - found ${releases?.length || 0} territory releases`);
               if (releases && releases.length > 0) {
                 // Find earliest release date
                 let earliestWeek = releases[0].releaseWeek;
@@ -3150,12 +3147,9 @@ export async function registerRoutes(
                   }
                 }
                 
-                console.error(`[RELEASE-DEBUG] ${film.title}: earliest release date = week ${earliestWeek}/${earliestYear}, current = week ${newWeek}/${newYear}`);
-                
                 // Check if we've reached the earliest release date
                 if (earliestYear < newYear || 
                     (earliestYear === newYear && earliestWeek <= newWeek)) {
-                  console.error(`[RELEASE-DEBUG] ${film.title}: RELEASING TO THEATERS!`);
                   currentPhase = 'released';
                   weeksInPhase = 0;
                   
@@ -3177,8 +3171,6 @@ export async function registerRoutes(
                     awards: [],
                   }));
                   continue;
-                } else {
-                  console.error(`[RELEASE-DEBUG] ${film.title}: release date not reached yet`);
                 }
               }
             }
@@ -3204,15 +3196,12 @@ export async function registerRoutes(
       
       // Include all released films - we'll handle empty weeklyBoxOffice in the loop
       const saveReleasedFilms = updatedSaveFilms.filter(f => f.phase === 'released' && f.status !== 'archived');
-      console.log(`\n=== BOX OFFICE PROCESSING START (Week ${newWeek}/${newYear}) ===`);
-      console.log(`Total released films to process: ${saveReleasedFilms.length}`);
       
       const filmReleasesMap = new Map<string, Awaited<ReturnType<typeof storage.getFilmReleasesByFilm>>>();
       
       // Parallel fetch all film releases
       const releaseFetchPromises = saveReleasedFilms.map(async film => {
         const releases = await storage.getFilmReleasesByFilm(film.id);
-        console.log(`Fetched ${releases.length} releases for ${film.title}`);
         filmReleasesMap.set(film.id, releases);
       });
       await Promise.all(releaseFetchPromises);
@@ -3222,16 +3211,13 @@ export async function registerRoutes(
       
       for (const film of saveReleasedFilms) {
         const filmReleases = filmReleasesMap.get(film.id);
-        console.error(`\n>>> PROCESSING ${film.title} (${film.id}): phase=${film.phase}, releases=${filmReleases?.length || 0}`);
         
-        if (!filmReleases) {
-          console.error(`    ERROR: No releases map entry for ${film.id}`);
-        } else if (filmReleases.length === 0) {
-          console.error(`    WARNING: No territory releases found for ${film.title}`);
+        if (!filmReleases || filmReleases.length === 0) {
+          // Skip films without territory releases
+          continue;
         }
         
         if (filmReleases && filmReleases.length > 0) {
-          console.error(`    ✓ Found ${filmReleases.length} territory releases`);
           // Use production and marketing budgets from territory releases (set at scheduling time)
           const productionBudgetAtRelease = filmReleases[0].productionBudget || film.productionBudget;
           // Marketing budget is stored only on ONE release (global budget, not per-territory)
@@ -3261,14 +3247,9 @@ export async function registerRoutes(
           const currentWeekNum = newYear * 52 + newWeek;
           const weeksOut = currentWeekNum - releaseWeekNum;
           
-          console.log(`[BOX OFFICE] ${film.title}: prodBudget=${productionBudgetAtRelease}, marketBudget=${marketingBudgetAtRelease}, weeksOut=${weeksOut}, hasWeeklyData=${film.weeklyBoxOffice.length}`);
-          
           // Validate that weeksOut matches weeklyBoxOffice.length
           // weeksOut should equal weeklyBoxOffice.length (0 entries = week 0, 1 entry = week 1, etc.)
           const expectedWeeksOut = film.weeklyBoxOffice.length;
-          if (weeksOut !== expectedWeeksOut) {
-            console.error(`[BOX OFFICE MISMATCH] ${film.title}: weeksOut=${weeksOut} but weeklyBoxOffice.length=${expectedWeeksOut} - using weeklyBoxOffice.length for consistency`);
-          }
           
           // Use weeklyBoxOffice.length as the source of truth for how many weeks the film has been out
           // This prevents issues where release date calculations don't match actual recorded data
@@ -3370,7 +3351,6 @@ export async function registerRoutes(
               if (hasActiveStreamingDeal) {
                 // Films on streaming drop 25-35% faster at box office
                 hold = hold * 0.70; // Reduce hold by 30%
-                console.error(`[STREAMING DECAY] ${film.title} is on streaming - applying faster decay`);
               }
               
               // Apply ±15% randomness
@@ -3379,8 +3359,6 @@ export async function registerRoutes(
               
               // Bound hold between 15% and 85% (lower minimum for streaming films)
               hold = Math.max(hasActiveStreamingDeal ? 0.15 : 0.20, Math.min(0.85, hold));
-              
-              console.error(`[DECAY] ${film.title} week ${actualWeeksOut}: lastWeekGross=${Math.round(lastWeekGross)}, audienceScore=${audienceScore}, hold=${hold.toFixed(3)}${hasActiveStreamingDeal ? ' (streaming)' : ''}`);
               
               globalWeeklyGross = Math.floor(lastWeekGross * hold);
             }
@@ -3616,7 +3594,6 @@ export async function registerRoutes(
             (newYear === talent.busyUntilYear && newWeek >= talent.busyUntilWeek);
           
           if (shouldBeFree) {
-            console.log(`[TALENT-FREE] Releasing ${talent.name} (${talent.type}) - was busy until week ${talent.busyUntilWeek}/${talent.busyUntilYear}, now is ${newWeek}/${newYear}`);
             talentReleasePromises.push(storage.updateTalent(talent.id, {
               currentFilmId: null,
               busyUntilWeek: null,
@@ -3627,7 +3604,6 @@ export async function registerRoutes(
       }
       if (talentReleasePromises.length > 0) {
         await Promise.all(talentReleasePromises);
-        console.log(`[TALENT-FREE] Released ${talentReleasePromises.length} talent members`);
       }
 
       // HIRE TALENT for existing films that don't have crew (catch-up for older films)
@@ -3636,12 +3612,10 @@ export async function registerRoutes(
         f.status !== 'archived' && 
         (!f.directorId || !f.writerId || !f.castIds || f.castIds.length === 0)
       );
-      console.log(`[TALENT-CATCHUP] ${filmsNeedingTalent.length} films need talent hiring`);
       
       for (const film of filmsNeedingTalent) {
         const filmStudio = allStudios.find(s => s.id === film.studioId);
         if (filmStudio && filmStudio.isAI) {
-          console.log(`[TALENT-CATCHUP] Hiring for "${film.title}" (${film.genre})`);
           try {
             await hireAITalent(film.id, film.genre, filmStudio);
           } catch (err) {
@@ -3690,7 +3664,7 @@ export async function registerRoutes(
             });
             
             if (investorShare > 0) {
-              console.log(`[SLATE-FINANCING] ${deal.investorName} receives ${formatMoney(investorShare)} (${deal.profitSharePercent}% of profits). Films remaining: ${newFilmsRemaining}`);
+              // Investor receives their share
             }
           }
         }
