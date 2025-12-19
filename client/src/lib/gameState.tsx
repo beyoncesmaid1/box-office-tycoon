@@ -122,6 +122,7 @@ export function GameProvider({ children, studioId, multiplayerSessionId, userId,
           queryClient.invalidateQueries({ queryKey: ['/api/studios', studioId] });
           queryClient.invalidateQueries({ queryKey: ['/api/streaming-deals'] });
           queryClient.invalidateQueries({ queryKey: ['/api/streaming-deals/service'] });
+          queryClient.invalidateQueries({ queryKey: [`/api/emails?playerGameId=${studioId}`] });
           queryClient.invalidateQueries({ queryKey: [`/api/emails/unread-count?playerGameId=${studioId}`] });
         }
       } catch (error) {
@@ -182,6 +183,7 @@ export function GameProvider({ children, studioId, multiplayerSessionId, userId,
       queryClient.invalidateQueries({ queryKey: ['/api/studios', studioId] });
       queryClient.invalidateQueries({ queryKey: ['/api/streaming-deals'] });
       queryClient.invalidateQueries({ queryKey: ['/api/streaming-deals/service'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/emails?playerGameId=${studioId}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/emails/unread-count?playerGameId=${studioId}`] });
     },
   });
