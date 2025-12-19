@@ -5312,28 +5312,12 @@ export async function registerRoutes(
       const allContent: { deal: any; film: any; tvShow?: any; studioName: string; isAI: boolean; serviceName: string; serviceId: string; serviceColor: string; contentType: 'movie' | 'tvshow' }[] = [];
       
       // Get the player's studio to find studios in the same game session
-      let gameSessionStudios: Set<string> = new Set();
-      if (playerGameId) {
-        const playerStudio = await storage.getStudio(playerGameId as string);
-        if (playerStudio) {
-          // Get all studios that belong to the same game (share the same playerGameId pattern or are AI studios created for this game)
-          const allStudios = await storage.getAllStudios();
-          // Filter to studios that are either the player's studio or AI studios
-          // AI studios are shared across games, but their deals should be filtered by when they were created
-          gameSessionStudios = new Set(
-            allStudios
-              .filter(s => s.id === playerGameId || s.isAI)
-              .map(s => s.id)
-          );
-        }
-      }
-      
       for (const service of services) {
         // Get movie deals
         const movieDeals = await storage.getStreamingDealsByService(service.id);
-        // Filter deals to only include those from the current game session
+        // Filter deals to only include those from the current game session by checking playerGameId directly
         const filteredMovieDeals = playerGameId 
-          ? movieDeals.filter(deal => gameSessionStudios.has(deal.playerGameId))
+          ? movieDeals.filter(deal => deal.playerGameId === playerGameId)
           : movieDeals;
         const filmsWithDeals = await Promise.all(
           filteredMovieDeals.map(async (deal) => {
@@ -5356,9 +5340,9 @@ export async function registerRoutes(
         // Get TV show deals for this service
         const allTVDeals = await storage.getAllTVDeals();
         const tvDealsForService = allTVDeals.filter(d => d.streamingServiceId === service.id && d.isActive);
-        // Filter TV deals to only include those from the current game session
+        // Filter TV deals to only include those from the current game session by checking playerGameId directly
         const filteredTVDeals = playerGameId
-          ? tvDealsForService.filter(deal => gameSessionStudios.has(deal.playerGameId))
+          ? tvDealsForService.filter(deal => deal.playerGameId === playerGameId)
           : tvDealsForService;
         const showsWithDeals = await Promise.all(
           filteredTVDeals.map(async (deal) => {
