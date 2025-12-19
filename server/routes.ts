@@ -4438,6 +4438,25 @@ export async function registerRoutes(
         hasHiredTalent: true,
       });
       
+      // CRITICAL: Also update roles with actorIds so they display correctly
+      if (castIds && castIds.length > 0) {
+        const roles = await storage.getFilmRolesByFilm(id);
+        const unassignedRoles = roles.filter(r => !r.actorId);
+        
+        for (let i = 0; i < castIds.length; i++) {
+          const actorId = castIds[i];
+          // Check if this actor already has a role assigned
+          const existingRole = roles.find(r => r.actorId === actorId);
+          if (!existingRole && unassignedRoles[i]) {
+            // Assign this actor to the next unassigned role
+            await storage.updateFilmRole(unassignedRoles[i].id, {
+              actorId: actorId,
+              isCast: true,
+            });
+          }
+        }
+      }
+      
       res.json(updated);
     } catch (error) {
       console.error("Error hiring talent:", error);
