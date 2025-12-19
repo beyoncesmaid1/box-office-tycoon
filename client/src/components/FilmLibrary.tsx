@@ -313,7 +313,10 @@ export function FilmLibrary() {
           comparison = a.audienceScore - b.audienceScore;
           break;
         case 'releaseDate':
-          comparison = (a.releaseWeek || 0) - (b.releaseWeek || 0);
+          // Compare by year first, then by week
+          const aTotal = ((a.releaseYear || 0) * 52) + (a.releaseWeek || 0);
+          const bTotal = ((b.releaseYear || 0) * 52) + (b.releaseWeek || 0);
+          comparison = aTotal - bTotal;
           break;
       }
       return sortDesc ? -comparison : comparison;
