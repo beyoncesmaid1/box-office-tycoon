@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'wouter';
-import { Grid3X3, List, Star, Award, Search, SortAsc, SortDesc, Loader2, Zap, Tv, Megaphone } from 'lucide-react';
+import { Grid3X3, List, Star, Award, Search, SortAsc, SortDesc, Loader2, Zap, Tv, Megaphone, ImageIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -175,6 +175,9 @@ export function FilmLibrary() {
   const [selectedFilm, setSelectedFilm] = useState<FilmWithTalent | null>(null);
   const [streamingRevenue, setStreamingRevenue] = useState<number>(0);
   const [actualMarketingBudget, setActualMarketingBudget] = useState<number>(0);
+  const [isChangingPoster, setIsChangingPoster] = useState(false);
+  const [newPosterUrl, setNewPosterUrl] = useState('');
+  const posterInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (selectedFilm) {
@@ -241,6 +244,37 @@ export function FilmLibrary() {
       toast({
         title: "Error",
         description: "Failed to load original film's roles. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleChangePoster = async () => {
+    if (!selectedFilm || !newPosterUrl.trim()) return;
+    
+    try {
+      const response = await fetch(`/api/films/${selectedFilm.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ posterUrl: newPosterUrl.trim() }),
+      });
+      
+      if (response.ok) {
+        toast({
+          title: "Poster updated",
+          description: `Poster for "${selectedFilm.title}" has been changed.`,
+        });
+        setIsChangingPoster(false);
+        setNewPosterUrl('');
+        // Update local state
+        setSelectedFilm({ ...selectedFilm, posterUrl: newPosterUrl.trim() });
+      } else {
+        throw new Error('Failed to update poster');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update poster. Please try again.",
         variant: "destructive",
       });
     }
@@ -433,15 +467,46 @@ export function FilmLibrary() {
                   const posterUrl = selectedFilm.posterUrl || '';
                   
                   return (
-                    <div 
-                      className="aspect-[2/3] rounded-lg overflow-hidden"
-                      style={{
-                        backgroundImage: posterUrl ? `url(${posterUrl})` : fallbackBg,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                        backgroundColor: 'rgb(40, 40, 40)',
-                      }}
-                    />
+                    <div className="space-y-2">
+                      <div 
+                        className="aspect-[2/3] rounded-lg overflow-hidden"
+                        style={{
+                          backgroundImage: posterUrl ? `url(${posterUrl})` : fallbackBg,
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center',
+                          backgroundColor: 'rgb(40, 40, 40)',
+                        }}
+                      />
+                      {isChangingPoster ? (
+                        <div className="space-y-2">
+                          <Input
+                            ref={posterInputRef}
+                            placeholder="Enter image URL..."
+                            value={newPosterUrl}
+                            onChange={(e) => setNewPosterUrl(e.target.value)}
+                            className="text-sm"
+                          />
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={handleChangePoster} className="flex-1">
+                              Save
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => { setIsChangingPoster(false); setNewPosterUrl(''); }}>
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="w-full"
+                          onClick={() => setIsChangingPoster(true)}
+                        >
+                          <ImageIcon className="w-4 h-4 mr-2" />
+                          Change Poster
+                        </Button>
+                      )}
+                    </div>
                   );
                 })()}
                 
