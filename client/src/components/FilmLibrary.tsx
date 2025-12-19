@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { useGame, formatMoney, genreColors, genreLabels, type FilmWithTalent } from '@/lib/gameState';
 import { useToast } from '@/hooks/use-toast';
 import { RatingDisplay } from './RatingDisplay';
+import { useQueryClient } from '@tanstack/react-query';
 
 type ViewMode = 'grid' | 'list';
 type SortField = 'title' | 'boxOffice' | 'rating' | 'releaseDate';
@@ -168,6 +169,7 @@ export function FilmLibrary() {
   const { state } = useGame();
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  const queryClient = useQueryClient();
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField>('releaseDate');
@@ -268,6 +270,9 @@ export function FilmLibrary() {
         setNewPosterUrl('');
         // Update local state
         setSelectedFilm({ ...selectedFilm, posterUrl: newPosterUrl.trim() });
+        // Invalidate queries to refresh film data everywhere
+        queryClient.invalidateQueries({ queryKey: ['/api/all-films'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/studio'] });
       } else {
         throw new Error('Failed to update poster');
       }
