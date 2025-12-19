@@ -2969,8 +2969,8 @@ export async function registerRoutes(
           'animation': 'skillAnimation',
           'romance': 'skillRomance',
           'thriller': 'skillThriller',
-          'fantasy': 'skillDrama',
-          'musicals': 'skillComedy',
+          'fantasy': 'skillFantasy',
+          'musicals': 'skillMusicals',
         };
         
         const skillKey = genreSkillMap[genre] || 'skillDrama';
@@ -3016,8 +3016,8 @@ export async function registerRoutes(
               'animation': 'skillAnimation',
               'romance': 'skillRomance',
               'thriller': 'skillThriller',
-              'fantasy': 'skillDrama',
-              'musicals': 'skillComedy',
+              'fantasy': 'skillFantasy',
+              'musicals': 'skillMusicals',
             };
             
             const skillKey = genreSkillMap[genre];
@@ -5896,6 +5896,9 @@ export async function registerRoutes(
             busyUntilYear,
           });
           
+          // Generate roles for the film so player can cast actors
+          await generateFilmRoles(newFilm.id, filmGenre, suggestedBudget);
+          
           // Archive the email
           await storage.updateEmail(id, { isArchived: true });
           
@@ -6269,6 +6272,31 @@ export async function registerRoutes(
     }
   });
   
+  // Randomize talent genre scores (one-time fix for fantasy/musicals skills)
+  app.post("/api/talent/randomize-skills", async (req, res) => {
+    try {
+      const allTalent = await storage.getAllTalent();
+      let updated = 0;
+      
+      for (const t of allTalent) {
+        // Generate random skills for fantasy and musicals (30-90 range for variety)
+        const skillFantasy = 30 + Math.floor(Math.random() * 61);
+        const skillMusicals = 30 + Math.floor(Math.random() * 61);
+        
+        await storage.updateTalent(t.id, {
+          skillFantasy,
+          skillMusicals,
+        } as any);
+        updated++;
+      }
+      
+      res.json({ success: true, message: `Randomized fantasy/musicals skills for ${updated} talent` });
+    } catch (error) {
+      console.error("Error randomizing talent skills:", error);
+      res.status(500).json({ error: "Failed to randomize talent skills" });
+    }
+  });
+
   // Delete talent
   app.delete("/api/talent/:id", async (req, res) => {
     try {

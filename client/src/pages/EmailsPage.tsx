@@ -282,8 +282,8 @@ export default function EmailsPage() {
       return await apiRequest('PATCH', `/api/emails/${id}`, { isRead: true });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/emails'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/emails/unread-count'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/emails?playerGameId=${state.studioId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/emails/unread-count?playerGameId=${state.studioId}`] });
     },
   });
 
@@ -292,8 +292,8 @@ export default function EmailsPage() {
       return await apiRequest('DELETE', `/api/emails/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/emails'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/emails/unread-count'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/emails?playerGameId=${state.studioId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/emails/unread-count?playerGameId=${state.studioId}`] });
       setSelectedEmailId(null);
       toast({ title: 'Email deleted' });
     },
@@ -311,8 +311,8 @@ export default function EmailsPage() {
       return await apiRequest('POST', `/api/emails/${emailId}/action`, {});
     },
     onSuccess: (data: { success: boolean; message: string }) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/emails'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/emails/unread-count'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/emails?playerGameId=${state.studioId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/emails/unread-count?playerGameId=${state.studioId}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/studio'] });
       queryClient.invalidateQueries({ queryKey: ['/api/streaming-deals'] });
       setSelectedEmailId(null);

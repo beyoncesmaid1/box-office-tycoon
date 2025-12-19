@@ -59,6 +59,8 @@ export const talent = pgTable("talent", {
   skillScifi: integer("skill_scifi").notNull().default(50),
   skillAnimation: integer("skill_animation").notNull().default(50),
   skillRomance: integer("skill_romance").notNull().default(50),
+  skillFantasy: integer("skill_fantasy").notNull().default(50),
+  skillMusicals: integer("skill_musicals").notNull().default(50),
   
   // Director-specific skills (only applicable for directors)
   skillCinematography: integer("skill_cinematography").notNull().default(50),
