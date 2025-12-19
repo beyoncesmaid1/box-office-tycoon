@@ -307,18 +307,14 @@ async function generateFilmRoles(filmId: string, genre: string, prodBudget: numb
 }
 
 async function hireAITalent(filmId: string, genre: string, aiStudio: any): Promise<number> {
-  console.log(`[HIRE-TALENT-START] Function called for filmId: ${filmId}`);
   let totalTalentCost = 0;
   try {
     const film = await storage.getFilm(filmId);
     if (!film) {
-      console.log(`[HIRE-TALENT-DEBUG] Film not found: ${filmId}`);
       return 0;
     }
-    console.log(`[HIRE-TALENT-DEBUG] Starting hiring for film "${film.title}" (${filmId})`);
     
     const allTalent = await storage.getAllTalent();
-    console.log(`[HIRE-TALENT-DEBUG] Total talent: ${allTalent.length}`);
     
     // Calculate when talent will be busy until (production end + a buffer)
     const totalProductionWeeks = (film.developmentDurationWeeks || 0) + 
@@ -331,12 +327,9 @@ async function hireAITalent(filmId: string, genre: string, aiStudio: any): Promi
       busyUntilWeek -= 52;
       busyUntilYear += 1;
     }
-    console.log(`[HIRE-TALENT-DEBUG] Talent will be busy until week ${busyUntilWeek}, year ${busyUntilYear}`);
     
     const directorCandidates = allTalent.filter(t => t.type === 'director');
     const writerCandidates = allTalent.filter(t => t.type === 'writer');
-    
-    console.log(`[HIRE-TALENT-DEBUG] Director candidates: ${directorCandidates.length}, Writer candidates: ${writerCandidates.length}`);
     
     let directorId: string | undefined;
     let writerId: string | undefined;
@@ -351,7 +344,6 @@ async function hireAITalent(filmId: string, genre: string, aiStudio: any): Promi
       directorId = director.id;
       directorCost = director.askingPrice || 5000000;
       totalTalentCost += directorCost;
-      console.log(`[HIRE-TALENT-DEBUG] Selected director: ${director.name} - cost: $${directorCost}`);
       await storage.updateTalent(director.id, { currentFilmId: filmId, busyUntilWeek, busyUntilYear });
     }
     
@@ -363,7 +355,6 @@ async function hireAITalent(filmId: string, genre: string, aiStudio: any): Promi
       writerCost = writer.askingPrice || 5000000;
       totalTalentCost += writerCost;
       scriptQuality = calculateScriptQualityFromWriter(writer);
-      console.log(`[HIRE-TALENT-DEBUG] Selected writer: ${writer.name} - cost: $${writerCost}, new script quality: ${scriptQuality}`);
       await storage.updateTalent(writer.id, { currentFilmId: filmId, busyUntilWeek, busyUntilYear });
     }
     
@@ -376,13 +367,9 @@ async function hireAITalent(filmId: string, genre: string, aiStudio: any): Promi
     let roles = await storage.getFilmRolesByFilm(filmId);
     
     if (!roles || roles.length === 0) {
-      console.log(`[HIRE-TALENT-DEBUG] No roles found for film ${film.title}, generating roles now...`);
       await generateFilmRoles(filmId, genre, film.productionBudget || 0);
       roles = await storage.getFilmRolesByFilm(filmId);
-      console.log(`[HIRE-TALENT-DEBUG] Generated ${roles.length} roles for film`);
     }
-    
-    console.log(`[HIRE-TALENT-DEBUG] Actor candidates: ${actorCandidates.length}, Roles to fill: ${roles.length}`);
     
     const castActorIds: string[] = [];
     const usedActorIds = new Set<string>();
@@ -415,9 +402,6 @@ async function hireAITalent(filmId: string, genre: string, aiStudio: any): Promi
         await storage.updateTalent(actor.id, { currentFilmId: filmId, busyUntilWeek, busyUntilYear });
         castActorIds.push(actor.id);
         usedActorIds.add(actor.id);
-        console.log(`[HIRE-TALENT-DEBUG] Cast ${role.importance} role "${role.roleName}": ${actor.name} - cost: $${actorCost}`);
-      } else {
-        console.log(`[HIRE-TALENT-DEBUG] Could not cast ${role.importance} role "${role.roleName}" - no actors available`);
       }
     }
     
@@ -434,7 +418,6 @@ async function hireAITalent(filmId: string, genre: string, aiStudio: any): Promi
       composerId = composer.id;
       composerCost = composer.askingPrice || 3000000;
       totalTalentCost += composerCost;
-      console.log(`[HIRE-TALENT-DEBUG] Selected composer: ${composer.name} - cost: $${composerCost}`);
       await storage.updateTalent(composer.id, { currentFilmId: filmId, busyUntilWeek, busyUntilYear });
     }
     
@@ -448,12 +431,9 @@ async function hireAITalent(filmId: string, genre: string, aiStudio: any): Promi
     filmUpdateData.talentBudget = totalTalentCost;
     filmUpdateData.totalBudget = (film.totalBudget || 0) + totalTalentCost;
     
-    console.log(`[HIRE-TALENT-DEBUG] Updating film with: director=${directorId ? 'yes' : 'no'}, writer=${writerId ? 'yes' : 'no'}, composer=${composerId ? 'yes' : 'no'}, cast=${castActorIds.length}, talentCost=$${totalTalentCost}`);
     await storage.updateFilm(filmId, filmUpdateData);
-    console.log(`[HIRE-TALENT-DEBUG] FILM SUCCESSFULLY UPDATED with talent cost: $${totalTalentCost}`);
     return totalTalentCost;
   } catch (error) {
-    console.error(`[HIRE-TALENT-ERROR] Error hiring talent for film ${filmId}:`, error);
     return 0;
   }
 }
@@ -3063,11 +3043,8 @@ export async function registerRoutes(
               const filmStudio = allStudios.find(s => s.id === film.studioId);
               const isAIFilm = filmStudio?.isAI === true;
               
-              console.log(`[advance-week] Film "${film.title}" finished post-production. weeksInPhase=${weeksInPhase}, duration=${film.postProductionDurationWeeks}, studioId=${film.studioId}, isAIFilm=${isAIFilm}, studioFound=${!!filmStudio}`);
-              
               if (isAIFilm) {
                 // AI films skip production-complete and go directly to released
-                console.log(`[advance-week] AI Film "${film.title}" releasing to theaters!`);
                 currentPhase = 'released';
                 weeksInPhase = 0;
                 
@@ -3097,7 +3074,6 @@ export async function registerRoutes(
                       weeksInRelease: 0,
                     })
                   ));
-                  console.log(`[advance-week] Created ${allTerritories.length} territory releases for AI film "${film.title}" - marketing=${safeMarketingBudget} on first territory`);
                 }
                 
                 filmUpdatePromises.push(storage.updateFilm(film.id, {
@@ -3330,7 +3306,6 @@ export async function registerRoutes(
             globalWeeklyGross = clampedInvestmentBudget1 * randomLuck * marketingMultiplier * 
               (0.5 + qualityFactor * 0.8) * genreMultiplier * audienceBoost * sequelBoost * holidayModifier;
             
-            console.log(`[OPENING] ${film.title} (${film.genre}): investmentBudget=${Math.round(investmentBudget)}, marketingMult=${marketingMultiplier.toFixed(2)}, audienceScore=${film.audienceScore}, audienceBoost=${audienceBoost.toFixed(2)}, randomLuck=${randomLuck.toFixed(2)}, sequelBoost=${sequelBoost.toFixed(2)}, holidayMod=${holidayModifier.toFixed(2)}${holiday ? ` (${holiday.name})` : ''}, gross=${Math.round(globalWeeklyGross)}`);
           } else {
             // Subsequent weeks (actualWeeksOut > 0) - apply decay with quality/genre modifiers
             const lastWeekGross = film.weeklyBoxOffice[film.weeklyBoxOffice.length - 1] || 0;
@@ -3852,8 +3827,6 @@ export async function registerRoutes(
                   weeksInRelease: 0,
                 })
               ));
-              console.log(`[AI-TERRITORIES] ${title} created with ${allTerritories.length} territories`);
-
               await storage.updateStudio(aiStudio.id, {
                 budget: aiStudio.budget - Math.floor(totalCost),
               });
