@@ -38,29 +38,12 @@ export function log(message: string, source = "express") {
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
 
   res.on("finish", () => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        const responseStr = JSON.stringify(capturedJsonResponse);
-        // Truncate very long responses to avoid flooding the console
-        if (responseStr.length > 500) {
-          logLine += ` :: ${responseStr.substring(0, 500)}... (truncated ${responseStr.length} chars)`;
-        } else {
-          logLine += ` :: ${responseStr}`;
-        }
-      }
-
-      log(logLine);
+      // Only log method, path, status, and duration - no response body
+      log(`${req.method} ${path} ${res.statusCode} in ${duration}ms`);
     }
   });
 
