@@ -537,7 +537,12 @@ export default function StreamingPage() {
   });
 
   const { data: allStreamingContent = [] } = useQuery<GlobalStreamingContent[]>({
-    queryKey: ['/api/streaming-deals/all-content'],
+    queryKey: ['/api/streaming-deals/all-content', state.studioId],
+    queryFn: async () => {
+      const response = await fetch(`/api/streaming-deals/all-content?playerGameId=${state.studioId}`);
+      if (!response.ok) throw new Error('Failed to fetch streaming content');
+      return response.json();
+    },
   });
 
   const releasedFilms = films.filter(f => f.phase === 'released');
