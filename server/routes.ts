@@ -5281,7 +5281,13 @@ export async function registerRoutes(
   app.get("/api/streaming-deals/service/:serviceId", async (req, res) => {
     try {
       const { serviceId } = req.params;
-      const deals = await storage.getStreamingDealsByService(serviceId);
+      const { playerGameId } = req.query;
+      const allDeals = await storage.getStreamingDealsByService(serviceId);
+      
+      // Filter deals to only include those from the current game session
+      const deals = playerGameId 
+        ? allDeals.filter(deal => deal.playerGameId === playerGameId)
+        : allDeals;
       
       // Get all films for these deals (including AI films)
       const filmsWithDeals = await Promise.all(

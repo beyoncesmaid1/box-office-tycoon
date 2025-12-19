@@ -468,14 +468,14 @@ export default function StreamingServiceDetailPage() {
     enabled: !!studioId,
   });
 
-  // Fetch ALL films on this streaming service (including AI films)
+  // Fetch ALL films on this streaming service (including AI films) for this game session
   const { data: allServiceContent = [] } = useQuery<{ deal: StreamingDeal; film: FilmType; studioName: string; isAI: boolean }[]>({
-    queryKey: ['/api/streaming-deals/service', serviceId],
+    queryKey: ['/api/streaming-deals/service', serviceId, studioId],
     queryFn: async () => {
-      const res = await fetch(`/api/streaming-deals/service/${serviceId}`);
+      const res = await fetch(`/api/streaming-deals/service/${serviceId}?playerGameId=${studioId}`);
       return res.json();
     },
-    enabled: !!serviceId,
+    enabled: !!serviceId && !!studioId,
   });
 
   const service = services.find(s => s.id === serviceId);
