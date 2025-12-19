@@ -494,12 +494,28 @@ async function generateStreamingOfferEmail(
   const service = streamingServiceData[Math.floor(Math.random() * streamingServiceData.length)];
   const exec = streamingExecs[Math.floor(Math.random() * streamingExecs.length)];
   
+  // Check if this film has ever been on this streaming service before (including expired deals)
+  const allFilmDeals = await storage.getStreamingDealsByFilm(film.id);
+  const previousDealWithService = allFilmDeals.find(deal => deal.streamingServiceId === service.id);
+  if (previousDealWithService) {
+    // Film was already on this streaming service - don't allow re-signing to same service
+    return null;
+  }
+  
+  // Check if film has been on ANY streaming service before (for reduced payment)
+  const hasBeenOnStreaming = allFilmDeals.length > 0;
+  
   // Calculate license fee based on box office performance
   const totalBoxOffice = film.totalBoxOffice || 0;
   const qualityScore = (film.audienceScore || 7) * 10; // Use audience score only (converted to 0-100 scale)
   const baseFee = totalBoxOffice * 0.15;
   const qualityBonus = baseFee * (qualityScore / 100) * 0.3;
-  const licenseFee = Math.round((baseFee + qualityBonus) * (0.8 + Math.random() * 0.4));
+  let licenseFee = Math.round((baseFee + qualityBonus) * (0.8 + Math.random() * 0.4));
+  
+  // If film has been on streaming before, reduce payment to 1/10
+  if (hasBeenOnStreaming) {
+    licenseFee = Math.round(licenseFee / 10);
+  }
   
   // Calculate expiration (4 weeks from now)
   let expiresWeek = currentWeek + 4;
@@ -509,12 +525,21 @@ async function generateStreamingOfferEmail(
     expiresYear += 1;
   }
   
-  return {
-    playerGameId,
-    sender: service.name,
-    senderTitle: exec.name + ', ' + exec.title,
-    subject: `Streaming Offer for "${film.title}"`,
-    body: `Dear Studio Executive,
+  // Different email body for previously-streamed films
+  const emailBody = hasBeenOnStreaming 
+    ? `Dear Studio Executive,
+
+We understand "${film.title}" has previously been available on another streaming platform. While the film's initial streaming window has passed, we believe there's still an audience for this title on ${service.name}.
+
+Given the film's prior streaming availability, we're prepared to offer: ${formatMoney(licenseFee)} for a 24-month streaming window.
+
+This is a secondary market offer, but we're confident the film will find new viewers on our platform.
+
+Best regards,
+${exec.name}
+${exec.title}
+${service.name}`
+    : `Dear Studio Executive,
 
 We've been following the impressive theatrical run of "${film.title}" with great interest. The film's performance at the box office (${formatMoney(totalBoxOffice)} to date) and strong audience reception have made it a prime candidate for our platform.
 
@@ -529,7 +554,14 @@ We would appreciate your response within the next few weeks, as our content cale
 Best regards,
 ${exec.name}
 ${exec.title}
-${service.name}`,
+${service.name}`;
+
+  return {
+    playerGameId,
+    sender: service.name,
+    senderTitle: exec.name + ', ' + exec.title,
+    subject: hasBeenOnStreaming ? `Secondary Streaming Offer for "${film.title}"` : `Streaming Offer for "${film.title}"`,
+    body: emailBody,
     type: 'streaming_offer',
     sentWeek: currentWeek,
     sentYear: currentYear,
