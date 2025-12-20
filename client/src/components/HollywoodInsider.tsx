@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useLocation } from 'wouter';
 import { 
@@ -102,9 +102,21 @@ export function HollywoodInsider() {
     enabled: !!state.studioId,
   });
 
-  const { data: allReleases = [] } = useQuery<FilmRelease[]>({
-    queryKey: ['/api/all-releases'],
-  });
+  const [allReleases, setAllReleases] = useState<FilmRelease[]>([]);
+  
+  // Fetch all releases directly (same pattern as FilmDetail)
+  useEffect(() => {
+    fetch('/api/all-releases')
+      .then(res => res.json())
+      .then(releases => {
+        console.log('Fetched releases:', releases);
+        setAllReleases(releases);
+      })
+      .catch(err => {
+        console.error('Error fetching releases:', err);
+        setAllReleases([]);
+      });
+  }, []);
 
   const studioMap = useMemo(() => new Map(allStudios.map(s => [s.id, s])), [allStudios]);
   const talentMap = useMemo(() => new Map(allTalent.map(t => [t.id, t])), [allTalent]);
@@ -120,7 +132,6 @@ export function HollywoodInsider() {
         }
       }
     });
-    console.log('Marketing budget map:', map);
     return map;
   }, [allReleases]);
 
