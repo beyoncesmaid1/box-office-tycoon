@@ -2330,11 +2330,10 @@ export async function registerRoutes(
             const departmentBudgetTotal = setsBudget + costumesBudget + stuntsBudget + makeupBudget + practicalEffectsBudget + soundCrewBudget;
             
             // Calculate marketing budget based on total investment budget (production + departments)
-            // 75% chance: 75-150% of investment, 25% chance: 50-75% of investment
+            // AI studios spend aggressively on marketing: 80-150% of investment budget
             const investmentBudget = prodBudget + departmentBudgetTotal;
-            const marketBudget = Math.random() < 0.75 
-              ? investmentBudget * (0.75 + Math.random() * 0.75)  // 75-150%
-              : investmentBudget * (0.50 + Math.random() * 0.25); // 50-75%
+            const marketingRatio = 0.80 + Math.random() * 0.70; // 80-150% guaranteed
+            const marketBudget = investmentBudget * marketingRatio;
             
             const totalCost = prodBudget + marketBudget + departmentBudgetTotal;
             const marketingRatioAtCreation = marketBudget / investmentBudget;
@@ -3755,11 +3754,10 @@ export async function registerRoutes(
           const departmentBudgetTotal = setsBudget + costumesBudget + stuntsBudget + makeupBudget + practicalEffectsBudget + soundCrewBudget;
           
           // Calculate marketing budget based on total investment (production + departments)
-          // 75% chance: 75-150% of investment, 25% chance: 50-75% of investment
+          // AI studios spend aggressively on marketing: 80-150% of investment budget
           const investmentBudget = prodBudget + departmentBudgetTotal;
-          const marketBudget = Math.random() < 0.75 
-            ? investmentBudget * (0.75 + Math.random() * 0.75)  // 75-150%
-            : investmentBudget * (0.50 + Math.random() * 0.25); // 50-75%
+          const marketingRatio = 0.80 + Math.random() * 0.70; // 80-150% guaranteed
+          const marketBudget = investmentBudget * marketingRatio;
           
           const totalCost = prodBudget + marketBudget + departmentBudgetTotal;
           const marketingRatioAtCreation = marketBudget / investmentBudget;
