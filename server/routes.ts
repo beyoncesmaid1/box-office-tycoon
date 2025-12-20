@@ -3210,16 +3210,16 @@ export async function registerRoutes(
         }
         
         if (filmReleases && filmReleases.length > 0) {
-          // Use production and marketing budgets from territory releases (set at scheduling time)
-          const productionBudgetAtRelease = filmReleases[0].productionBudget || film.productionBudget;
+          // Use totalBudget (the actual total investment shown in UI) for box office calculation
+          // totalBudget = production + talent + all crew costs combined
+          const totalBudgetAtRelease = film.totalBudget || filmReleases[0].productionBudget || film.productionBudget;
           // Marketing budget is stored only on ONE release (global budget, not per-territory)
           // Find the release with the actual marketing budget, don't assume it's the first one
           const releaseWithMarketing = filmReleases.find(r => r.marketingBudget && r.marketingBudget > 0);
           const marketingBudgetAtRelease = releaseWithMarketing?.marketingBudget || film.marketingBudget || 0;
           
-          // Calculate marketing multiplier as ratio of marketing to production budget
-          // Production budget already includes all crew/talent costs - don't double count
-          const marketingRatio = marketingBudgetAtRelease / (productionBudgetAtRelease || 1);
+          // Calculate marketing multiplier as ratio of marketing to total budget
+          const marketingRatio = marketingBudgetAtRelease / (totalBudgetAtRelease || 1);
           const globalMarketingMultiplier = marketingRatio;
           
           // Calculate global weekly box office with quality/genre/decay modifiers
@@ -3260,9 +3260,8 @@ export async function registerRoutes(
             const marketingMultiplier = globalMarketingMultiplier;
             const audienceBoost = getAudienceMultiplier(film.audienceScore || 7);
             
-            // Investment budget = production budget (already includes talent + all crew + composer + VFX)
-            // DO NOT add crew budgets again - they're already part of productionBudget
-            let investmentBudget = productionBudgetAtRelease;
+            // Investment budget = total budget (already includes talent + all crew + composer + VFX)
+            let investmentBudget = totalBudgetAtRelease;
             
             // Production budget is a one-time GLOBAL cost, not split per territory
             // Use full investment budget for all territory opening calculations
@@ -3291,7 +3290,7 @@ export async function registerRoutes(
               qualityModifier * genreMultiplier * audienceBoost * sequelBoost * holidayModifier;
             
             console.log(`[OPENING-WEEKEND] ${film.title} (${film.genre}):
-  productionBudget=$${Math.round(productionBudgetAtRelease/1000000)}M, marketingBudget=$${Math.round(marketingBudgetAtRelease/1000000)}M, marketingMult=${marketingMultiplier.toFixed(3)}
+  totalBudget=$${Math.round(totalBudgetAtRelease/1000000)}M, marketingBudget=$${Math.round(marketingBudgetAtRelease/1000000)}M, marketingMult=${marketingMultiplier.toFixed(3)}
   CALCULATION: $${Math.round(clampedInvestmentBudget1/1000000)}M × ${randomLuck.toFixed(2)} × ${marketingMultiplier.toFixed(2)} × ${qualityModifier.toFixed(2)} × ${genreMultiplier} × ${audienceBoost.toFixed(2)} × ${sequelBoost.toFixed(2)} × ${holidayModifier.toFixed(2)} = $${Math.round(globalWeeklyGross/1000000)}M`);
             
           } else {
