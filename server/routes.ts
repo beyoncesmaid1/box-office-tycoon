@@ -3217,19 +3217,9 @@ export async function registerRoutes(
           const releaseWithMarketing = filmReleases.find(r => r.marketingBudget && r.marketingBudget > 0);
           const marketingBudgetAtRelease = releaseWithMarketing?.marketingBudget || film.marketingBudget || 0;
           
-          // Calculate total investment budget to get proper marketing ratio
-          // Investment = production + talent + crew (composer, VFX handled separately but included in calculation)
-          let investmentBudgetForRatio = productionBudgetAtRelease + 
-            (film.talentBudget || 0) + 
-            (film.setsBudget || 0) + 
-            (film.costumesBudget || 0) + 
-            (film.stuntsBudget || 0) + 
-            (film.makeupBudget || 0) + 
-            (film.practicalEffectsBudget || 0) + 
-            (film.soundCrewBudget || 0);
-          
-          // Calculate marketing multiplier as ratio of marketing to total investment (e.g., 26.4M / 43.8M = 0.603x)
-          const marketingRatio = marketingBudgetAtRelease / (investmentBudgetForRatio || 1);
+          // Calculate marketing multiplier as ratio of marketing to production budget
+          // Production budget already includes all crew/talent costs - don't double count
+          const marketingRatio = marketingBudgetAtRelease / (productionBudgetAtRelease || 1);
           const globalMarketingMultiplier = marketingRatio;
           
           // Calculate global weekly box office with quality/genre/decay modifiers
@@ -3270,32 +3260,9 @@ export async function registerRoutes(
             const marketingMultiplier = globalMarketingMultiplier;
             const audienceBoost = getAudienceMultiplier(film.audienceScore || 7);
             
-            // Investment budget = production + talent + all crew + composer + VFX (NOT marketing - it has its own multiplier)
-            let investmentBudget = productionBudgetAtRelease + 
-              (film.talentBudget || 0) + 
-              (film.setsBudget || 0) + 
-              (film.costumesBudget || 0) + 
-              (film.stuntsBudget || 0) + 
-              (film.makeupBudget || 0) + 
-              (film.practicalEffectsBudget || 0) + 
-              (film.soundCrewBudget || 0);
-            
-            // Add composer cost if hired
-            if (film.composerId) {
-              const allTalent = await storage.getAllTalent();
-              const composer = allTalent.find(t => t.id === film.composerId);
-              if (composer) {
-                investmentBudget += composer.askingPrice || 0;
-              }
-            }
-            
-            // Add VFX studio cost if hired
-            if (film.vfxStudioId) {
-              const vfxStudio = vfxStudios.find(s => s.id === film.vfxStudioId);
-              if (vfxStudio) {
-                investmentBudget += vfxStudio.cost || 0;
-              }
-            }
+            // Investment budget = production budget (already includes talent + all crew + composer + VFX)
+            // DO NOT add crew budgets again - they're already part of productionBudget
+            let investmentBudget = productionBudgetAtRelease;
             
             // Production budget is a one-time GLOBAL cost, not split per territory
             // Use full investment budget for all territory opening calculations
@@ -3324,11 +3291,7 @@ export async function registerRoutes(
               qualityModifier * genreMultiplier * audienceBoost * sequelBoost * holidayModifier;
             
             console.log(`[OPENING-WEEKEND] ${film.title} (${film.genre}):
-  film.productionBudget=$${Math.round((film.productionBudget || 0)/1000000)}M, productionBudgetAtRelease=$${Math.round(productionBudgetAtRelease/1000000)}M
-  talentBudget=$${Math.round((film.talentBudget || 0)/1000000)}M, sets=$${Math.round((film.setsBudget || 0)/1000000)}M, costumes=$${Math.round((film.costumesBudget || 0)/1000000)}M
-  stunts=$${Math.round((film.stuntsBudget || 0)/1000000)}M, makeup=$${Math.round((film.makeupBudget || 0)/1000000)}M, practicalFX=$${Math.round((film.practicalEffectsBudget || 0)/1000000)}M, sound=$${Math.round((film.soundCrewBudget || 0)/1000000)}M
-  TOTAL investmentBudget=$${Math.round(investmentBudget/1000000)}M, clamped=$${Math.round(clampedInvestmentBudget1/1000000)}M
-  marketingBudget=$${Math.round(marketingBudgetAtRelease/1000000)}M, marketingMult=${marketingMultiplier.toFixed(3)}
+  productionBudget=$${Math.round(productionBudgetAtRelease/1000000)}M, marketingBudget=$${Math.round(marketingBudgetAtRelease/1000000)}M, marketingMult=${marketingMultiplier.toFixed(3)}
   CALCULATION: $${Math.round(clampedInvestmentBudget1/1000000)}M × ${randomLuck.toFixed(2)} × ${marketingMultiplier.toFixed(2)} × ${qualityModifier.toFixed(2)} × ${genreMultiplier} × ${audienceBoost.toFixed(2)} × ${sequelBoost.toFixed(2)} × ${holidayModifier.toFixed(2)} = $${Math.round(globalWeeklyGross/1000000)}M`);
             
           } else {
