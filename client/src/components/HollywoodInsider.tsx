@@ -120,6 +120,7 @@ export function HollywoodInsider() {
         }
       }
     });
+    console.log('Marketing budget map:', map);
     return map;
   }, [allReleases]);
 
