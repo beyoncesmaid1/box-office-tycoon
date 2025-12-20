@@ -3865,7 +3865,7 @@ export async function registerRoutes(
               const allTerritories = BOX_OFFICE_COUNTRIES.map(c => c.code);
               const firstTerritory = allTerritories[0];
               
-              const safeMarketingBudget = film.marketingBudget || Math.floor(film.productionBudget * 0.3);
+              const safeMarketingBudget = film.marketingBudget || Math.floor(film.productionBudget * 0.8);
               
               // Schedule release 2-4 weeks from now
               const releaseOffset = 2 + Math.floor(Math.random() * 3);
