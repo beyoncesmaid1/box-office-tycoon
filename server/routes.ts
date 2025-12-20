@@ -431,7 +431,26 @@ async function hireAITalent(filmId: string, genre: string, aiStudio: any): Promi
     filmUpdateData.castIds = castActorIds;
     filmUpdateData.hasHiredTalent = true;
     filmUpdateData.talentBudget = totalTalentCost;
-    filmUpdateData.totalBudget = (film.totalBudget || 0) + totalTalentCost;
+    
+    // Recalculate marketing budget to include talent costs for AI films
+    // Investment = production + departments + talent
+    const investmentBudget = (film.productionBudget || 0) + 
+      (film.setsBudget || 0) + (film.costumesBudget || 0) + (film.stuntsBudget || 0) + 
+      (film.makeupBudget || 0) + (film.practicalEffectsBudget || 0) + (film.soundCrewBudget || 0) + 
+      totalTalentCost;
+    
+    // For AI films, recalculate marketing as 80-150% of full investment (including talent)
+    const filmStudio = await storage.getStudio(film.studioId);
+    if (filmStudio?.isAI) {
+      const marketingRatio = 0.80 + Math.random() * 0.70; // 80-150%
+      const newMarketingBudget = Math.floor(investmentBudget * marketingRatio);
+      filmUpdateData.marketingBudget = newMarketingBudget;
+      filmUpdateData.totalBudget = investmentBudget + newMarketingBudget;
+      console.log(`[AI-TALENT-HIRED] ${film.title}: talent=$${Math.round(totalTalentCost/1000000)}M, investment=$${Math.round(investmentBudget/1000000)}M, newMarketing=$${Math.round(newMarketingBudget/1000000)}M, ratio=${(marketingRatio*100).toFixed(1)}%`);
+    } else {
+      // Player films: just add talent cost to total
+      filmUpdateData.totalBudget = (film.totalBudget || 0) + totalTalentCost;
+    }
     
     await storage.updateFilm(filmId, filmUpdateData);
     return totalTalentCost;
@@ -3216,10 +3235,11 @@ export async function registerRoutes(
           const releaseWithMarketing = filmReleases.find(r => r.marketingBudget && r.marketingBudget > 0);
           const marketingBudgetAtRelease = releaseWithMarketing?.marketingBudget || film.marketingBudget || 0;
           
-          // Investment budget = production + all department budgets (NOT derived from totalBudget which includes talent)
+          // Investment budget = production + departments + talent (everything except marketing)
           const investmentBudgetAtRelease = (film.productionBudget || 0) + 
             (film.setsBudget || 0) + (film.costumesBudget || 0) + (film.stuntsBudget || 0) + 
-            (film.makeupBudget || 0) + (film.practicalEffectsBudget || 0) + (film.soundCrewBudget || 0);
+            (film.makeupBudget || 0) + (film.practicalEffectsBudget || 0) + (film.soundCrewBudget || 0) +
+            (film.talentBudget || 0);
           
           // Calculate marketing multiplier as ratio of marketing to investment
           const marketingRatio = marketingBudgetAtRelease / (investmentBudgetAtRelease || 1);
