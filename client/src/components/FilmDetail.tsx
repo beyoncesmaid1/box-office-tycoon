@@ -311,11 +311,11 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-sm text-muted-foreground">% of Total Gross</p>
+                <p className="text-sm text-muted-foreground">Legs</p>
                 <p className="text-2xl font-semibold">
-                  {grossStats.worldwideGross > 0 
-                    ? ((grossStats.openingWeekend / grossStats.worldwideGross) * 100).toFixed(1) 
-                    : 0}%
+                  {grossStats.openingWeekend > 0 
+                    ? (grossStats.worldwideGross / grossStats.openingWeekend).toFixed(2) 
+                    : 0}x
                 </p>
               </div>
             </div>
