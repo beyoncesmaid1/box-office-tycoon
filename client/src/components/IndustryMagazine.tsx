@@ -463,9 +463,9 @@ export function IndustryMagazine() {
   const rightColumnStories = columnStories.filter((_, i) => i % 2 === 1);
 
   return (
-    <Card className="overflow-hidden flex flex-col bg-amber-50 dark:bg-stone-900 border-2 border-stone-400 dark:border-stone-600" style={{ maxHeight: '650px' }}>
+    <Card className="overflow-hidden flex flex-col bg-stone-50 dark:bg-slate-900/50 border border-stone-300 dark:border-slate-700" style={{ maxHeight: '650px' }}>
       {/* Newspaper Masthead */}
-      <div className="bg-stone-100 dark:bg-stone-800 border-b-4 border-double border-stone-800 dark:border-stone-400 px-4 py-3 flex-shrink-0">
+      <div className="bg-stone-100 dark:bg-slate-800/80 border-b-2 border-stone-300 dark:border-slate-600 px-4 py-3 flex-shrink-0">
         <div className="text-center">
           <div className="flex items-center justify-center gap-3 mb-1">
             <div className="h-px flex-1 bg-stone-800 dark:bg-stone-400"></div>
