@@ -231,7 +231,11 @@ function UpcomingFilmCard({ film, isYours, studioName }: { film: FilmType; isYou
           
           <div className="flex items-center justify-between text-xs">
             <span className="text-gray-400">Budget</span>
-            <span className="text-white font-medium">{formatMoney((film.totalBudget || 0) - (film.marketingBudget || 0))}</span>
+            <span className="text-white font-medium">{formatMoney(
+              (film.productionBudget || 0) + (film.setsBudget || 0) + (film.costumesBudget || 0) + 
+              (film.stuntsBudget || 0) + (film.makeupBudget || 0) + (film.practicalEffectsBudget || 0) + 
+              (film.soundCrewBudget || 0) + (film.talentBudget || 0)
+            )}</span>
           </div>
         </div>
       </div>
@@ -370,8 +374,12 @@ function HeroBanner({ film, studioName, isYours, onExpand }: { film: FilmType; s
 }
 
 function ExpandedFilmDetail({ film, studioName, onClose }: { film: FilmType; studioName: string; onClose: () => void }) {
-  const budgetExcludingMarketing = (film.totalBudget || 0) - (film.marketingBudget || 0);
-  const profit = film.totalBoxOffice * 0.7 - budgetExcludingMarketing;
+  // Calculate investment budget directly from components (production + departments + talent)
+  const investmentBudget = (film.productionBudget || 0) + 
+    (film.setsBudget || 0) + (film.costumesBudget || 0) + (film.stuntsBudget || 0) + 
+    (film.makeupBudget || 0) + (film.practicalEffectsBudget || 0) + (film.soundCrewBudget || 0) +
+    (film.talentBudget || 0);
+  const profit = film.totalBoxOffice * 0.7 - investmentBudget;
   const isProfitable = profit > 0;
   
   // Fetch talent data for crew/cast display
@@ -705,7 +713,7 @@ function ExpandedFilmDetail({ film, studioName, onClose }: { film: FilmType; stu
                 <div>
                   <p className="text-sm text-muted-foreground">Profit / Loss</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Budget: {formatMoney((film.totalBudget || 0) - (film.marketingBudget || 0))} | Studio Share: 70%
+                    Budget: {formatMoney(investmentBudget)} | Studio Share: 70%
                   </p>
                 </div>
                 <p className={`font-display text-2xl flex items-center gap-2 ${isProfitable ? 'text-green-500' : 'text-red-500'}`}>

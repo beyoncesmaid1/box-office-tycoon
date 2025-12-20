@@ -3241,8 +3241,8 @@ export async function registerRoutes(
             (film.makeupBudget || 0) + (film.practicalEffectsBudget || 0) + (film.soundCrewBudget || 0) +
             (film.talentBudget || 0);
           
-          // Calculate marketing multiplier as ratio of marketing to investment
-          const marketingRatio = marketingBudgetAtRelease / (investmentBudgetAtRelease || 1);
+          // Calculate marketing multiplier as ratio of marketing to investment (capped at 1.0)
+          const marketingRatio = Math.min(1.0, marketingBudgetAtRelease / (investmentBudgetAtRelease || 1));
           const globalMarketingMultiplier = marketingRatio;
           
           // Calculate global weekly box office with quality/genre/decay modifiers
