@@ -2954,17 +2954,18 @@ export async function registerRoutes(
       };
       
       const calculateScores = async (film: typeof saveFilms[0]) => {
-        const qualityBoost = (film.scriptQuality - 80) * 0.35;
-        // Critics have lower base range: 45-60, audiences have higher: 55-72
-        const criticRandomBase = 45 + Math.random() * 15;
+        // Script quality: 70 is average (0 boost), 90 = +7, 50 = -7
+        const qualityBoost = (film.scriptQuality - 70) * 0.35;
+        // Critics base range: 52-65 (more realistic, most films land 50-70%)
+        const criticRandomBase = 52 + Math.random() * 13;
         const audienceRandomBase = 55 + Math.random() * 17;
-        // Critics have more variance (harsher), audiences are more forgiving
-        const hugeCriticSwing = (Math.random() - 0.5) * 28;
+        // Reduced swing variance: ±10 instead of ±14
+        const hugeCriticSwing = (Math.random() - 0.5) * 20;
         const hugeAudienceSwing = (Math.random() - 0.5) * 16;
         
-        // Divisive factor: 15% chance of being a polarizing film that critics either love or hate
-        const isDivisive = Math.random() < 0.15;
-        const divisivePenalty = isDivisive ? (Math.random() - 0.5) * 20 : 0;
+        // Divisive factor: 10% chance of being a polarizing film (reduced from 15%, ±8 instead of ±10)
+        const isDivisive = Math.random() < 0.10;
+        const divisivePenalty = isDivisive ? (Math.random() - 0.5) * 16 : 0;
         
         // Calculate all components
         const castQuality = calculateCastQuality(film, film.genre);
@@ -3920,8 +3921,8 @@ export async function registerRoutes(
               const isReleaseTime = earliestYear < aiNewYear || 
                                     (earliestYear === aiNewYear && earliestWeek <= aiNewWeek);
               if (isReleaseTime) {
-                // Quality boost - threshold 80: only high quality scripts get boost
-                const qualityBoost = (film.scriptQuality - 80) * 0.35;
+                // Quality boost - threshold 70: average scripts = 0 boost
+                const qualityBoost = (film.scriptQuality - 70) * 0.35;
                 
                 // Small random genre preferences (±3 points), heavily overridden by randomness
                 let genreBonus = 0;
@@ -3933,12 +3934,16 @@ export async function registerRoutes(
                 else if (film.genre === 'scifi') { genreBonus = 1; audienceGenreBonus = 2; }
                 else if (film.genre === 'animation') { genreBonus = 2; audienceGenreBonus = 2; }
                 
-                // Massive randomness that dominates everything
-                const randomBase = 55 + Math.random() * 15;  // Increased range: 55-70
-                const hugeCriticSwing = (Math.random() - 0.5) * 20;  // Reduced from ±20 to ±10
-                const hugeAudienceSwing = (Math.random() - 0.5) * 15;  // Reduced from ±15 to ±7.5
+                // Randomness with realistic base range (52-65)
+                const randomBase = 52 + Math.random() * 13;
+                const hugeCriticSwing = (Math.random() - 0.5) * 20;  // ±10
+                const hugeAudienceSwing = (Math.random() - 0.5) * 16;
                 
-                const rawCriticScore = randomBase + hugeCriticSwing + qualityBoost + genreBonus;
+                // 10% chance of divisive film (±8)
+                const isDivisive = Math.random() < 0.10;
+                const divisivePenalty = isDivisive ? (Math.random() - 0.5) * 16 : 0;
+                
+                const rawCriticScore = randomBase + hugeCriticSwing + qualityBoost + genreBonus + divisivePenalty;
                 const rawAudienceScore = randomBase + hugeAudienceSwing + qualityBoost + audienceGenreBonus;
                 
                 const criticScore = Math.min(100, Math.max(20, Math.floor(rawCriticScore)));
