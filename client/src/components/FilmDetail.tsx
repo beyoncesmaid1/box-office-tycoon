@@ -442,7 +442,7 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm text-muted-foreground">Total Budget</p>
+                <p className="text-sm text-muted-foreground">Production Budget</p>
                 <p className="text-xl font-bold">{formatCompactMoney(film.totalBudget || 0)}</p>
               </div>
               {actualMarketingBudget > 0 && (
@@ -453,20 +453,29 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
               )}
               <div className="p-4 bg-muted/50 rounded-lg">
                 <p className="text-sm text-muted-foreground">Total Investment</p>
-                <p className="text-xl font-bold">{formatCompactMoney(grossStats.investmentBudget)}</p>
+                <p className="text-xl font-bold">{formatCompactMoney(film.totalBudget+actualMarketingBudget)}</p>
               </div>
-              <div className={`p-4 rounded-lg ${grossStats.profit >= 0 ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'}`}>
-                <p className="text-sm text-muted-foreground">Profit/Loss</p>
-                <p className={`text-xl font-bold ${grossStats.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {grossStats.profit >= 0 ? '+' : ''}{formatCompactMoney(grossStats.profit)}
-                </p>
-              </div>
-              <div className={`p-4 rounded-lg ${grossStats.roi >= 0 ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'}`}>
-                <p className="text-sm text-muted-foreground">Return on Investment</p>
-                <p className={`text-xl font-bold ${grossStats.roi >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {grossStats.roi >= 0 ? '+' : ''}{grossStats.roi.toFixed(1)}%
-                </p>
-              </div>
+              {(() => {
+                const totalInvestment = (film.totalBudget || 0) + actualMarketingBudget;
+                const profit = film.totalBoxOffice - totalInvestment;
+                const roi = totalInvestment > 0 ? (profit / totalInvestment * 100) : 0;
+                return (
+                  <>
+                    <div className={`p-4 rounded-lg ${profit >= 0 ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'}`}>
+                      <p className="text-sm text-muted-foreground">Profit/Loss</p>
+                      <p className={`text-xl font-bold ${profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {profit >= 0 ? '+' : ''}{formatCompactMoney(profit)}
+                      </p>
+                    </div>
+                    <div className={`p-4 rounded-lg ${roi >= 0 ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'}`}>
+                      <p className="text-sm text-muted-foreground">Return on Investment</p>
+                      <p className={`text-xl font-bold ${roi >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {roi >= 0 ? '+' : ''}{roi.toFixed(1)}%
+                      </p>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </CardContent>
         </Card>
