@@ -32,7 +32,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useGame, formatMoney, genreLabels } from '@/lib/gameState';
-import type { Film, Studio, Talent, AwardNomination } from '@shared/schema';
+import type { Film, Studio, Talent, AwardNomination, FilmRelease } from '@shared/schema';
 
 type SortField = 'worldwide' | 'domestic' | 'international';
 type TimeFilter = 'all-time' | 'yearly';
@@ -102,8 +102,26 @@ export function HollywoodInsider() {
     enabled: !!state.studioId,
   });
 
+  const { data: allReleases = [] } = useQuery<FilmRelease[]>({
+    queryKey: ['/api/all-releases'],
+  });
+
   const studioMap = useMemo(() => new Map(allStudios.map(s => [s.id, s])), [allStudios]);
   const talentMap = useMemo(() => new Map(allTalent.map(t => [t.id, t])), [allTalent]);
+  
+  // Create a map of filmId to marketing budget from releases
+  const marketingBudgetMap = useMemo(() => {
+    const map = new Map<string, number>();
+    allReleases.forEach(release => {
+      if (release.marketingBudget && release.marketingBudget > 0) {
+        // Only set if not already set (first release with marketing budget wins)
+        if (!map.has(release.filmId)) {
+          map.set(release.filmId, release.marketingBudget);
+        }
+      }
+    });
+    return map;
+  }, [allReleases]);
 
   // Get available years for filtering
   const availableYears = useMemo(() => {
@@ -129,7 +147,9 @@ export function HollywoodInsider() {
         const internationalGross = film.totalBoxOffice - domesticGross;
         
         // Use totalBudget which includes all production costs
-        const investmentBudget = (film.totalBudget || 0) + (film.marketingBudget || 0);
+        // For marketing budget, check releases first (for player films), then fall back to film.marketingBudget
+        const marketingBudget = marketingBudgetMap.get(film.id) || film.marketingBudget || 0;
+        const investmentBudget = (film.totalBudget || 0) + marketingBudget;
         
         // Studios get 70% of box office revenue
         const studioRevenue = film.totalBoxOffice * 0.7;

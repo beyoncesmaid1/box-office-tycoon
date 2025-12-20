@@ -4632,6 +4632,16 @@ export async function registerRoutes(
 
   // === FILM RELEASES (TERRITORY-BASED) ROUTES ===
   
+  app.get("/api/all-releases", async (req, res) => {
+    try {
+      const releases = await db.select().from(filmReleases);
+      res.json(releases);
+    } catch (error) {
+      console.error("Error fetching all releases:", error);
+      res.status(500).json({ error: "Failed to fetch all releases" });
+    }
+  });
+  
   app.get("/api/films/:filmId/releases", async (req, res) => {
     try {
       const { filmId } = req.params;
