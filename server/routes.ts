@@ -4482,29 +4482,35 @@ export async function registerRoutes(
       let genreBonus = 0;
       let audienceGenreBonus = 0;
       if (film.genre === 'drama') {
-        genreBonus = 6; // Critics prefer drama
-        audienceGenreBonus = -4;
+        genreBonus = 10; // Critics prefer drama
+        audienceGenreBonus = -5;
       } else if (film.genre === 'action') {
-        genreBonus = -6; // Critics less impressed
-        audienceGenreBonus = 6; // Audience loves action
+        genreBonus = -5; // Critics less impressed
+        audienceGenreBonus = 7; // Audience loves action
       } else if (film.genre === 'comedy') {
-        genreBonus = -2;
-        audienceGenreBonus = 6;
+        genreBonus = -3;
+        audienceGenreBonus = 0;
       } else if (film.genre === 'horror') {
-        genreBonus = -10; // Critics harsh on horror
-        audienceGenreBonus = 4; // Audiences enjoy it more
+        genreBonus = -5; // Critics harsh on horror
+        audienceGenreBonus = 3; // Audiences enjoy it more
       } else if (film.genre === 'scifi') {
-        genreBonus = 2;
+        genreBonus = 0;
         audienceGenreBonus = 4;
       } else if (film.genre === 'animation') {
-        genreBonus = 4;
-        audienceGenreBonus = 4;
+        genreBonus = 0;
+        audienceGenreBonus = 5;
       } else if (film.genre === 'fantasy') {
-        genreBonus = 2;
-        audienceGenreBonus = 6;
+        genreBonus = -3;
+        audienceGenreBonus = 5;
       } else if (film.genre === 'musicals') {
-        genreBonus = 6;
+        genreBonus = 5;
         audienceGenreBonus = 2;
+      } else if (film.genre === 'romance') {
+        genreBonus = -2;
+        audienceGenreBonus = 4;
+      } else if (film.genre === 'thriller') {
+        genreBonus = 2;
+        audienceGenreBonus = 5;
       }
       
       // Randomness reduced - director fame provides variety
