@@ -3697,14 +3697,17 @@ export async function registerRoutes(
       // Execute all studio updates in parallel
       await Promise.all(studioUpdatePromises);
       // AI logic: create and release films (sequential to avoid budget race conditions)
-      for (const {id: aiStudioId, oldStudio: aiStudio, aiNewWeek, aiNewYear, updatedBudget} of aiStudiosWithWeeks) {
-        // AI creates new films every 4 weeks with 75% chance (week 4, 8, 12, 16, etc.)
-        const isMultipleOf4 = aiNewWeek % 4 === 0;
+      for (let studioIndex = 0; studioIndex < aiStudiosWithWeeks.length; studioIndex++) {
+        const {id: aiStudioId, oldStudio: aiStudio, aiNewWeek, aiNewYear, updatedBudget} = aiStudiosWithWeeks[studioIndex];
+        // AI creates new films every 4 weeks with 75% chance
+        // Each studio is offset by its index (0, 1, 2, 3...) to stagger releases across weeks
+        const studioOffset = studioIndex % 4;
+        const isStudioWeek = (aiNewWeek + studioOffset) % 4 === 0;
         const randomRoll = Math.random();
         const meetsRandomChance = randomRoll < 0.75;
         const hasSufficientBudget = updatedBudget > 15000000;
         
-        if (isMultipleOf4 && meetsRandomChance && hasSufficientBudget) {
+        if (isStudioWeek && meetsRandomChance && hasSufficientBudget) {
           const genre = GENRES[Math.floor(Math.random() * GENRES.length)] as keyof typeof filmTitles;
           
           const titleList = filmTitles[genre];
