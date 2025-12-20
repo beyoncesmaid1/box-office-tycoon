@@ -3090,11 +3090,13 @@ export async function registerRoutes(
                 const theaterCount = Math.floor(3500 + (film.productionBudget / 40000000) * 3000);
                 
                 // Create territory releases for AI film so box office simulation works
+                // SAFETY: Only create releases for AI films, never for player films
                 const existingReleases = await storage.getFilmReleasesByFilm(film.id);
-                if (existingReleases.length === 0) {
+                if (existingReleases.length === 0 && filmStudio?.isAI === true) {
                   const allTerritories = BOX_OFFICE_COUNTRIES.map(c => c.code);
                   const firstTerritory = allTerritories[0];
                   const safeMarketingBudget = film.marketingBudget || Math.floor(film.productionBudget * 0.8);
+                  console.log(`[AI-AUTO-RELEASE] ${film.title} - Creating releases for all ${allTerritories.length} territories`);
                   
                   await Promise.all(allTerritories.map(territory => 
                     storage.createFilmRelease({
