@@ -3759,6 +3759,8 @@ export async function registerRoutes(
             : investmentBudget * (0.50 + Math.random() * 0.25); // 50-75%
           
           const totalCost = prodBudget + marketBudget + departmentBudgetTotal;
+          const marketingRatioAtCreation = marketBudget / investmentBudget;
+          console.log(`[AI-FILM-CREATE] ${title} (${genre}): prod=$${Math.round(prodBudget/1000000)}M, depts=$${Math.round(departmentBudgetTotal/1000000)}M, investment=$${Math.round(investmentBudget/1000000)}M, marketing=$${Math.round(marketBudget/1000000)}M, ratio=${(marketingRatioAtCreation*100).toFixed(1)}%`);
 
           if (aiStudio.budget >= totalCost) {
             // Generate phase durations based on genre and production needs
