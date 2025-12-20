@@ -3324,12 +3324,25 @@ export async function registerRoutes(
             if (!lastWeekGross || isNaN(lastWeekGross)) {
               globalWeeklyGross = 0;
             } else {
-              // Simple audience score-based decay system with boost for good scores
-              // Formula: hold = (audienceScore / 100) * 0.85 for scores 70+, 0.75 for scores below 70
-              // 50% → 37.5% hold, 60% → 45%, 70% → 59.5%, 80% → 68%, 90% → 76.5%
+              // Week-based decay with audience score modifiers
               const audienceScore = (film.audienceScore || 7) * 10; // Convert to 0-100 scale
               const coefficient = audienceScore >= 70 ? 0.85 : 0.75;
-              let hold = (audienceScore / 100) * coefficient;
+              let baseHold = (audienceScore / 100) * coefficient;
+              
+              // Week-based decay: films drop faster in later weeks
+              const weekNumber = actualWeeksOut + 1; // Current week (1-indexed)
+              let weekDecayMultiplier = 1.0;
+              if (weekNumber <= 3) {
+                weekDecayMultiplier = 1.0; // Weeks 1-3: normal hold
+              } else if (weekNumber <= 6) {
+                weekDecayMultiplier = 0.90; // Weeks 4-6: 10% faster drop
+              } else if (weekNumber <= 12) {
+                weekDecayMultiplier = 0.80; // Weeks 7-12: 20% faster drop
+              } else {
+                weekDecayMultiplier = 0.70; // Weeks 13+: 30% faster drop
+              }
+              
+              let hold = baseHold * weekDecayMultiplier;
               
               // Check if film is on a streaming service - apply faster decay
               const filmStreamingDeals = await storage.getStreamingDealsByFilm(film.id);
@@ -3339,8 +3352,8 @@ export async function registerRoutes(
                 hold = hold * 0.70; // Reduce hold by 30%
               }
               
-              // Apply ±10% randomness
-              const randomMultiplier = 1 + (Math.random() - 0.5) * 0.20;
+              // Apply ±15% randomness (increased from 10%)
+              const randomMultiplier = 1 + (Math.random() - 0.5) * 0.30;
               hold = hold * randomMultiplier;
               
               // Bound hold between 15% and 85% (lower minimum for streaming films)
@@ -3519,15 +3532,28 @@ export async function registerRoutes(
           
           const lastWeek = film.weeklyBoxOffice[film.weeklyBoxOffice.length - 1];
           
-          // Simple audience score-based decay system with boost for good scores
-          // Formula: hold = (audienceScore / 100) * 0.85 for scores 70+, 0.75 for scores below 70
-          // 50% → 37.5% hold, 60% → 45%, 70% → 59.5%, 80% → 68%, 90% → 76.5%
+          // Week-based decay with audience score modifiers
           const audienceScore = (film.audienceScore || 7) * 10; // Convert to 0-100 scale
           const coefficient = audienceScore >= 70 ? 0.85 : 0.75;
-          let hold = (audienceScore / 100) * coefficient;
+          let baseHold = (audienceScore / 100) * coefficient;
           
-          // Apply ±10% randomness
-          const randomMultiplier = 1 + (Math.random() - 0.5) * 0.20;
+          // Week-based decay: films drop faster in later weeks
+          const weekNumber = film.weeklyBoxOffice.length + 1; // Current week (1-indexed)
+          let weekDecayMultiplier = 1.0;
+          if (weekNumber <= 3) {
+            weekDecayMultiplier = 1.0; // Weeks 1-3: normal hold
+          } else if (weekNumber <= 6) {
+            weekDecayMultiplier = 0.90; // Weeks 4-6: 10% faster drop
+          } else if (weekNumber <= 12) {
+            weekDecayMultiplier = 0.80; // Weeks 7-12: 20% faster drop
+          } else {
+            weekDecayMultiplier = 0.70; // Weeks 13+: 30% faster drop
+          }
+          
+          let hold = baseHold * weekDecayMultiplier;
+          
+          // Apply ±15% randomness (increased from 10%)
+          const randomMultiplier = 1 + (Math.random() - 0.5) * 0.30;
           hold = hold * randomMultiplier;
           
           // Bound hold between 20% and 85%
