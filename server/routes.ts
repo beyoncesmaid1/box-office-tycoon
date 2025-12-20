@@ -2330,8 +2330,11 @@ export async function registerRoutes(
             const departmentBudgetTotal = setsBudget + costumesBudget + stuntsBudget + makeupBudget + practicalEffectsBudget + soundCrewBudget;
             
             // Calculate marketing budget based on total investment budget (production + departments)
+            // 75% chance: 75-150% of investment, 25% chance: 50-75% of investment
             const investmentBudget = prodBudget + departmentBudgetTotal;
-            const marketBudget = investmentBudget * (0.75 + Math.random() * 0.75);
+            const marketBudget = Math.random() < 0.75 
+              ? investmentBudget * (0.75 + Math.random() * 0.75)  // 75-150%
+              : investmentBudget * (0.50 + Math.random() * 0.25); // 50-75%
             
             const totalCost = prodBudget + marketBudget + departmentBudgetTotal;
 
@@ -3773,7 +3776,10 @@ export async function registerRoutes(
             prodBudget = 8000000 + Math.random() * 52000000; // 8M-60M (default)
           }
           
-          const marketBudget = prodBudget * (0.75 + Math.random() * 0.75);
+          // 75% chance: 75-150% of production, 25% chance: 50-75% of production
+          const marketBudget = Math.random() < 0.75 
+            ? prodBudget * (0.75 + Math.random() * 0.75)  // 75-150%
+            : prodBudget * (0.50 + Math.random() * 0.25); // 50-75%
           
           // Roll department budgets based on genre and production budget
           const setsBudget = prodBudget * (0.08 + Math.random() * 0.12); // 8-20%
