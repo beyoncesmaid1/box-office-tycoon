@@ -375,9 +375,21 @@ export function HollywoodInsider() {
 
         {/* Box Office Charts Tab */}
         <TabsContent value="box-office" className="space-y-4">
-          {/* Filters */}
+          {/* Search and Filters */}
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="pt-6 space-y-4">
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search films by title, studio, or director..."
+                  value={filmSearchQuery}
+                  onChange={(e) => setFilmSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+
+              {/* Filters and Sort */}
               <div className="flex flex-wrap gap-4 items-center">
                 <div className="flex items-center gap-2">
                   <Filter className="w-4 h-4 text-muted-foreground" />
@@ -623,9 +635,21 @@ export function HollywoodInsider() {
 
         {/* Talent Profiles Tab */}
         <TabsContent value="talent" className="space-y-4">
-          {/* Talent Filters */}
+          {/* Search and Filters */}
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="pt-6 space-y-4">
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search talent by name..."
+                  value={talentSearchQuery}
+                  onChange={(e) => setTalentSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+
+              {/* Filters and Sort */}
               <div className="flex flex-wrap gap-4 items-center">
                 <div className="flex items-center gap-2">
                   <Filter className="w-4 h-4 text-muted-foreground" />
