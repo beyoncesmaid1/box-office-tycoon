@@ -109,8 +109,13 @@ export function HollywoodInsider() {
     fetch('/api/all-releases')
       .then(res => res.json())
       .then(releases => {
-        console.log('Fetched releases:', releases);
-        setAllReleases(releases);
+        // Ensure we have an array
+        if (Array.isArray(releases)) {
+          setAllReleases(releases);
+        } else {
+          console.error('Releases is not an array:', releases);
+          setAllReleases([]);
+        }
       })
       .catch(err => {
         console.error('Error fetching releases:', err);
