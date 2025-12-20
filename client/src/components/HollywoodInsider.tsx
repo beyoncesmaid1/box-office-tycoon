@@ -128,17 +128,12 @@ export function HollywoodInsider() {
           Math.floor(film.totalBoxOffice * 0.4); // Default 40% domestic
         const internationalGross = film.totalBoxOffice - domesticGross;
         
-        const investmentBudget = (film.productionBudget || 0) + 
-          (film.talentBudget || 0) + 
-          (film.setsBudget || 0) + 
-          (film.costumesBudget || 0) + 
-          (film.stuntsBudget || 0) + 
-          (film.makeupBudget || 0) + 
-          (film.practicalEffectsBudget || 0) + 
-          (film.soundCrewBudget || 0) +
-          (film.marketingBudget || 0);
+        // Use totalBudget which includes all production costs
+        const investmentBudget = (film.totalBudget || 0) + (film.marketingBudget || 0);
         
-        const profit = film.totalBoxOffice - investmentBudget;
+        // Studios get 70% of box office revenue
+        const studioRevenue = film.totalBoxOffice * 0.7;
+        const profit = studioRevenue - investmentBudget;
         const roi = investmentBudget > 0 ? (profit / investmentBudget) * 100 : 0;
 
         return {
