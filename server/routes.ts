@@ -3213,14 +3213,19 @@ export async function registerRoutes(
           // Marketing budget is stored only on ONE release (global budget, not per-territory)
           // Find the release with the actual marketing budget, don't assume it's the first one
           const releaseWithMarketing = filmReleases.find(r => r.marketingBudget && r.marketingBudget > 0);
-          const marketingBudgetAtRelease = releaseWithMarketing?.marketingBudget || film.marketingBudget || 0;
+          // Use release marketing, then film marketing, then default to 80% of production as fallback
+          const productionBudget = film.productionBudget || filmReleases[0].productionBudget || 0;
+          const marketingBudgetAtRelease = releaseWithMarketing?.marketingBudget || film.marketingBudget || Math.floor(productionBudget * 0.8);
           
           // Investment budget = totalBudget MINUS marketing (totalBudget includes marketing)
           // This gives us the production investment shown in UI
           const investmentBudgetAtRelease = (film.totalBudget || film.productionBudget || 0) - marketingBudgetAtRelease;
           
+          // If investment budget is negative or zero (marketing > totalBudget), use production budget directly
+          const safeInvestmentBudget = investmentBudgetAtRelease > 0 ? investmentBudgetAtRelease : productionBudget;
+          
           // Calculate marketing multiplier as ratio of marketing to production investment
-          const marketingRatio = marketingBudgetAtRelease / (investmentBudgetAtRelease || 1);
+          const marketingRatio = marketingBudgetAtRelease / (safeInvestmentBudget || 1);
           const globalMarketingMultiplier = marketingRatio;
           
           // Calculate global weekly box office with quality/genre/decay modifiers
@@ -3261,8 +3266,8 @@ export async function registerRoutes(
             const marketingMultiplier = globalMarketingMultiplier;
             const audienceBoost = getAudienceMultiplier(film.audienceScore || 7);
             
-            // Investment budget = totalBudget minus marketing
-            let investmentBudget = investmentBudgetAtRelease;
+            // Investment budget = totalBudget minus marketing (use safe value)
+            let investmentBudget = safeInvestmentBudget;
             
             // Production budget is a one-time GLOBAL cost, not split per territory
             // Use full investment budget for all territory opening calculations
