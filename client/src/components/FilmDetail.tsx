@@ -120,15 +120,8 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
     const domesticPercent = film.totalBoxOffice > 0 ? (domesticGross / film.totalBoxOffice * 100).toFixed(1) : '0';
     const intlPercent = film.totalBoxOffice > 0 ? (internationalGross / film.totalBoxOffice * 100).toFixed(1) : '0';
     
-    const investmentBudget = (film.productionBudget || 0) + 
-      (film.talentBudget || 0) + 
-      (film.setsBudget || 0) + 
-      (film.costumesBudget || 0) + 
-      (film.stuntsBudget || 0) + 
-      (film.makeupBudget || 0) + 
-      (film.practicalEffectsBudget || 0) + 
-      (film.soundCrewBudget || 0) +
-      (film.marketingBudget || 0);
+    // Use totalBudget which includes all production costs + marketing
+    const investmentBudget = film.totalBudget || 0;
     
     const profit = film.totalBoxOffice - investmentBudget;
     const roi = investmentBudget > 0 ? (profit / investmentBudget * 100) : 0;
