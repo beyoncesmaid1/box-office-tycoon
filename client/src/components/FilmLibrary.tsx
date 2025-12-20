@@ -199,14 +199,8 @@ export function FilmLibrary() {
         })
         .catch(() => setStreamingRevenue(0));
       
-      fetch(`/api/films/${selectedFilm.id}/releases`)
-        .then(res => res.json())
-        .then(releases => {
-          const releaseWithMarketing = releases.find((r: any) => r.marketingBudget && r.marketingBudget > 0);
-          const marketingFromReleases = releaseWithMarketing?.marketingBudget || 0;
-          setActualMarketingBudget(marketingFromReleases || selectedFilm.marketingBudget || 0);
-        })
-        .catch(() => setActualMarketingBudget(selectedFilm.marketingBudget || 0));
+      // Use the film's marketing budget directly
+      setActualMarketingBudget(selectedFilm.marketingBudget || 0);
     } else {
       setStreamingRevenue(0);
       setActualMarketingBudget(0);
@@ -548,7 +542,7 @@ export function FilmLibrary() {
 
                   <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
                     <div>
-                      <p className="text-sm text-muted-foreground">Total Budget</p>
+                      <p className="text-sm text-muted-foreground">Production Budget</p>
                       <p className="font-medium">{formatMoney(selectedFilm.totalBudget)}</p>
                     </div>
                     <div>
