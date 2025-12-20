@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Clock, Users, DollarSign, Loader2, Calendar, Globe, UserPlus, Film, Zap } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Clock, Users, DollarSign, Loader2, Calendar, Globe, UserPlus, Film, Zap, Edit2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -52,6 +53,11 @@ function ProjectCard({ film, currentWeek = 1, currentYear = 2025 }: ProjectCardP
   const [showHireTalentModal, setShowHireTalentModal] = useState(false);
   const [showEditPostModal, setShowEditPostModal] = useState(false);
   const [isCreatingSequel, setIsCreatingSequel] = useState(false);
+  const [showRenameModal, setShowRenameModal] = useState(false);
+  const [newTitle, setNewTitle] = useState(film.title);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   
   // Fetch territory releases for this film
   const { data: releases = [] } = useQuery<FilmRelease[]>({
@@ -71,6 +77,44 @@ function ProjectCard({ film, currentWeek = 1, currentYear = 2025 }: ProjectCardP
   const isDevelopmentComplete = (film.phase === 'awaiting-greenlight' || film.phase === 'pre-production') && !film.hasHiredTalent;
   const isProductionComplete = film.phase === 'filmed' && !film.hasEditedPostProduction;
   const isReleased = film.phase === 'released';
+  const canRename = !isReleased && film.phase !== 'awaiting-release';
+
+  const handleRename = async () => {
+    if (!newTitle.trim() || newTitle === film.title) {
+      setShowRenameModal(false);
+      return;
+    }
+    
+    setIsRenaming(true);
+    try {
+      const res = await fetch(`/api/films/${film.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: newTitle.trim() })
+      });
+      
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to rename film');
+      }
+      
+      toast({
+        title: 'Film Renamed',
+        description: `Successfully renamed to "${newTitle.trim()}"`,
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['/api/films'] });
+      setShowRenameModal(false);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsRenaming(false);
+    }
+  };
   
   const createSequel = async () => {
     setIsCreatingSequel(true);
@@ -127,9 +171,24 @@ function ProjectCard({ film, currentWeek = 1, currentYear = 2025 }: ProjectCardP
       <CardHeader className="pb-3 gap-2">
         <div className="flex items-start justify-between flex-wrap gap-2">
           <div className="flex-1 min-w-0">
-            <CardTitle className="text-lg truncate" data-testid={`text-project-title-${film.id}`}>
-              {film.title}
-            </CardTitle>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-lg truncate" data-testid={`text-project-title-${film.id}`}>
+                {film.title}
+              </CardTitle>
+              {canRename && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0"
+                  onClick={() => {
+                    setNewTitle(film.title);
+                    setShowRenameModal(true);
+                  }}
+                >
+                  <Edit2 className="w-3 h-3" />
+                </Button>
+              )}
+            </div>
             <div className="flex flex-wrap items-center gap-2 mt-2">
               <Badge variant="secondary" className={genreColors[film.genre as keyof typeof genreColors]}>
                 {genreLabels[film.genre as keyof typeof genreLabels]}
@@ -271,6 +330,45 @@ function ProjectCard({ film, currentWeek = 1, currentYear = 2025 }: ProjectCardP
         open={showCastingModal}
         onOpenChange={setShowCastingModal}
       />
+      
+      <Dialog open={showRenameModal} onOpenChange={setShowRenameModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename Film</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="film-title">Film Title</Label>
+              <Input
+                id="film-title"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                placeholder="Enter new film title"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleRename();
+                  }
+                }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRenameModal(false)} disabled={isRenaming}>
+              Cancel
+            </Button>
+            <Button onClick={handleRename} disabled={isRenaming || !newTitle.trim()}>
+              {isRenaming ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Renaming...
+                </>
+              ) : (
+                'Rename'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       
       {showHireTalentModal && (
         <HireTalentModal
