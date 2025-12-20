@@ -2976,7 +2976,7 @@ export async function registerRoutes(
         const rawCriticScore = randomBase + hugeCriticSwing + qualityBoost + genreBonus + 
                               directorImpact.criticScore + budgetImpact + vfxImpact + castQuality.criticScore + divisivePenalty;
         const rawAudienceScore = randomBase + hugeAudienceSwing + qualityBoost + audienceGenreBonus + 
-                               directorImpact.audienceScore + budgetImpact + vfxImpact + castQuality.audienceScore;
+                               directorImpact.audienceScore + budgetImpact + vfxImpact + castQuality.audienceScore + 10;
         
         const criticBreakdown = {
           randomBase: Math.round(randomBase * 100) / 100,
