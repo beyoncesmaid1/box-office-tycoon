@@ -3485,7 +3485,7 @@ export async function registerRoutes(
             const globalWeeklyGross = Math.round(clampedInvestmentBudget2 * randomFactor * marketingMultiplier * 
               qualityModifier * genreMultiplier * audienceBoost * sequelBoost * holidayModifier);
             
-            console.log(`[OPENING-NO-RELEASES] ${film.title} (${film.genre}): investBudget=${Math.round(investmentBudget)}, random=${randomFactor.toFixed(2)}, marketing=${marketingMultiplier.toFixed(2)}, quality=${qualityModifier.toFixed(2)}, genre=${genreMultiplier}, audience=${audienceBoost.toFixed(2)}, sequelBoost=${sequelBoost.toFixed(2)}, holidayMod=${holidayModifier.toFixed(2)}${holiday ? ` (${holiday.name})` : ''}, GROSS=${globalWeeklyGross}`);
+            console.log(`[OPENING-NO-RELEASES] ${film.title} (${film.genre}): investBudget=${Math.round(investmentBudget)}, marketingBudget=${film.marketingBudget}, marketingMult=${marketingMultiplier.toFixed(2)}, random=${randomFactor.toFixed(2)}, quality=${qualityModifier.toFixed(2)}, genre=${genreMultiplier}, audience=${audienceBoost.toFixed(2)}, sequelBoost=${sequelBoost.toFixed(2)}, holidayMod=${holidayModifier.toFixed(2)}${holiday ? ` (${holiday.name})` : ''}, GROSS=${globalWeeklyGross}`);
             
             const newWeeklyBoxOffice = [globalWeeklyGross];
             const newTotalBoxOffice = globalWeeklyGross;
