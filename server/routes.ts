@@ -3213,16 +3213,18 @@ export async function registerRoutes(
           // Marketing budget is stored only on ONE release (global budget, not per-territory)
           // Find the release with the actual marketing budget, don't assume it's the first one
           const releaseWithMarketing = filmReleases.find(r => r.marketingBudget && r.marketingBudget > 0);
-          // Use release marketing, then film marketing, then default to 80% of production as fallback
           const productionBudget = film.productionBudget || filmReleases[0].productionBudget || 0;
-          const marketingBudgetAtRelease = releaseWithMarketing?.marketingBudget || film.marketingBudget || Math.floor(productionBudget * 0.8);
+          
+          // Get raw marketing from releases or film
+          let rawMarketing = releaseWithMarketing?.marketingBudget || film.marketingBudget || 0;
           
           // Investment budget = totalBudget MINUS marketing (totalBudget includes marketing)
-          // This gives us the production investment shown in UI
-          const investmentBudgetAtRelease = (film.totalBudget || film.productionBudget || 0) - marketingBudgetAtRelease;
-          
-          // If investment budget is negative or zero (marketing > totalBudget), use production budget directly
+          const investmentBudgetAtRelease = (film.totalBudget || film.productionBudget || 0) - rawMarketing;
           const safeInvestmentBudget = investmentBudgetAtRelease > 0 ? investmentBudgetAtRelease : productionBudget;
+          
+          // If marketing ratio is below 50%, use 80% fallback (fixes AI films with low marketing)
+          const rawRatio = rawMarketing / (safeInvestmentBudget || 1);
+          const marketingBudgetAtRelease = rawRatio < 0.5 ? Math.floor(safeInvestmentBudget * 0.8) : rawMarketing;
           
           // Calculate marketing multiplier as ratio of marketing to production investment
           const marketingRatio = marketingBudgetAtRelease / (safeInvestmentBudget || 1);
