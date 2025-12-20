@@ -515,8 +515,7 @@ export function HollywoodInsider() {
                       <th className="py-3 px-2 text-right">Domestic</th>
                       <th className="py-3 px-2 text-right">International</th>
                       <th className="py-3 px-2 text-right font-semibold">Worldwide</th>
-                      <th className="py-3 px-2 text-right">Budget</th>
-                      <th className="py-3 px-2 text-right">ROI</th>
+                      <th className="py-3 px-2 text-right">Production Budget</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -556,16 +555,11 @@ export function HollywoodInsider() {
                         <td className="py-3 px-2 text-right font-mono text-sm text-muted-foreground">
                           {formatCompactMoney(film.totalBudget || 0)}
                         </td>
-                        <td className="py-3 px-2 text-right">
-                          <span className={`font-mono text-sm ${film.roi >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                            {film.roi >= 0 ? '+' : ''}{film.roi.toFixed(0)}%
-                          </span>
-                        </td>
                       </tr>
                     ))}
                     {filteredFilms.length === 0 && (
                       <tr>
-                        <td colSpan={9} className="py-8 text-center text-muted-foreground">
+                        <td colSpan={8} className="py-8 text-center text-muted-foreground">
                           No films match the current filters
                         </td>
                       </tr>
