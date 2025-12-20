@@ -4478,33 +4478,33 @@ export async function registerRoutes(
       // Budget quality boost - higher budgets tend to have better production value, but don't guarantee high scores
       const budgetQualityBoost = Math.max(-1, (budgetFactor - 0.5) * 2); // -1 to +1, not cumulative with other factors
       
-      // Small random genre preferences (±3 points), heavily overridden by randomness
+      // Genre preferences - doubled for more pronounced effects
       let genreBonus = 0;
       let audienceGenreBonus = 0;
       if (film.genre === 'drama') {
-        genreBonus = 3; // Critics prefer drama
-        audienceGenreBonus = -2;
+        genreBonus = 6; // Critics prefer drama
+        audienceGenreBonus = -4;
       } else if (film.genre === 'action') {
-        genreBonus = -3; // Critics less impressed
-        audienceGenreBonus = 3; // Audience loves action
+        genreBonus = -6; // Critics less impressed
+        audienceGenreBonus = 6; // Audience loves action
       } else if (film.genre === 'comedy') {
-        genreBonus = -1;
-        audienceGenreBonus = 3;
+        genreBonus = -2;
+        audienceGenreBonus = 6;
       } else if (film.genre === 'horror') {
-        genreBonus = -5; // Critics harsh on horror
-        audienceGenreBonus = 2; // Audiences enjoy it more
+        genreBonus = -10; // Critics harsh on horror
+        audienceGenreBonus = 4; // Audiences enjoy it more
       } else if (film.genre === 'scifi') {
-        genreBonus = 1;
-        audienceGenreBonus = 2;
-      } else if (film.genre === 'animation') {
         genreBonus = 2;
-        audienceGenreBonus = 2;
+        audienceGenreBonus = 4;
+      } else if (film.genre === 'animation') {
+        genreBonus = 4;
+        audienceGenreBonus = 4;
       } else if (film.genre === 'fantasy') {
-        genreBonus = 1;
-        audienceGenreBonus = 3;
+        genreBonus = 2;
+        audienceGenreBonus = 6;
       } else if (film.genre === 'musicals') {
-        genreBonus = 3;
-        audienceGenreBonus = 1;
+        genreBonus = 6;
+        audienceGenreBonus = 2;
       }
       
       // Randomness reduced - director fame provides variety
