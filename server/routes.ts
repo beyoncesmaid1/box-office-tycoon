@@ -2212,10 +2212,10 @@ export async function registerRoutes(
           const lastWeek = film.weeklyBoxOffice[film.weeklyBoxOffice.length - 1];
           
           // Simple audience score-based decay system
-          // Formula: hold = (audienceScore / 100) * 0.90
-          // 50% → 45% hold → 1.8x legs, 60% → 54% → 2.2x, 70% → 63% → 2.7x, 80% → 72% → 3.6x, 90% → 81% → 5.3x
+          // Formula: hold = (audienceScore / 100) * 0.75
+          // 50% → 37.5% hold → 1.6x legs, 60% → 45% → 1.8x, 70% → 52.5% → 2.1x, 80% → 60% → 2.5x, 90% → 67.5% → 3.1x
           const audienceScore = (film.audienceScore || 7) * 10; // Convert to 0-100 scale
-          let hold = (audienceScore / 100) * 0.90;
+          let hold = (audienceScore / 100) * 0.75;
           
           // Apply ±15% randomness
           const randomMultiplier = 1 + (Math.random() - 0.5) * 0.30;
@@ -3326,10 +3326,10 @@ export async function registerRoutes(
               globalWeeklyGross = 0;
             } else {
               // Simple audience score-based decay system
-              // Formula: hold = (audienceScore / 100) * 0.90
-              // 50% → 45% hold → 1.8x legs, 60% → 54% → 2.2x, 70% → 63% → 2.7x, 80% → 72% → 3.6x, 90% → 81% → 5.3x
+              // Formula: hold = (audienceScore / 100) * 0.75
+              // 50% → 37.5% hold → 1.6x legs, 60% → 45% → 1.8x, 70% → 52.5% → 2.1x, 80% → 60% → 2.5x, 90% → 67.5% → 3.1x
               const audienceScore = (film.audienceScore || 7) * 10; // Convert to 0-100 scale
-              let hold = (audienceScore / 100) * 0.90;
+              let hold = (audienceScore / 100) * 0.75;
               
               // Check if film is on a streaming service - apply faster decay
               const filmStreamingDeals = await storage.getStreamingDealsByFilm(film.id);
@@ -3520,10 +3520,10 @@ export async function registerRoutes(
           const lastWeek = film.weeklyBoxOffice[film.weeklyBoxOffice.length - 1];
           
           // Simple audience score-based decay system
-          // Formula: hold = (audienceScore / 100) * 0.90
-          // 50% → 45% hold → 1.8x legs, 60% → 54% → 2.2x, 70% → 63% → 2.7x, 80% → 72% → 3.6x, 90% → 81% → 5.3x
+          // Formula: hold = (audienceScore / 100) * 0.75
+          // 50% → 37.5% hold → 1.6x legs, 60% → 45% → 1.8x, 70% → 52.5% → 2.1x, 80% → 60% → 2.5x, 90% → 67.5% → 3.1x
           const audienceScore = (film.audienceScore || 7) * 10; // Convert to 0-100 scale
-          let hold = (audienceScore / 100) * 0.90;
+          let hold = (audienceScore / 100) * 0.75;
           
           // Apply ±15% randomness
           const randomMultiplier = 1 + (Math.random() - 0.5) * 0.30;
