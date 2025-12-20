@@ -146,9 +146,15 @@ function FilmCard({ film, rank, isYours, studioName, showWeeklyChange = true, is
           <div className="pt-1">
             <div className="flex items-center justify-between">
               <span className="text-xs text-gray-400">Total Gross</span>
-              <div className="flex items-center gap-1">
-                <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                <span className="text-xs text-gray-300">{film.audienceScore.toFixed(1)}</span>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-0.5" title="Critic Score">
+                  <span className="text-xs">🍅</span>
+                  <span className="text-xs text-gray-300">{film.criticScore || 0}%</span>
+                </div>
+                <div className="flex items-center gap-0.5" title="Audience Score">
+                  <span className="text-xs">🍿</span>
+                  <span className="text-xs text-gray-300">{Math.round((film.audienceScore || 0) * 10)}%</span>
+                </div>
               </div>
             </div>
             <p className="font-display text-2xl text-primary">{formatMoney(displayGross)}</p>
