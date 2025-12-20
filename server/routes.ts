@@ -7,6 +7,8 @@ import { registerMultiplayerRoutes } from "./multiplayer-routes";
 import { 
   distributeBoxOfficeByCountry, 
   distributeBoxOfficeToTerritories,
+  distributeBoxOfficeWithFixedPercentages,
+  generateTerritoryPercentages,
   BOX_OFFICE_COUNTRIES,
   getTerritoryBasePercentage,
   getCountryName
@@ -3351,8 +3353,13 @@ export async function registerRoutes(
           // Round box office to nearest dollar (database expects integers)
           globalWeeklyGross = Math.round(globalWeeklyGross);
           
-          // Distribute global box office to territories by percentage
-          const weeklyByCountry = globalWeeklyGross > 0 ? distributeBoxOfficeByCountry(globalWeeklyGross) : {};
+          // Distribute global box office to territories using fixed percentages
+          // Use stored percentages if available, otherwise generate new ones (first week)
+          let territoryPcts = film.territoryPercentages as Record<string, number> | null;
+          if (!territoryPcts || Object.keys(territoryPcts).length === 0) {
+            territoryPcts = generateTerritoryPercentages();
+          }
+          const weeklyByCountry = globalWeeklyGross > 0 ? distributeBoxOfficeWithFixedPercentages(globalWeeklyGross, territoryPcts) : {};
           const releaseUpdatePromises: Promise<any>[] = [];
           
           for (const release of filmReleases) {
@@ -3385,12 +3392,18 @@ export async function registerRoutes(
             newTotalByCountry[country] = (newTotalByCountry[country] || 0) + Math.round(amount || 0);
           }
           
-          boxOfficeUpdatePromises.push(storage.updateFilm(film.id, {
+          // Include territoryPercentages in update if this is the first week (to store them)
+          const filmUpdate: any = {
             weeklyBoxOffice: newWeeklyBoxOffice,
             weeklyBoxOfficeByCountry: newWeeklyByCountry,
             totalBoxOffice: newTotalBoxOffice,
             totalBoxOfficeByCountry: newTotalByCountry,
-          }));
+          };
+          // Store territory percentages on first week so they stay fixed
+          if (!film.territoryPercentages || Object.keys(film.territoryPercentages as object).length === 0) {
+            filmUpdate.territoryPercentages = territoryPcts;
+          }
+          boxOfficeUpdatePromises.push(storage.updateFilm(film.id, filmUpdate));
           
           // Only credit studio if there's actual earnings
           if (globalWeeklyGross > 0) {
@@ -3474,7 +3487,9 @@ export async function registerRoutes(
             
             const newWeeklyBoxOffice = [globalWeeklyGross];
             const newTotalBoxOffice = globalWeeklyGross;
-            const weeklyByCountry = globalWeeklyGross > 0 ? distributeBoxOfficeByCountry(globalWeeklyGross) : {};
+            // Generate and store fixed territory percentages for this film's first week
+            const aiTerritoryPcts = generateTerritoryPercentages();
+            const weeklyByCountry = globalWeeklyGross > 0 ? distributeBoxOfficeWithFixedPercentages(globalWeeklyGross, aiTerritoryPcts) : {};
             const newWeeklyByCountry = [weeklyByCountry];
             
             const newTotalByCountry: Record<string, number> = {};
@@ -3487,6 +3502,7 @@ export async function registerRoutes(
               weeklyBoxOfficeByCountry: newWeeklyByCountry,
               totalBoxOffice: newTotalBoxOffice,
               totalBoxOfficeByCountry: newTotalByCountry,
+              territoryPercentages: aiTerritoryPcts,
             }));
             
             // Credit studio if there's earnings
@@ -3521,7 +3537,11 @@ export async function registerRoutes(
           // Always record weekly box office (even if $0) so week count advances properly
           const newWeeklyBoxOffice = [...film.weeklyBoxOffice, newGross];
           const newTotalBoxOffice = film.totalBoxOffice + newGross;
-          const weeklyByCountry = distributeBoxOfficeByCountry(newGross);
+          // Use stored territory percentages (should already exist from first week)
+          const aiStoredPcts = film.territoryPercentages as Record<string, number> | null;
+          const weeklyByCountry = (newGross > 0 && aiStoredPcts && Object.keys(aiStoredPcts).length > 0) 
+            ? distributeBoxOfficeWithFixedPercentages(newGross, aiStoredPcts) 
+            : {};
           const newWeeklyByCountry = [...(Array.isArray(film.weeklyBoxOfficeByCountry) ? film.weeklyBoxOfficeByCountry : []), weeklyByCountry];
           
           const newTotalByCountry = { ...(typeof film.totalBoxOfficeByCountry === 'object' && film.totalBoxOfficeByCountry !== null ? film.totalBoxOfficeByCountry as Record<string, number> : {}) };
