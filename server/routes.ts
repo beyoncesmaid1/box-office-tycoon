@@ -3321,7 +3321,7 @@ export async function registerRoutes(
               qualityModifier * genreMultiplier * audienceBoost * sequelBoost * holidayModifier;
             
             console.log(`[OPENING-WEEKEND] ${film.title} (${film.genre}):
-  investmentBudget=$${Math.round(investmentBudget/1000000)}M, clamped=$${Math.round(clampedInvestmentBudget1/1000000)}M
+  investmentBudget=$${Math.round(investmentBudget/1000000)}M, clamped=$${Math.round(clampedInvestmentBudget1/1000000)}M, marketingBudget=$${Math.round((film.marketingBudget || 0)/1000000)}M
   randomLuck=${randomLuck.toFixed(3)}, marketingMult=${marketingMultiplier.toFixed(3)}, qualityMod=${qualityModifier.toFixed(3)}
   genreMult=${genreMultiplier}, audienceBoost=${audienceBoost.toFixed(3)}, sequelBoost=${sequelBoost.toFixed(3)}, holidayMod=${holidayModifier.toFixed(3)}
   CALCULATION: $${Math.round(clampedInvestmentBudget1/1000000)}M × ${randomLuck.toFixed(2)} × ${marketingMultiplier.toFixed(2)} × ${qualityModifier.toFixed(2)} × ${genreMultiplier} × ${audienceBoost.toFixed(2)} × ${sequelBoost.toFixed(2)} × ${holidayModifier.toFixed(2)} = $${Math.round(globalWeeklyGross/1000000)}M`);
