@@ -17,7 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useGame, formatMoney, genreLabels } from '@/lib/gameState';
-import type { Film, Studio, Talent, AwardNomination } from '@shared/schema';
+import type { Film, Studio, Talent, AwardNomination, FilmRole } from '@shared/schema';
 
 interface FilmDetailProps {
   filmId: string;
@@ -70,6 +70,11 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
     enabled: !!state.studioId,
   });
 
+  const { data: filmRoles = [] } = useQuery<FilmRole[]>({
+    queryKey: [`/api/films/${filmId}/roles`],
+    enabled: !!filmId,
+  });
+
   const film = useMemo(() => allFilms.find(f => f.id === filmId), [allFilms, filmId]);
   const studio = useMemo(() => film ? allStudios.find(s => s.id === film.studioId) : null, [allStudios, film]);
   const talentMap = useMemo(() => new Map(allTalent.map(t => [t.id, t])), [allTalent]);
@@ -79,8 +84,17 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
   const composer = useMemo(() => film?.composerId ? talentMap.get(film.composerId) : null, [film, talentMap]);
   const cast = useMemo(() => {
     if (!film?.castIds) return [];
-    return film.castIds.map(id => talentMap.get(id)).filter(Boolean) as Talent[];
-  }, [film, talentMap]);
+    return film.castIds.map(id => {
+      const actor = talentMap.get(id);
+      if (!actor) return null;
+      // Find the role for this actor
+      const role = filmRoles.find(r => r.actorId === id);
+      return {
+        ...actor,
+        roleName: role?.roleName || 'Unknown Role',
+      };
+    }).filter(Boolean) as (Talent & { roleName: string })[];
+  }, [film, talentMap, filmRoles]);
 
   const filmAwards = useMemo(() => {
     if (!film) return { wins: [], nominations: [] };
@@ -295,7 +309,7 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
                     </p>
                   </div>
                 </div>
-                {film.marketingBudget && (
+                {film.marketingBudget != null && film.marketingBudget > 0 && (
                   <div>
                     <p className="text-sm text-muted-foreground">Marketing Budget</p>
                     <p className="text-lg font-semibold">{formatCompactMoney(film.marketingBudget)}</p>
@@ -334,7 +348,7 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
                     )}
                     <span className="font-medium">{actor.name}</span>
                   </div>
-                  <span className="text-muted-foreground">Cast Member {index + 1}</span>
+                  <span className="text-muted-foreground">{actor.roleName}</span>
                 </div>
               ))}
             </div>
