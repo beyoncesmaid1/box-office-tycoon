@@ -112,6 +112,8 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
   const grossStats = useMemo(() => {
     if (!film) return null;
     const totalByCountry = film.totalBoxOfficeByCountry as Record<string, number> | null;
+    const weeklyByCountry = film.weeklyBoxOfficeByCountry as Array<Record<string, number>> | null;
+    
     const domesticGross = totalByCountry?.['North America'] || totalByCountry?.['NA'] || 
       Math.floor(film.totalBoxOffice * 0.4);
     const internationalGross = film.totalBoxOffice - domesticGross;
@@ -134,16 +136,34 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
     const openingWeekend = film.weeklyBoxOffice?.[0] || 0;
     const weeklyData = film.weeklyBoxOffice || [];
     
-    // Country breakdown - sort by gross descending
+    // Get opening weekend per country (first week's data)
+    const openingByCountry: Record<string, number> = {};
+    if (weeklyByCountry && weeklyByCountry.length > 0) {
+      const firstWeek = weeklyByCountry[0];
+      Object.entries(firstWeek).forEach(([country, gross]) => {
+        openingByCountry[country] = gross;
+      });
+    }
+    
+    // Country breakdown with opening weekend - sort by gross descending
     const countryBreakdown = totalByCountry 
       ? Object.entries(totalByCountry)
           .map(([country, gross]) => ({
             country,
             gross,
+            opening: openingByCountry[country] || 0,
             percent: film.totalBoxOffice > 0 ? (gross / film.totalBoxOffice * 100) : 0
           }))
           .sort((a, b) => b.gross - a.gross)
       : [];
+    
+    // Separate domestic and international markets
+    const domesticMarkets = countryBreakdown.filter(c => 
+      c.country === 'North America' || c.country === 'NA' || c.country === 'Domestic'
+    );
+    const internationalMarkets = countryBreakdown.filter(c => 
+      c.country !== 'North America' && c.country !== 'NA' && c.country !== 'Domestic'
+    );
 
     return {
       domesticGross,
@@ -157,6 +177,8 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
       openingWeekend,
       weeklyData,
       countryBreakdown,
+      domesticMarkets,
+      internationalMarkets,
     };
   }, [film]);
 
@@ -356,37 +378,81 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
         </Card>
       )}
 
-      {/* Country Breakdown - Box Office Mojo Style */}
+      {/* Rollout Table - Box Office Mojo Style */}
       {grossStats && grossStats.countryBreakdown.length > 0 && (
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Globe className="w-5 h-5" />
-              International Breakdown
-            </CardTitle>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="w-5 h-5" />
+                Rollout
+              </CardTitle>
+              <div className="flex gap-6 text-sm">
+                <div>
+                  <span className="text-muted-foreground uppercase text-xs">Domestic ({grossStats.domesticPercent}%)</span>
+                  <p className="font-bold">{formatMoney(grossStats.domesticGross)}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground uppercase text-xs">International ({grossStats.intlPercent}%)</span>
+                  <p className="font-bold">{formatMoney(grossStats.internationalGross)}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground uppercase text-xs">Worldwide</span>
+                  <p className="font-bold text-primary">{formatMoney(grossStats.worldwideGross)}</p>
+                </div>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {grossStats.countryBreakdown.map(({ country, gross, percent }) => (
-                <div key={country} className="flex items-center gap-4">
-                  <div className="w-32 text-sm font-medium truncate">{country}</div>
-                  <div className="flex-1">
-                    <div className="h-6 bg-muted rounded-full overflow-hidden relative">
-                      <div 
-                        className="h-full bg-gradient-to-r from-primary/80 to-primary rounded-full transition-all" 
-                        style={{ width: `${Math.min(percent, 100)}%` }}
-                      />
-                      <span className="absolute inset-0 flex items-center justify-center text-xs font-medium">
-                        {percent.toFixed(1)}%
-                      </span>
-                    </div>
-                  </div>
-                  <div className="w-28 text-right font-mono text-sm">
-                    {formatCompactMoney(gross)}
-                  </div>
-                </div>
-              ))}
-            </div>
+            {/* Domestic Section */}
+            {grossStats.domesticMarkets.length > 0 && (
+              <div className="mb-6">
+                <h4 className="font-semibold text-lg mb-3 border-b pb-2">Domestic</h4>
+                <table className="w-full">
+                  <thead>
+                    <tr className="text-sm text-muted-foreground border-b">
+                      <th className="text-left py-2 font-medium">Market</th>
+                      <th className="text-right py-2 font-medium">Opening</th>
+                      <th className="text-right py-2 font-medium">Gross</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {grossStats.domesticMarkets.map(({ country, gross, opening }) => (
+                      <tr key={country} className="border-b border-muted/50 hover:bg-muted/30">
+                        <td className="py-2 text-blue-600 dark:text-blue-400">{country}</td>
+                        <td className="py-2 text-right font-mono">{formatMoney(opening)}</td>
+                        <td className="py-2 text-right font-mono font-medium">{formatMoney(gross)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* International Section */}
+            {grossStats.internationalMarkets.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-lg mb-3 border-b pb-2">International Markets</h4>
+                <table className="w-full">
+                  <thead>
+                    <tr className="text-sm text-muted-foreground border-b">
+                      <th className="text-left py-2 font-medium">Market</th>
+                      <th className="text-right py-2 font-medium">Opening</th>
+                      <th className="text-right py-2 font-medium">Gross</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {grossStats.internationalMarkets.map(({ country, gross, opening }) => (
+                      <tr key={country} className="border-b border-muted/50 hover:bg-muted/30">
+                        <td className="py-2">{country}</td>
+                        <td className="py-2 text-right font-mono">{formatMoney(opening)}</td>
+                        <td className="py-2 text-right font-mono font-medium">{formatMoney(gross)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
