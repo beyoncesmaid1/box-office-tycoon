@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { 
   TrendingUp, 
   Trophy, 
@@ -73,6 +73,7 @@ interface TalentWithFilmography extends Talent {
 
 export function HollywoodInsider() {
   const { state } = useGame();
+  const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState('box-office');
   const [sortField, setSortField] = useState<SortField>('worldwide');
   const [genreFilter, setGenreFilter] = useState<string>('all');
@@ -525,7 +526,7 @@ export function HollywoodInsider() {
                   </thead>
                   <tbody className="divide-y">
                     {filteredFilms.map((film, index) => (
-                      <tr key={film.id} className="hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => window.location.href = `/film/${film.id}`}>
+                      <tr key={film.id} className="hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => navigate(`/film/${film.id}`)}>
                         <td className="py-3 px-2 font-bold text-muted-foreground">{index + 1}</td>
                         <td className="py-3 px-2">
                           <Link href={`/film/${film.id}`} className="flex items-center gap-3 hover:text-primary">
