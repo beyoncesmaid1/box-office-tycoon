@@ -2976,7 +2976,7 @@ export async function registerRoutes(
         const qualityBoost = (film.scriptQuality - 70) * 0.35;
         // Critics base range: 52-65 (more realistic, most films land 50-70%)
         const criticRandomBase = 52 + Math.random() * 13;
-        const audienceRandomBase = 55 + Math.random() * 17;
+        const audienceRandomBase = 50 + Math.random() * 17;
         // Reduced swing variance: ±10 instead of ±14
         const hugeCriticSwing = (Math.random() - 0.5) * 20;
         const hugeAudienceSwing = (Math.random() - 0.5) * 16;
