@@ -3073,7 +3073,7 @@ export async function registerRoutes(
                 if (existingReleases.length === 0) {
                   const allTerritories = BOX_OFFICE_COUNTRIES.map(c => c.code);
                   const firstTerritory = allTerritories[0];
-                  const safeMarketingBudget = film.marketingBudget || Math.floor(film.productionBudget * 0.3);
+                  const safeMarketingBudget = film.marketingBudget || Math.floor(film.productionBudget * 0.8);
                   
                   await Promise.all(allTerritories.map(territory => 
                     storage.createFilmRelease({
@@ -3211,23 +3211,14 @@ export async function registerRoutes(
         
         if (filmReleases && filmReleases.length > 0) {
           // Marketing budget is stored only on ONE release (global budget, not per-territory)
-          // Find the release with the actual marketing budget, don't assume it's the first one
           const releaseWithMarketing = filmReleases.find(r => r.marketingBudget && r.marketingBudget > 0);
-          const productionBudget = film.productionBudget || filmReleases[0].productionBudget || 0;
-          
-          // Get raw marketing from releases or film
-          let rawMarketing = releaseWithMarketing?.marketingBudget || film.marketingBudget || 0;
+          const marketingBudgetAtRelease = releaseWithMarketing?.marketingBudget || film.marketingBudget || 0;
           
           // Investment budget = totalBudget MINUS marketing (totalBudget includes marketing)
-          const investmentBudgetAtRelease = (film.totalBudget || film.productionBudget || 0) - rawMarketing;
-          const safeInvestmentBudget = investmentBudgetAtRelease > 0 ? investmentBudgetAtRelease : productionBudget;
+          const investmentBudgetAtRelease = (film.totalBudget || film.productionBudget || 0) - marketingBudgetAtRelease;
           
-          // If marketing ratio is below 50%, use 80% fallback (fixes AI films with low marketing)
-          const rawRatio = rawMarketing / (safeInvestmentBudget || 1);
-          const marketingBudgetAtRelease = rawRatio < 0.5 ? Math.floor(safeInvestmentBudget * 0.8) : rawMarketing;
-          
-          // Calculate marketing multiplier as ratio of marketing to production investment
-          const marketingRatio = marketingBudgetAtRelease / (safeInvestmentBudget || 1);
+          // Calculate marketing multiplier as ratio of marketing to investment
+          const marketingRatio = marketingBudgetAtRelease / (investmentBudgetAtRelease || 1);
           const globalMarketingMultiplier = marketingRatio;
           
           // Calculate global weekly box office with quality/genre/decay modifiers
@@ -3268,8 +3259,8 @@ export async function registerRoutes(
             const marketingMultiplier = globalMarketingMultiplier;
             const audienceBoost = getAudienceMultiplier(film.audienceScore || 7);
             
-            // Investment budget = totalBudget minus marketing (use safe value)
-            let investmentBudget = safeInvestmentBudget;
+            // Investment budget = totalBudget minus marketing
+            let investmentBudget = investmentBudgetAtRelease;
             
             // Production budget is a one-time GLOBAL cost, not split per territory
             // Use full investment budget for all territory opening calculations
@@ -3748,11 +3739,6 @@ export async function registerRoutes(
             prodBudget = 8000000 + Math.random() * 52000000; // 8M-60M (default)
           }
           
-          // 75% chance: 75-150% of production, 25% chance: 50-75% of production
-          const marketBudget = Math.random() < 0.75 
-            ? prodBudget * (0.75 + Math.random() * 0.75)  // 75-150%
-            : prodBudget * (0.50 + Math.random() * 0.25); // 50-75%
-          
           // Roll department budgets based on genre and production budget
           const setsBudget = prodBudget * (0.08 + Math.random() * 0.12); // 8-20%
           const costumesBudget = prodBudget * (0.02 + Math.random() * 0.03); // 2-5%
@@ -3764,6 +3750,14 @@ export async function registerRoutes(
           const soundCrewBudget = prodBudget * (0.01 + Math.random() * 0.02); // 1-3%
           
           const departmentBudgetTotal = setsBudget + costumesBudget + stuntsBudget + makeupBudget + practicalEffectsBudget + soundCrewBudget;
+          
+          // Calculate marketing budget based on total investment (production + departments)
+          // 75% chance: 75-150% of investment, 25% chance: 50-75% of investment
+          const investmentBudget = prodBudget + departmentBudgetTotal;
+          const marketBudget = Math.random() < 0.75 
+            ? investmentBudget * (0.75 + Math.random() * 0.75)  // 75-150%
+            : investmentBudget * (0.50 + Math.random() * 0.25); // 50-75%
+          
           const totalCost = prodBudget + marketBudget + departmentBudgetTotal;
 
           if (aiStudio.budget >= totalCost) {
