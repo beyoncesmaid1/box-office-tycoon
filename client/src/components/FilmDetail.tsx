@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'wouter';
 import { 
@@ -79,7 +79,25 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
     enabled: !!filmId,
   });
 
+  const [actualMarketingBudget, setActualMarketingBudget] = useState<number>(0);
+
   const film = useMemo(() => allFilms.find(f => f.id === filmId), [allFilms, filmId]);
+
+  // Fetch marketing budget from releases (same as FilmLibrary)
+  useEffect(() => {
+    if (film) {
+      fetch(`/api/films/${film.id}/releases`)
+        .then(res => res.json())
+        .then(releases => {
+          const releaseWithMarketing = releases.find((r: any) => r.marketingBudget && r.marketingBudget > 0);
+          const marketingFromReleases = releaseWithMarketing?.marketingBudget || 0;
+          setActualMarketingBudget(marketingFromReleases || film.marketingBudget || 0);
+        })
+        .catch(() => setActualMarketingBudget(film.marketingBudget || 0));
+    } else {
+      setActualMarketingBudget(0);
+    }
+  }, [film]);
   const studio = useMemo(() => film ? allStudios.find(s => s.id === film.studioId) : null, [allStudios, film]);
   const talentMap = useMemo(() => new Map(allTalent.map(t => [t.id, t])), [allTalent]);
 
@@ -424,13 +442,13 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm text-muted-foreground">Production Budget</p>
-                <p className="text-xl font-bold">{formatCompactMoney(film.productionBudget || 0)}</p>
+                <p className="text-sm text-muted-foreground">Total Budget</p>
+                <p className="text-xl font-bold">{formatCompactMoney(film.totalBudget || 0)}</p>
               </div>
-              {film.marketingBudget != null && film.marketingBudget > 0 && (
+              {actualMarketingBudget > 0 && (
                 <div className="p-4 bg-muted/50 rounded-lg">
                   <p className="text-sm text-muted-foreground">Marketing Budget</p>
-                  <p className="text-xl font-bold">{formatCompactMoney(film.marketingBudget)}</p>
+                  <p className="text-xl font-bold">{formatCompactMoney(actualMarketingBudget)}</p>
                 </div>
               )}
               <div className="p-4 bg-muted/50 rounded-lg">
