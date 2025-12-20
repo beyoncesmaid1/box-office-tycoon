@@ -103,7 +103,9 @@ function ProjectCard({ film, currentWeek = 1, currentYear = 2025 }: ProjectCardP
         description: `Successfully renamed to "${newTitle.trim()}"`,
       });
       
-      queryClient.invalidateQueries({ queryKey: ['/api/films'] });
+      // Invalidate the studio films query to refresh the list
+      queryClient.invalidateQueries({ queryKey: ['/api/studio', film.studioId, 'films'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/all-films'] });
       setShowRenameModal(false);
     } catch (error: any) {
       toast({
