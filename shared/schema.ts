@@ -129,6 +129,7 @@ export const films = pgTable("films", {
   weeklyBoxOfficeByCountry: jsonb("weekly_box_office_by_country").notNull().default(sql`'[]'::jsonb`),
   totalBoxOffice: bigint("total_box_office", { mode: "number" }).notNull().default(0),
   totalBoxOfficeByCountry: jsonb("total_box_office_by_country").notNull().default(sql`'{}'::jsonb`),
+  territoryPercentages: jsonb("territory_percentages").notNull().default(sql`'{}'::jsonb`),
   audienceScore: real("audience_score").notNull().default(0),
   criticScore: integer("critic_score").notNull().default(0),
   criticScoreBreakdown: jsonb("critic_score_breakdown").notNull().default(sql`'{}'::jsonb`),
