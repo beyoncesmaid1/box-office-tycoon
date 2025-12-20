@@ -157,6 +157,16 @@ export function HollywoodInsider() {
   const filteredFilms = useMemo(() => {
     let filtered = [...filmsWithStats];
 
+    // Search filter
+    if (filmSearchQuery.trim()) {
+      const query = filmSearchQuery.toLowerCase();
+      filtered = filtered.filter(f => 
+        f.title.toLowerCase().includes(query) ||
+        f.studioName.toLowerCase().includes(query) ||
+        f.directorName.toLowerCase().includes(query)
+      );
+    }
+
     // Time filter
     if (timeFilter === 'yearly') {
       filtered = filtered.filter(f => f.releaseYear === selectedYear);
@@ -186,7 +196,7 @@ export function HollywoodInsider() {
     });
 
     return filtered;
-  }, [filmsWithStats, timeFilter, selectedYear, genreFilter, studioFilter, sortField]);
+  }, [filmsWithStats, timeFilter, selectedYear, genreFilter, studioFilter, sortField, filmSearchQuery]);
 
   // Process talent with filmography (include all types)
   const talentWithFilmography: TalentWithFilmography[] = useMemo(() => {
@@ -249,6 +259,14 @@ export function HollywoodInsider() {
   const filteredTalent = useMemo(() => {
     let filtered = [...talentWithFilmography];
     
+    // Search filter
+    if (talentSearchQuery.trim()) {
+      const query = talentSearchQuery.toLowerCase();
+      filtered = filtered.filter(t => 
+        t.name.toLowerCase().includes(query)
+      );
+    }
+    
     // Type filter
     if (talentTypeFilter !== 'all') {
       filtered = filtered.filter(t => t.type === talentTypeFilter);
@@ -262,7 +280,7 @@ export function HollywoodInsider() {
     }
     
     return filtered;
-  }, [talentWithFilmography, talentTypeFilter, talentSortField]);
+  }, [talentWithFilmography, talentTypeFilter, talentSortField, talentSearchQuery]);
 
   // Get unique genres and studios for filters
   const genres = useMemo(() => {
