@@ -12,7 +12,8 @@ import {
   Calendar,
   Tv,
   Mail,
-  MonitorPlay
+  MonitorPlay,
+  Newspaper
 } from 'lucide-react';
 import {
   Sidebar,
@@ -39,6 +40,7 @@ const navItems = [
   { title: 'Streaming', url: '/streaming', icon: Tv },
   { title: 'Emails', url: '/emails', icon: Mail },
   { title: 'Awards', url: '/awards', icon: Trophy },
+  { title: 'Hollywood Insider', url: '/insider', icon: Newspaper },
 ];
 
 export function AppSidebar() {
