@@ -99,46 +99,6 @@ export function distributeBoxOfficeByCountry(total: number): Record<string, numb
   return result;
 }
 
-// Generate territory percentages (for first week - these should be stored and reused)
-export function generateTerritoryPercentages(): Record<string, number> {
-  // Generate randomized percentages for each country
-  const randomizedPcts: { name: string; pct: number }[] = BOX_OFFICE_COUNTRIES.map(country => ({
-    name: country.name,
-    pct: getRandomizedPercentage(country),
-  }));
-  
-  // Normalize so percentages sum to 1.0
-  const totalPct = randomizedPcts.reduce((sum, c) => sum + c.pct, 0);
-  
-  const result: Record<string, number> = {};
-  for (const c of randomizedPcts) {
-    result[c.name] = c.pct / totalPct;
-  }
-  
-  return result;
-}
-
-// Distribute box office using fixed percentages (for subsequent weeks)
-export function distributeBoxOfficeWithFixedPercentages(total: number, percentages: Record<string, number>): Record<string, number> {
-  const result: Record<string, number> = {};
-  let distributed = 0;
-  const entries = Object.entries(percentages);
-  
-  for (let i = 0; i < entries.length - 1; i++) {
-    const [country, pct] = entries[i];
-    const amount = Math.floor(total * pct);
-    result[country] = amount;
-    distributed += amount;
-  }
-  
-  // Give remaining to last country to avoid rounding errors
-  if (entries.length > 0) {
-    result[entries[entries.length - 1][0]] = total - distributed;
-  }
-  
-  return result;
-}
-
 // Get country list for dropdown/display
 export function getCountryNames(): string[] {
   return BOX_OFFICE_COUNTRIES.map(c => c.name);
