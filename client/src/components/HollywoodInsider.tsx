@@ -167,7 +167,7 @@ export function HollywoodInsider() {
           roi,
         };
       });
-  }, [allFilms, studioMap, talentMap]);
+  }, [allFilms, studioMap, talentMap, marketingBudgetMap]);
 
   // Filter and sort films
   const filteredFilms = useMemo(() => {
