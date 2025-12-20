@@ -574,7 +574,7 @@ export function HollywoodInsider() {
                           {formatCompactMoney(film.worldwideGross)}
                         </td>
                         <td className="py-3 px-2 text-right font-mono text-sm text-muted-foreground">
-                          {formatCompactMoney(film.productionBudget || 0)}
+                          {formatCompactMoney(film.totalBudget || 0)}
                         </td>
                         <td className="py-3 px-2 text-right">
                           <span className={`font-mono text-sm ${film.roi >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
