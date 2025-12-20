@@ -2231,18 +2231,18 @@ export async function registerRoutes(
           const lastWeek = film.weeklyBoxOffice[film.weeklyBoxOffice.length - 1];
           
           // Simple audience score-based decay system with boost for good scores
-          // Formula: hold = (audienceScore / 100) * 0.85 for scores 70+, 0.75 for scores below 70
-          // 50% → 37.5% hold, 60% → 45%, 70% → 59.5%, 80% → 68%, 90% → 76.5%
+          // Formula: hold = (audienceScore / 100) * 0.70 for scores 70+, 0.60 for scores below 70
+          // 50% → 30% hold, 60% → 36%, 70% → 49%, 80% → 56%, 90% → 63%
           const audienceScore = (film.audienceScore || 7) * 10; // Convert to 0-100 scale
-          const coefficient = audienceScore >= 70 ? 0.85 : 0.75;
+          const coefficient = audienceScore >= 70 ? 0.70 : 0.60;
           let hold = (audienceScore / 100) * coefficient;
           
           // Apply ±10% randomness
           const randomMultiplier = 1 + (Math.random() - 0.5) * 0.20;
           hold = hold * randomMultiplier;
           
-          // Bound hold between 20% and 85%
-          hold = Math.max(0.20, Math.min(0.85, hold));
+          // Bound hold between 20% and 70%
+          hold = Math.max(0.20, Math.min(0.70, hold));
           
           const newGross = Math.floor(lastWeek * hold);
           
