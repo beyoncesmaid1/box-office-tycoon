@@ -2950,11 +2950,12 @@ export async function registerRoutes(
       
       const calculateScores = async (film: typeof saveFilms[0]) => {
         const qualityBoost = (film.scriptQuality - 80) * 0.35;
-        // Lower base range: 50-65 instead of 65-80
-        const randomBase = 50 + Math.random() * 15;
-        // Increased variance: ±12 instead of ±7.5
-        const hugeCriticSwing = (Math.random() - 0.5) * 24;
-        const hugeAudienceSwing = (Math.random() - 0.5) * 18;
+        // Critics have lower base range: 45-60, audiences have higher: 55-72
+        const criticRandomBase = 45 + Math.random() * 15;
+        const audienceRandomBase = 55 + Math.random() * 17;
+        // Critics have more variance (harsher), audiences are more forgiving
+        const hugeCriticSwing = (Math.random() - 0.5) * 28;
+        const hugeAudienceSwing = (Math.random() - 0.5) * 16;
         
         // Divisive factor: 15% chance of being a polarizing film that critics either love or hate
         const isDivisive = Math.random() < 0.15;
@@ -2976,13 +2977,13 @@ export async function registerRoutes(
         else if (film.genre === 'fantasy') { genreBonus = 1; audienceGenreBonus = 3; }
         else if (film.genre === 'musicals') { genreBonus = 3; audienceGenreBonus = 1; }
         
-        const rawCriticScore = randomBase + hugeCriticSwing + qualityBoost + genreBonus + 
+        const rawCriticScore = criticRandomBase + hugeCriticSwing + qualityBoost + genreBonus + 
                               directorImpact.criticScore + budgetImpact + vfxImpact + castQuality.criticScore + divisivePenalty;
-        const rawAudienceScore = randomBase + hugeAudienceSwing + qualityBoost + audienceGenreBonus + 
-                               directorImpact.audienceScore + budgetImpact + vfxImpact + castQuality.audienceScore + 10;
+        const rawAudienceScore = audienceRandomBase + hugeAudienceSwing + qualityBoost + audienceGenreBonus + 
+                               directorImpact.audienceScore + budgetImpact + vfxImpact + castQuality.audienceScore + 12;
         
         const criticBreakdown = {
-          randomBase: Math.round(randomBase * 100) / 100,
+          randomBase: Math.round(criticRandomBase * 100) / 100,
           criticSwing: Math.round(hugeCriticSwing * 100) / 100,
           qualityBoost: Math.round(qualityBoost * 100) / 100,
           genreBonus,
@@ -2995,7 +2996,7 @@ export async function registerRoutes(
         };
 
         const audienceBreakdown = {
-          randomBase: Math.round(randomBase * 100) / 100,
+          randomBase: Math.round(audienceRandomBase * 100) / 100,
           audienceSwing: Math.round(hugeAudienceSwing * 100) / 100,
           qualityBoost: Math.round(qualityBoost * 100) / 100,
           audienceGenreBonus,
