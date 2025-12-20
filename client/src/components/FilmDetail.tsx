@@ -457,7 +457,9 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
               </div>
               {(() => {
                 const totalInvestment = (film.totalBudget || 0) + actualMarketingBudget;
-                const profit = film.totalBoxOffice - totalInvestment;
+                // Studios get 70% of box office revenue
+                const studioRevenue = film.totalBoxOffice * 0.7;
+                const profit = studioRevenue - totalInvestment;
                 const roi = totalInvestment > 0 ? (profit / totalInvestment * 100) : 0;
                 return (
                   <>
