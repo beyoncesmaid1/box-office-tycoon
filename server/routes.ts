@@ -3324,11 +3324,11 @@ export async function registerRoutes(
               qualityModifier * genreMultiplier * audienceBoost * sequelBoost * holidayModifier;
             
             console.log(`[OPENING-WEEKEND] ${film.title} (${film.genre}):
-  investmentBudget=$${Math.round(investmentBudget/1000000)}M, clamped=$${Math.round(clampedInvestmentBudget1/1000000)}M
-  marketingBudget=$${Math.round(marketingBudgetAtRelease/1000000)}M (from releases), film.marketingBudget=$${Math.round((film.marketingBudget || 0)/1000000)}M
-  investmentForRatio=$${Math.round(investmentBudgetForRatio/1000000)}M, marketingRatio=${marketingRatio.toFixed(3)}
-  randomLuck=${randomLuck.toFixed(3)}, marketingMult=${marketingMultiplier.toFixed(3)}, qualityMod=${qualityModifier.toFixed(3)}
-  genreMult=${genreMultiplier}, audienceBoost=${audienceBoost.toFixed(3)}, sequelBoost=${sequelBoost.toFixed(3)}, holidayMod=${holidayModifier.toFixed(3)}
+  film.productionBudget=$${Math.round((film.productionBudget || 0)/1000000)}M, productionBudgetAtRelease=$${Math.round(productionBudgetAtRelease/1000000)}M
+  talentBudget=$${Math.round((film.talentBudget || 0)/1000000)}M, sets=$${Math.round((film.setsBudget || 0)/1000000)}M, costumes=$${Math.round((film.costumesBudget || 0)/1000000)}M
+  stunts=$${Math.round((film.stuntsBudget || 0)/1000000)}M, makeup=$${Math.round((film.makeupBudget || 0)/1000000)}M, practicalFX=$${Math.round((film.practicalEffectsBudget || 0)/1000000)}M, sound=$${Math.round((film.soundCrewBudget || 0)/1000000)}M
+  TOTAL investmentBudget=$${Math.round(investmentBudget/1000000)}M, clamped=$${Math.round(clampedInvestmentBudget1/1000000)}M
+  marketingBudget=$${Math.round(marketingBudgetAtRelease/1000000)}M, marketingMult=${marketingMultiplier.toFixed(3)}
   CALCULATION: $${Math.round(clampedInvestmentBudget1/1000000)}M × ${randomLuck.toFixed(2)} × ${marketingMultiplier.toFixed(2)} × ${qualityModifier.toFixed(2)} × ${genreMultiplier} × ${audienceBoost.toFixed(2)} × ${sequelBoost.toFixed(2)} × ${holidayModifier.toFixed(2)} = $${Math.round(globalWeeklyGross/1000000)}M`);
             
           } else {
