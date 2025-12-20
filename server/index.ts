@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import { execSync } from "child_process";
+import { Pool } from "pg";
 
 const app = express();
 const httpServer = createServer(app);
@@ -51,10 +52,23 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Skip migrations at startup - run them manually or via a separate command
-  // The drizzle-kit push was causing Railway to timeout
+  // Run migrations at startup
   if (process.env.DATABASE_URL) {
     console.log("Database URL detected, using PostgreSQL storage");
+    console.log("Running migrations...");
+    try {
+      const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+      
+      // Add territory_percentages column if it doesn't exist
+      await pool.query(`
+        ALTER TABLE films ADD COLUMN IF NOT EXISTS territory_percentages jsonb NOT NULL DEFAULT '{}'::jsonb;
+      `);
+      console.log("Migrations completed successfully");
+      
+      await pool.end();
+    } catch (err) {
+      console.error("Migration error (non-fatal):", err);
+    }
   } else {
     console.log("Warning: No DATABASE_URL, using in-memory storage");
   }
