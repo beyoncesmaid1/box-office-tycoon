@@ -74,10 +74,10 @@ function FilmCard({ film, rank, isYours, studioName, showWeeklyChange = true, is
     : film.totalBoxOffice;
 
   return (
-    <div className="flex-shrink-0 w-64 group">
+    <div className={`flex-shrink-0 w-64 group ${isYours ? 'p-1' : ''}`}>
       <div
         className={`relative h-80 rounded-lg overflow-hidden cursor-pointer transition-all duration-300 ${
-          isYours ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''
+          isYours ? 'ring-2 ring-primary' : ''
         } ${isExpanded ? 'ring-2 ring-white/50' : 'hover:scale-105 hover:shadow-2xl hover:shadow-primary/20'}`}
         onClick={onToggle}
         data-testid={`card-film-${film.id}`}
