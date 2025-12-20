@@ -2968,14 +2968,14 @@ export async function registerRoutes(
         const vfxImpact = calculateVFXImpact(film, film.genre);
         
         let genreBonus = 0, audienceGenreBonus = 0;
-        if (film.genre === 'drama') { genreBonus = 3; audienceGenreBonus = -2; }
-        else if (film.genre === 'action') { genreBonus = -3; audienceGenreBonus = 3; }
-        else if (film.genre === 'comedy') { genreBonus = -1; audienceGenreBonus = 3; }
-        else if (film.genre === 'horror') { genreBonus = -5; audienceGenreBonus = 2; }
-        else if (film.genre === 'scifi') { genreBonus = 1; audienceGenreBonus = 2; }
-        else if (film.genre === 'animation') { genreBonus = 2; audienceGenreBonus = 4; }
-        else if (film.genre === 'fantasy') { genreBonus = 1; audienceGenreBonus = 3; }
-        else if (film.genre === 'musicals') { genreBonus = 3; audienceGenreBonus = 1; }
+        if (film.genre === 'drama') { genreBonus = 6; audienceGenreBonus = -2; }
+        else if (film.genre === 'action') { genreBonus = -6; audienceGenreBonus = 3; }
+        else if (film.genre === 'comedy') { genreBonus = -2; audienceGenreBonus = 3; }
+        else if (film.genre === 'horror') { genreBonus = -10; audienceGenreBonus = 2; }
+        else if (film.genre === 'scifi') { genreBonus = 0; audienceGenreBonus = 2; }
+        else if (film.genre === 'animation') { genreBonus = 4; audienceGenreBonus = 4; }
+        else if (film.genre === 'fantasy') { genreBonus = 2; audienceGenreBonus = 3; }
+        else if (film.genre === 'musicals') { genreBonus = 6; audienceGenreBonus = 1; }
         
         const rawCriticScore = criticRandomBase + hugeCriticSwing + qualityBoost + genreBonus + 
                               directorImpact.criticScore + budgetImpact + vfxImpact + castQuality.criticScore + divisivePenalty;
