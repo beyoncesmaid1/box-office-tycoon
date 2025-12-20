@@ -3216,8 +3216,10 @@ export async function registerRoutes(
           const releaseWithMarketing = filmReleases.find(r => r.marketingBudget && r.marketingBudget > 0);
           const marketingBudgetAtRelease = releaseWithMarketing?.marketingBudget || film.marketingBudget || 0;
           
-          // Investment budget = totalBudget MINUS marketing (totalBudget includes marketing)
-          const investmentBudgetAtRelease = (film.totalBudget || film.productionBudget || 0) - marketingBudgetAtRelease;
+          // Investment budget = production + all department budgets (NOT derived from totalBudget which includes talent)
+          const investmentBudgetAtRelease = (film.productionBudget || 0) + 
+            (film.setsBudget || 0) + (film.costumesBudget || 0) + (film.stuntsBudget || 0) + 
+            (film.makeupBudget || 0) + (film.practicalEffectsBudget || 0) + (film.soundCrewBudget || 0);
           
           // Calculate marketing multiplier as ratio of marketing to investment
           const marketingRatio = marketingBudgetAtRelease / (investmentBudgetAtRelease || 1);
