@@ -99,15 +99,15 @@ function formatMoney(amount: number): string {
 function clampInvestmentBudgetByGenre(budget: number, genre: string): number {
   const genreMaxBudgets: Record<string, number> = {
     'drama': 30000000,
-    'comedy': 100000000,
+    'comedy': 125000000,
     'romance': 50000000,
     'thriller': 60000000,
-    'horror': 75000000,
+    'horror': 150000000,
     'action': Infinity,
     'scifi': Infinity,
     'animation': Infinity,
     'fantasy': Infinity,
-    'musicals': 70000000,
+    'musicals': 100000000,
   };
   
   const maxBudget = genreMaxBudgets[genre] || 50000000;
