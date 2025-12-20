@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'wouter';
 import { 
   TrendingUp, 
   Trophy, 
@@ -11,7 +12,10 @@ import {
   Star,
   Globe,
   MapPin,
-  Building2
+  Building2,
+  Clapperboard,
+  PenTool,
+  Music
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -30,6 +34,8 @@ import type { Film, Studio, Talent, AwardNomination } from '@shared/schema';
 
 type SortField = 'worldwide' | 'domestic' | 'international';
 type TimeFilter = 'all-time' | 'yearly';
+type TalentTypeFilter = 'all' | 'director' | 'actor' | 'composer' | 'writer';
+type TalentSortField = 'gross' | 'alphabetical';
 
 function formatCompactMoney(amount: number): string {
   if (amount >= 1000000000) {
@@ -71,6 +77,8 @@ export function HollywoodInsider() {
   const [studioFilter, setStudioFilter] = useState<string>('all');
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all-time');
   const [selectedYear, setSelectedYear] = useState<number>(state.currentYear);
+  const [talentTypeFilter, setTalentTypeFilter] = useState<TalentTypeFilter>('all');
+  const [talentSortField, setTalentSortField] = useState<TalentSortField>('gross');
 
   const { data: allFilms = [] } = useQuery<Film[]>({
     queryKey: ['/api/all-films', state.studioId],
@@ -176,10 +184,9 @@ export function HollywoodInsider() {
     return filtered;
   }, [filmsWithStats, timeFilter, selectedYear, genreFilter, studioFilter, sortField]);
 
-  // Process talent with filmography
+  // Process talent with filmography (include all types)
   const talentWithFilmography: TalentWithFilmography[] = useMemo(() => {
     return allTalent
-      .filter(t => t.type === 'actor' || t.type === 'director')
       .map(talent => {
         const filmography: TalentWithFilmography['filmography'] = [];
         
@@ -192,7 +199,22 @@ export function HollywoodInsider() {
               role: 'Director',
               boxOffice: film.totalBoxOffice,
             });
-          } else if (film.castIds?.includes(talent.id)) {
+          }
+          if (film.writerId === talent.id) {
+            filmography.push({
+              film,
+              role: 'Writer',
+              boxOffice: film.totalBoxOffice,
+            });
+          }
+          if (film.composerId === talent.id) {
+            filmography.push({
+              film,
+              role: 'Composer',
+              boxOffice: film.totalBoxOffice,
+            });
+          }
+          if (film.castIds?.includes(talent.id)) {
             filmography.push({
               film,
               role: 'Actor',
@@ -216,9 +238,27 @@ export function HollywoodInsider() {
           awardNominations,
         };
       })
-      .filter(t => t.filmography.length > 0)
-      .sort((a, b) => b.totalBoxOffice - a.totalBoxOffice);
+      .filter(t => t.filmography.length > 0);
   }, [allTalent, allFilms, nominations]);
+
+  // Filter and sort talent
+  const filteredTalent = useMemo(() => {
+    let filtered = [...talentWithFilmography];
+    
+    // Type filter
+    if (talentTypeFilter !== 'all') {
+      filtered = filtered.filter(t => t.type === talentTypeFilter);
+    }
+    
+    // Sort
+    if (talentSortField === 'alphabetical') {
+      filtered.sort((a, b) => a.name.localeCompare(b.name));
+    } else {
+      filtered.sort((a, b) => b.totalBoxOffice - a.totalBoxOffice);
+    }
+    
+    return filtered;
+  }, [talentWithFilmography, talentTypeFilter, talentSortField]);
 
   // Get unique genres and studios for filters
   const genres = useMemo(() => {
@@ -451,10 +491,10 @@ export function HollywoodInsider() {
                   </thead>
                   <tbody className="divide-y">
                     {filteredFilms.map((film, index) => (
-                      <tr key={film.id} className="hover:bg-muted/50 transition-colors">
+                      <tr key={film.id} className="hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => window.location.href = `/film/${film.id}`}>
                         <td className="py-3 px-2 font-bold text-muted-foreground">{index + 1}</td>
                         <td className="py-3 px-2">
-                          <div className="flex items-center gap-3">
+                          <Link href={`/film/${film.id}`} className="flex items-center gap-3 hover:text-primary">
                             {film.posterUrl && (
                               <img 
                                 src={film.posterUrl} 
@@ -463,10 +503,10 @@ export function HollywoodInsider() {
                               />
                             )}
                             <div>
-                              <p className="font-medium">{film.title}</p>
+                              <p className="font-medium hover:underline">{film.title}</p>
                               <p className="text-xs text-muted-foreground">{film.releaseYear}</p>
                             </div>
-                          </div>
+                          </Link>
                         </td>
                         <td className="py-3 px-2 text-sm">{film.studioName}</td>
                         <td className="py-3 px-2">
@@ -579,22 +619,113 @@ export function HollywoodInsider() {
 
         {/* Talent Profiles Tab */}
         <TabsContent value="talent" className="space-y-4">
+          {/* Talent Filters */}
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex flex-wrap gap-4 items-center">
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Filter:</span>
+                </div>
+                
+                <Select value={talentTypeFilter} onValueChange={(v) => setTalentTypeFilter(v as TalentTypeFilter)}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4" />
+                        All Talent
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="director">
+                      <div className="flex items-center gap-2">
+                        <Clapperboard className="w-4 h-4" />
+                        Directors
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="actor">
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4" />
+                        Actors
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="composer">
+                      <div className="flex items-center gap-2">
+                        <Music className="w-4 h-4" />
+                        Composers
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="writer">
+                      <div className="flex items-center gap-2">
+                        <PenTool className="w-4 h-4" />
+                        Writers
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <div className="flex items-center gap-2 ml-auto">
+                  <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Sort:</span>
+                  <Select value={talentSortField} onValueChange={(v) => setTalentSortField(v as TalentSortField)}>
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="gross">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4" />
+                          Box Office
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="alphabetical">
+                        <div className="flex items-center gap-2">
+                          A-Z
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
-              <CardTitle>Talent Filmography & Awards</CardTitle>
+              <CardTitle>
+                Talent Filmography & Awards
+                {talentTypeFilter !== 'all' && ` - ${talentTypeFilter.charAt(0).toUpperCase() + talentTypeFilter.slice(1)}s`}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[600px]">
                 <div className="space-y-6">
-                  {talentWithFilmography.slice(0, 50).map((talent, index) => (
+                  {filteredTalent.slice(0, 50).map((talent, index) => (
                     <div key={talent.id} className="p-4 rounded-lg border border-border">
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center gap-4">
-                          <div className="text-xl font-bold text-muted-foreground w-8">
-                            #{index + 1}
-                          </div>
+                          {/* Profile Picture */}
+                          {talent.imageUrl ? (
+                            <img 
+                              src={talent.imageUrl} 
+                              alt={talent.name}
+                              className="w-16 h-16 rounded-full object-cover border-2 border-border"
+                            />
+                          ) : (
+                            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center border-2 border-border">
+                              {talent.type === 'director' && <Clapperboard className="w-6 h-6 text-muted-foreground" />}
+                              {talent.type === 'actor' && <Users className="w-6 h-6 text-muted-foreground" />}
+                              {talent.type === 'composer' && <Music className="w-6 h-6 text-muted-foreground" />}
+                              {talent.type === 'writer' && <PenTool className="w-6 h-6 text-muted-foreground" />}
+                            </div>
+                          )}
                           <div>
-                            <h3 className="font-semibold text-lg">{talent.name}</h3>
+                            <div className="flex items-center gap-2">
+                              <span className="text-lg font-bold text-muted-foreground">#{index + 1}</span>
+                              <h3 className="font-semibold text-lg">{talent.name}</h3>
+                            </div>
                             <div className="flex items-center gap-2 mt-1">
                               <Badge variant="outline" className="text-xs capitalize">
                                 {talent.type}
@@ -626,17 +757,18 @@ export function HollywoodInsider() {
                         </p>
                         <div className="flex flex-wrap gap-2">
                           {talent.filmography.slice(0, 8).map(({ film, role, boxOffice }) => (
-                            <div 
-                              key={film.id} 
-                              className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-md text-sm"
+                            <Link 
+                              key={`${film.id}-${role}`}
+                              href={`/film/${film.id}`}
+                              className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-md text-sm hover:bg-muted transition-colors"
                             >
-                              <span className="font-medium">{film.title}</span>
+                              <span className="font-medium hover:underline">{film.title}</span>
                               <span className="text-muted-foreground">({film.releaseYear})</span>
                               <span className="text-xs text-muted-foreground">•</span>
                               <span className="text-xs">{role}</span>
                               <span className="text-xs text-muted-foreground">•</span>
                               <span className="text-xs font-mono">{formatCompactMoney(boxOffice)}</span>
-                            </div>
+                            </Link>
                           ))}
                           {talent.filmography.length > 8 && (
                             <div className="px-3 py-1.5 text-sm text-muted-foreground">
@@ -647,7 +779,7 @@ export function HollywoodInsider() {
                       </div>
                     </div>
                   ))}
-                  {talentWithFilmography.length === 0 && (
+                  {filteredTalent.length === 0 && (
                     <div className="py-8 text-center text-muted-foreground">
                       No talent with released films yet
                     </div>
