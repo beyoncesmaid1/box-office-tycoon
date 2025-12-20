@@ -456,86 +456,134 @@ export function IndustryMagazine() {
   const topStory = thisWeekStories[0];
   const olderStories = allStories.filter(s => s !== topStory).slice(0, 20);
 
+  // Split stories into columns for newspaper layout
+  const secondaryStories = thisWeekStories.slice(1, 3);
+  const columnStories = olderStories.slice(0, 12);
+  const leftColumnStories = columnStories.filter((_, i) => i % 2 === 0);
+  const rightColumnStories = columnStories.filter((_, i) => i % 2 === 1);
+
   return (
-    <Card className="overflow-hidden flex flex-col" style={{ maxHeight: '600px' }}>
-      <CardHeader className="bg-gradient-to-r from-slate-900 to-slate-800 text-white pb-3 flex-shrink-0">
-        <div className="flex items-center gap-2">
-          <Newspaper className="w-5 h-5" />
-          <CardTitle className="font-display text-xl tracking-wide">VARIETY WEEKLY</CardTitle>
+    <Card className="overflow-hidden flex flex-col bg-amber-50 dark:bg-stone-900 border-2 border-stone-400 dark:border-stone-600" style={{ maxHeight: '650px' }}>
+      {/* Newspaper Masthead */}
+      <div className="bg-stone-100 dark:bg-stone-800 border-b-4 border-double border-stone-800 dark:border-stone-400 px-4 py-3 flex-shrink-0">
+        <div className="text-center">
+          <div className="flex items-center justify-center gap-3 mb-1">
+            <div className="h-px flex-1 bg-stone-800 dark:bg-stone-400"></div>
+            <span className="text-[10px] tracking-[0.3em] text-stone-600 dark:text-stone-400 uppercase">The Entertainment Industry's Leading Source</span>
+            <div className="h-px flex-1 bg-stone-800 dark:bg-stone-400"></div>
+          </div>
+          <h1 className="font-serif text-3xl font-black tracking-tight text-stone-900 dark:text-stone-100" style={{ fontFamily: 'Georgia, Times New Roman, serif' }}>
+            VARIETY WEEKLY
+          </h1>
+          <div className="flex items-center justify-between mt-1 text-[10px] text-stone-600 dark:text-stone-400">
+            <span>Est. 1905</span>
+            <span className="font-medium">Week {state.currentWeek}, {state.currentYear}</span>
+            <span>Vol. CXIX No. {state.currentWeek}</span>
+          </div>
         </div>
-        <p className="text-xs text-slate-400 mt-1">
-          Week {state.currentWeek}, {state.currentYear} Edition
-        </p>
-      </CardHeader>
+      </div>
+
       <CardContent className="p-0 flex-1 overflow-hidden">
         <ScrollArea className="h-full">
-          {topStory ? (
-            <div className="border-b">
-              <div className="flex gap-4 p-4">
-                {topStory.imageUrl && (
-                  <div className="w-24 h-32 flex-shrink-0 rounded overflow-hidden bg-slate-200">
-                    <img 
-                      src={topStory.imageUrl} 
-                      alt="" 
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                      }}
-                    />
+          <div className="p-3">
+            {/* Lead Story - Full Width */}
+            {topStory ? (
+              <div className="border-b-2 border-stone-300 dark:border-stone-600 pb-3 mb-3">
+                <div className="flex gap-4">
+                  {topStory.imageUrl && (
+                    <div className="w-28 h-36 flex-shrink-0 border border-stone-400 dark:border-stone-600 bg-stone-200 dark:bg-stone-700">
+                      <img 
+                        src={topStory.imageUrl} 
+                        alt="" 
+                        className="w-full h-full object-cover grayscale-[30%]"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[10px] font-bold tracking-wider text-red-700 dark:text-red-400 uppercase">Breaking</span>
+                      <StoryIcon type={topStory.type} />
+                    </div>
+                    <h2 className="font-serif text-xl font-bold leading-tight mb-2 text-stone-900 dark:text-stone-100" style={{ fontFamily: 'Georgia, Times New Roman, serif' }}>
+                      {topStory.headline}
+                    </h2>
+                    <p className="text-sm text-stone-700 dark:text-stone-300 leading-relaxed" style={{ fontFamily: 'Georgia, Times New Roman, serif' }}>
+                      {topStory.content}
+                    </p>
                   </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-2">
-                    <StoryIcon type={topStory.type} />
-                    <Badge variant="secondary" className="text-xs bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
-                      TOP STORY
-                    </Badge>
-                  </div>
-                  <h3 className="font-serif text-lg font-bold leading-tight mb-2">
-                    {topStory.headline}
-                  </h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {topStory.content}
-                  </p>
                 </div>
               </div>
-            </div>
-          ) : (
-            <div className="p-6 text-center text-muted-foreground">
-              <Film className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p>No major industry news this week.</p>
-              <p className="text-xs mt-1">Release some films to make headlines!</p>
-            </div>
-          )}
-          
-          {olderStories.length > 0 && (
-            <div className="divide-y">
-              {olderStories.map((story) => (
-                <div key={story.id} className="p-3 hover:bg-muted/50 transition-colors">
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5">
+            ) : (
+              <div className="py-8 text-center text-stone-500 dark:text-stone-400 border-b-2 border-stone-300 dark:border-stone-600 mb-3">
+                <Film className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="font-serif italic">No major industry news this week.</p>
+                <p className="text-xs mt-1">Release some films to make headlines!</p>
+              </div>
+            )}
+
+            {/* Secondary Stories Row */}
+            {secondaryStories.length > 0 && (
+              <div className="grid grid-cols-2 gap-3 border-b-2 border-stone-300 dark:border-stone-600 pb-3 mb-3">
+                {secondaryStories.map((story) => (
+                  <div key={story.id} className="border-r last:border-r-0 border-stone-200 dark:border-stone-700 pr-3 last:pr-0">
+                    <div className="flex items-center gap-1 mb-1">
                       <StoryIcon type={story.type} />
+                      <span className="text-[9px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">This Week</span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-medium text-sm leading-tight">
-                          {story.headline}
-                        </h4>
-                        {(story.week !== state.currentWeek || story.year !== state.currentYear) && (
-                          <Badge variant="outline" className="text-xs shrink-0">
-                            Wk {story.week}
-                          </Badge>
-                        )}
+                    <h3 className="font-serif text-sm font-bold leading-tight mb-1 text-stone-900 dark:text-stone-100" style={{ fontFamily: 'Georgia, Times New Roman, serif' }}>
+                      {story.headline}
+                    </h3>
+                    <p className="text-[11px] text-stone-600 dark:text-stone-400 line-clamp-3" style={{ fontFamily: 'Georgia, Times New Roman, serif' }}>
+                      {story.content}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Two-Column Layout for Older Stories */}
+            {columnStories.length > 0 && (
+              <div className="grid grid-cols-2 gap-3">
+                {/* Left Column */}
+                <div className="border-r border-stone-200 dark:border-stone-700 pr-3 space-y-3">
+                  {leftColumnStories.map((story) => (
+                    <div key={story.id} className="border-b border-dashed border-stone-300 dark:border-stone-600 pb-2 last:border-b-0">
+                      <div className="flex items-center gap-1 mb-0.5">
+                        <StoryIcon type={story.type} />
+                        <span className="text-[9px] text-stone-400 dark:text-stone-500">Wk {story.week}</span>
                       </div>
-                      <p className="text-xs text-muted-foreground line-clamp-2">
+                      <h4 className="font-serif text-xs font-semibold leading-tight text-stone-800 dark:text-stone-200" style={{ fontFamily: 'Georgia, Times New Roman, serif' }}>
+                        {story.headline}
+                      </h4>
+                      <p className="text-[10px] text-stone-500 dark:text-stone-400 line-clamp-2 mt-0.5" style={{ fontFamily: 'Georgia, Times New Roman, serif' }}>
                         {story.content}
                       </p>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
+                {/* Right Column */}
+                <div className="space-y-3">
+                  {rightColumnStories.map((story) => (
+                    <div key={story.id} className="border-b border-dashed border-stone-300 dark:border-stone-600 pb-2 last:border-b-0">
+                      <div className="flex items-center gap-1 mb-0.5">
+                        <StoryIcon type={story.type} />
+                        <span className="text-[9px] text-stone-400 dark:text-stone-500">Wk {story.week}</span>
+                      </div>
+                      <h4 className="font-serif text-xs font-semibold leading-tight text-stone-800 dark:text-stone-200" style={{ fontFamily: 'Georgia, Times New Roman, serif' }}>
+                        {story.headline}
+                      </h4>
+                      <p className="text-[10px] text-stone-500 dark:text-stone-400 line-clamp-2 mt-0.5" style={{ fontFamily: 'Georgia, Times New Roman, serif' }}>
+                        {story.content}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </ScrollArea>
       </CardContent>
     </Card>

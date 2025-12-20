@@ -4506,10 +4506,10 @@ export async function registerRoutes(
         genreBonus = 5;
         audienceGenreBonus = 2;
       } else if (film.genre === 'romance') {
-        genreBonus = -2;
-        audienceGenreBonus = 4;
+        genreBonus = 5;
+        audienceGenreBonus = 2;
       } else if (film.genre === 'thriller') {
-        genreBonus = 2;
+        genreBonus = 3;
         audienceGenreBonus = 5;
       }
       
