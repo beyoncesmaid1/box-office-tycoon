@@ -10,7 +10,11 @@ import {
   Users,
   Clapperboard,
   PenTool,
-  Music
+  Music,
+  Globe,
+  TrendingUp,
+  DollarSign,
+  MapPin
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -128,6 +132,18 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
     const roi = investmentBudget > 0 ? (profit / investmentBudget * 100) : 0;
 
     const openingWeekend = film.weeklyBoxOffice?.[0] || 0;
+    const weeklyData = film.weeklyBoxOffice || [];
+    
+    // Country breakdown - sort by gross descending
+    const countryBreakdown = totalByCountry 
+      ? Object.entries(totalByCountry)
+          .map(([country, gross]) => ({
+            country,
+            gross,
+            percent: film.totalBoxOffice > 0 ? (gross / film.totalBoxOffice * 100) : 0
+          }))
+          .sort((a, b) => b.gross - a.gross)
+      : [];
 
     return {
       domesticGross,
@@ -139,6 +155,8 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
       profit,
       roi,
       openingWeekend,
+      weeklyData,
+      countryBreakdown,
     };
   }, [film]);
 
@@ -256,65 +274,156 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
         </CardContent>
       </Card>
 
-      {/* Grosses Section */}
+      {/* Opening Weekend Highlight - Box Office Mojo Style */}
+      {grossStats && grossStats.openingWeekend > 0 && (
+        <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-primary/20 rounded-full">
+                  <TrendingUp className="w-8 h-8 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground uppercase tracking-wide">Opening Weekend</p>
+                  <p className="text-4xl font-bold text-primary">{formatMoney(grossStats.openingWeekend)}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-muted-foreground">% of Total Gross</p>
+                <p className="text-2xl font-semibold">
+                  {grossStats.worldwideGross > 0 
+                    ? ((grossStats.openingWeekend / grossStats.worldwideGross) * 100).toFixed(1) 
+                    : 0}%
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Box Office Summary - Box Office Mojo Style */}
       {grossStats && (
         <Card>
           <CardHeader>
-            <CardTitle>Grosses</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="w-5 h-5" />
+              Box Office Summary
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Left: Gross Breakdown */}
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground uppercase tracking-wide">
-                    Domestic ({grossStats.domesticPercent}%)
-                  </p>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Worldwide Total */}
+              <div className="lg:col-span-1 p-6 bg-muted/50 rounded-lg text-center">
+                <Globe className="w-8 h-8 mx-auto mb-2 text-primary" />
+                <p className="text-sm text-muted-foreground uppercase tracking-wide">Worldwide</p>
+                <p className="text-3xl font-bold text-primary">{formatMoney(grossStats.worldwideGross)}</p>
+              </div>
+              
+              {/* Domestic & International */}
+              <div className="lg:col-span-2 grid grid-cols-2 gap-4">
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MapPin className="w-4 h-4 text-blue-600" />
+                    <p className="text-sm text-muted-foreground uppercase tracking-wide">Domestic</p>
+                  </div>
                   <p className="text-2xl font-bold">{formatMoney(grossStats.domesticGross)}</p>
+                  <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-blue-500 rounded-full" 
+                      style={{ width: `${grossStats.domesticPercent}%` }}
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">{grossStats.domesticPercent}% of worldwide</p>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground uppercase tracking-wide">
-                    International ({grossStats.intlPercent}%)
-                  </p>
+                
+                <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Globe className="w-4 h-4 text-green-600" />
+                    <p className="text-sm text-muted-foreground uppercase tracking-wide">International</p>
+                  </div>
                   <p className="text-2xl font-bold">{formatMoney(grossStats.internationalGross)}</p>
-                </div>
-                <Separator />
-                <div>
-                  <p className="text-sm text-muted-foreground uppercase tracking-wide">Worldwide</p>
-                  <p className="text-3xl font-bold text-primary">{formatMoney(grossStats.worldwideGross)}</p>
+                  <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-green-500 rounded-full" 
+                      style={{ width: `${grossStats.intlPercent}%` }}
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">{grossStats.intlPercent}% of worldwide</p>
                 </div>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-              {/* Right: Additional Stats */}
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Opening Weekend</p>
-                    <p className="text-lg font-semibold">{formatCompactMoney(grossStats.openingWeekend)}</p>
+      {/* Country Breakdown - Box Office Mojo Style */}
+      {grossStats && grossStats.countryBreakdown.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Globe className="w-5 h-5" />
+              International Breakdown
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {grossStats.countryBreakdown.map(({ country, gross, percent }) => (
+                <div key={country} className="flex items-center gap-4">
+                  <div className="w-32 text-sm font-medium truncate">{country}</div>
+                  <div className="flex-1">
+                    <div className="h-6 bg-muted rounded-full overflow-hidden relative">
+                      <div 
+                        className="h-full bg-gradient-to-r from-primary/80 to-primary rounded-full transition-all" 
+                        style={{ width: `${Math.min(percent, 100)}%` }}
+                      />
+                      <span className="absolute inset-0 flex items-center justify-center text-xs font-medium">
+                        {percent.toFixed(1)}%
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Budget</p>
-                    <p className="text-lg font-semibold">{formatCompactMoney(grossStats.investmentBudget)}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Profit/Loss</p>
-                    <p className={`text-lg font-semibold ${grossStats.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {grossStats.profit >= 0 ? '+' : ''}{formatCompactMoney(grossStats.profit)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">ROI</p>
-                    <p className={`text-lg font-semibold ${grossStats.roi >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {grossStats.roi >= 0 ? '+' : ''}{grossStats.roi.toFixed(1)}%
-                    </p>
+                  <div className="w-28 text-right font-mono text-sm">
+                    {formatCompactMoney(gross)}
                   </div>
                 </div>
-                {film.marketingBudget != null && film.marketingBudget > 0 && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">Marketing Budget</p>
-                    <p className="text-lg font-semibold">{formatCompactMoney(film.marketingBudget)}</p>
-                  </div>
-                )}
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Financial Performance */}
+      {grossStats && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Financial Performance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="p-4 bg-muted/50 rounded-lg">
+                <p className="text-sm text-muted-foreground">Production Budget</p>
+                <p className="text-xl font-bold">{formatCompactMoney(film.productionBudget || 0)}</p>
+              </div>
+              {film.marketingBudget != null && film.marketingBudget > 0 && (
+                <div className="p-4 bg-muted/50 rounded-lg">
+                  <p className="text-sm text-muted-foreground">Marketing Budget</p>
+                  <p className="text-xl font-bold">{formatCompactMoney(film.marketingBudget)}</p>
+                </div>
+              )}
+              <div className="p-4 bg-muted/50 rounded-lg">
+                <p className="text-sm text-muted-foreground">Total Investment</p>
+                <p className="text-xl font-bold">{formatCompactMoney(grossStats.investmentBudget)}</p>
+              </div>
+              <div className={`p-4 rounded-lg ${grossStats.profit >= 0 ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'}`}>
+                <p className="text-sm text-muted-foreground">Profit/Loss</p>
+                <p className={`text-xl font-bold ${grossStats.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {grossStats.profit >= 0 ? '+' : ''}{formatCompactMoney(grossStats.profit)}
+                </p>
+              </div>
+              <div className={`p-4 rounded-lg ${grossStats.roi >= 0 ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'}`}>
+                <p className="text-sm text-muted-foreground">Return on Investment</p>
+                <p className={`text-xl font-bold ${grossStats.roi >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {grossStats.roi >= 0 ? '+' : ''}{grossStats.roi.toFixed(1)}%
+                </p>
               </div>
             </div>
           </CardContent>
