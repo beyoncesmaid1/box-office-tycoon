@@ -1559,6 +1559,15 @@ async function processAwardCeremonies(
               if (['scifi', 'fantasy', 'action'].includes(film.genre)) score += 10;
             }
             
+            if (categoryType === 'box_office' || categoryName.includes('box office')) {
+              // Box Office Achievement - based on box office + audience score
+              // Override the base critic score for this category
+              score = 0; // Reset score
+              score += Math.min(100, (film.totalBoxOffice || 0) / 5000000); // Box office (up to 100 points for $500M+)
+              score += ((film.audienceScore || 7) * 10) * 2; // Audience score matters a lot (up to 200 points)
+              score += Math.random() * 20; // Small random factor
+            }
+            
             // Check if film has awards campaign
             if (film.awards?.includes('Awards Campaign')) {
               score += 20;

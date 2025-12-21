@@ -959,6 +959,7 @@ export class DatabaseStorage implements IStorage {
       { awardShowId: 'golden_globes', name: 'Best Motion Picture - Drama', shortName: 'Picture (Drama)', categoryType: 'film_drama', isPerformance: false },
       { awardShowId: 'golden_globes', name: 'Best Motion Picture - Musical or Comedy', shortName: 'Picture (Comedy)', categoryType: 'film_comedy', isPerformance: false },
       { awardShowId: 'golden_globes', name: 'Best Animated Feature', shortName: 'Animation', categoryType: 'film', requiresGenre: 'animation', isPerformance: false },
+      { awardShowId: 'golden_globes', name: 'Cinematic and Box Office Achievement', shortName: 'Box Office', categoryType: 'box_office', isPerformance: false },
       { awardShowId: 'golden_globes', name: 'Best Director', shortName: 'Director', categoryType: 'film', isPerformance: false },
       { awardShowId: 'golden_globes', name: 'Best Actor - Drama', shortName: 'Actor (Drama)', categoryType: 'acting_drama', isPerformance: true },
       { awardShowId: 'golden_globes', name: 'Best Actress - Drama', shortName: 'Actress (Drama)', categoryType: 'acting_drama', isPerformance: true },
