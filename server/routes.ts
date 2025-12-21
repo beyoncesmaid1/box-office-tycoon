@@ -4058,6 +4058,21 @@ export async function registerRoutes(
                 console.error(`[AI-TALENT-ERROR] Failed to hire talent for ${title}:`, talentErr);
               }
 
+              // AI films with VFX-heavy genres pick a VFX studio (skip drama, comedy, romance, etc.)
+              const vfxRequiredGenres = ['action', 'scifi', 'fantasy', 'animation'];
+              if (vfxRequiredGenres.includes(genre)) {
+                const selectedVFXStudio = vfxStudios[Math.floor(Math.random() * vfxStudios.length)];
+                const vfxCost = selectedVFXStudio.cost || 0;
+                
+                await storage.updateFilm(newFilm.id, {
+                  vfxStudioId: selectedVFXStudio.id,
+                  totalBudget: Math.floor(totalCost + vfxCost),
+                });
+                
+                // Track VFX cost in budget changes
+                aiStudioBudgetChanges.set(aiStudio.id, (aiStudioBudgetChanges.get(aiStudio.id) || 0) - vfxCost);
+              }
+
               // Create territory releases immediately for the new AI film (BATCHED for performance)
               // ALL AI films release in ALL territories globally
               // Marketing is stored only on FIRST territory (global budget, not per-territory)
