@@ -2614,7 +2614,7 @@ export async function registerRoutes(
               }
 
               // AI films with VFX-heavy genres MUST pick a VFX studio
-              const vfxRequiredGenres = ['action', 'scifi', 'fantasy', 'animation'];
+              const vfxRequiredGenres = ['action', 'scifi', 'fantasy', 'animation', 'horror'];
               if (vfxRequiredGenres.includes(genre)) {
                 // Randomly select a VFX studio
                 const selectedVFXStudio = vfxStudios[Math.floor(Math.random() * vfxStudios.length)];
@@ -4059,7 +4059,7 @@ export async function registerRoutes(
               }
 
               // AI films with VFX-heavy genres pick a VFX studio (skip drama, comedy, romance, etc.)
-              const vfxRequiredGenres = ['action', 'scifi', 'fantasy', 'animation'];
+              const vfxRequiredGenres = ['action', 'scifi', 'fantasy', 'animation', 'horror'];
               if (vfxRequiredGenres.includes(genre)) {
                 const selectedVFXStudio = vfxStudios[Math.floor(Math.random() * vfxStudios.length)];
                 const vfxCost = selectedVFXStudio.cost || 0;
