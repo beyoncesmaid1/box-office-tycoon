@@ -937,6 +937,7 @@ export function HollywoodInsider() {
           {/* Oscar Predictions - Only show in Nov, Dec, Jan */}
           {(() => {
             const currentWeek = state.currentWeek;
+            const currentYear = state.currentYear;
             const isNovember = currentWeek >= 44 && currentWeek <= 48; // Early November
             const isDecember = currentWeek >= 48 && currentWeek <= 52; // December
             const isJanuary = currentWeek >= 1 && currentWeek <= 4; // January
@@ -946,12 +947,33 @@ export function HollywoodInsider() {
             
             if (!showPredictions) return null;
             
+            // Seeded random function for stable predictions
+            // Seed changes only at the start of each prediction period (Nov, Dec, Jan)
+            const getPredictionSeed = () => {
+              if (isJanuary) return currentYear * 1000 + 1; // January seed
+              if (isDecember) return currentYear * 1000 + 12; // December seed
+              return currentYear * 1000 + 11; // November seed
+            };
+            const seed = getPredictionSeed();
+            
+            // Simple seeded random number generator
+            const seededRandom = (filmId: string, categoryOffset: number = 0) => {
+              // Create a hash from film ID and seed
+              let hash = seed + categoryOffset;
+              for (let i = 0; i < filmId.length; i++) {
+                hash = ((hash << 5) - hash) + filmId.charCodeAt(i);
+                hash = hash & hash; // Convert to 32bit integer
+              }
+              // Return a pseudo-random number between 0 and 1
+              return Math.abs(Math.sin(hash) * 10000) % 1;
+            };
+            
             // Get eligible films (released this year or last year, with good scores)
             const eligibleFilms = allFilms.filter(f => 
               f.phase === 'released' && 
               f.criticScore !== null && 
               f.criticScore !== undefined &&
-              (f.releaseYear === state.currentYear || f.releaseYear === state.currentYear - 1)
+              (f.releaseYear === currentYear || f.releaseYear === currentYear - 1)
             );
             
             // Oscar-friendly genres boost
@@ -961,26 +983,34 @@ export function HollywoodInsider() {
               'animation': 5, 'action': 0, 'horror': -5, 'fantasy': 0
             };
             
-            // Score films for general Oscar potential
+            // Score films for general Oscar potential (with seeded random for stability)
             const scoredFilms = eligibleFilms.map(film => {
               const studio = studioMap.get(film.studioId);
+              const director = film.directorId ? talentMap.get(film.directorId) : null;
               const criticScore = film.criticScore || 0;
               const genreBoost = oscarGenreBoost[film.genre] || 0;
               const boxOfficeBonus = Math.min(10, Math.log10(Math.max(1, film.totalBoxOffice) / 1000000) * 2);
-              const randomFactor = (Math.random() - 0.5) * 30;
+              // Use seeded random instead of Math.random() for stable predictions
+              const randomFactor = (seededRandom(film.id) - 0.5) * 30;
               const oscarScore = criticScore + genreBoost + boxOfficeBonus + randomFactor;
               
               return {
                 film,
                 studioName: studio?.name || 'Unknown Studio',
+                directorName: director?.name || 'Unknown Director',
                 oscarScore,
                 criticScore
               };
             });
             
-            // Helper to get top N for a category with winner
-            const getTopNominees = (films: typeof scoredFilms, count: number = 5) => {
-              const sorted = [...films].sort((a, b) => b.oscarScore - a.oscarScore);
+            // Helper to get top N for a category with winner (uses category-specific seeded random)
+            const getTopNominees = (films: typeof scoredFilms, count: number = 5, categoryOffset: number = 0) => {
+              // Re-score with category-specific offset for variety between categories
+              const categoryScored = films.map(f => ({
+                ...f,
+                categoryScore: f.oscarScore + (seededRandom(f.film.id, categoryOffset) - 0.5) * 15
+              }));
+              const sorted = [...categoryScored].sort((a, b) => b.categoryScore - a.categoryScore);
               const nominees = sorted.slice(0, count);
               const winner = nominees[0];
               return { nominees: nominees.sort((a, b) => a.film.title.localeCompare(b.film.title)), winner };
@@ -988,45 +1018,67 @@ export function HollywoodInsider() {
             
             // Category-specific filtering
             const animatedFilms = scoredFilms.filter(f => f.film.genre === 'animation');
-            const dramaFilms = scoredFilms.filter(f => ['drama', 'thriller', 'horror', 'scifi', 'fantasy', 'action'].includes(f.film.genre));
-            const comedyMusicalFilms = scoredFilms.filter(f => ['comedy', 'romance', 'musicals'].includes(f.film.genre));
             const vfxFilms = scoredFilms.filter(f => (f.film.practicalEffectsBudget || 0) > 5000000 || ['scifi', 'fantasy', 'action', 'animation'].includes(f.film.genre));
             
-            // Get predictions for each category
+            // Get predictions for each category (with unique category offsets for variety)
             // Animation is ONLY eligible for Score and Animated Feature
             const nonAnimatedFilms = scoredFilms.filter(f => f.film.genre !== 'animation');
-            const bestPicture = getTopNominees(nonAnimatedFilms, 10);
-            const bestDirector = getTopNominees(nonAnimatedFilms, 5);
-            const bestActor = getTopNominees(nonAnimatedFilms, 5);
-            const bestActress = getTopNominees(nonAnimatedFilms, 5);
-            const bestSuppActor = getTopNominees(nonAnimatedFilms, 5);
-            const bestSuppActress = getTopNominees(nonAnimatedFilms, 5);
-            const bestOrigScreenplay = getTopNominees(nonAnimatedFilms.filter(f => !f.film.title.match(/\s[2-9]$|\sII|III|IV|Part\s/i)), 5);
-            const bestAnimated = getTopNominees(animatedFilms, 5);
-            const bestCinematography = getTopNominees(nonAnimatedFilms, 5);
-            const bestEditing = getTopNominees(nonAnimatedFilms, 5);
-            const bestProdDesign = getTopNominees(nonAnimatedFilms.filter(f => (f.film.setsBudget || 0) > 3000000), 5);
-            const bestCostume = getTopNominees(nonAnimatedFilms.filter(f => (f.film.costumesBudget || 0) > 1000000), 5);
-            const bestMakeup = getTopNominees(nonAnimatedFilms.filter(f => (f.film.makeupBudget || 0) > 500000), 5);
-            const bestVFX = getTopNominees(vfxFilms.filter(f => f.film.genre !== 'animation'), 5);
-            const bestScore = getTopNominees(scoredFilms, 5); // Animation IS eligible for Score
+            const bestPicture = getTopNominees(nonAnimatedFilms, 10, 1);
+            const bestDirector = getTopNominees(nonAnimatedFilms, 5, 2);
+            const bestActor = getTopNominees(nonAnimatedFilms, 5, 3);
+            const bestActress = getTopNominees(nonAnimatedFilms, 5, 4);
+            const bestSuppActor = getTopNominees(nonAnimatedFilms, 5, 5);
+            const bestSuppActress = getTopNominees(nonAnimatedFilms, 5, 6);
+            const bestOrigScreenplay = getTopNominees(nonAnimatedFilms.filter(f => !f.film.title.match(/\s[2-9]$|\sII|III|IV|Part\s/i)), 5, 7);
+            const bestAnimated = getTopNominees(animatedFilms, 5, 8);
+            const bestCinematography = getTopNominees(nonAnimatedFilms, 5, 9);
+            const bestEditing = getTopNominees(nonAnimatedFilms, 5, 10);
+            const bestProdDesign = getTopNominees(nonAnimatedFilms.filter(f => (f.film.setsBudget || 0) > 3000000), 5, 11);
+            const bestCostume = getTopNominees(nonAnimatedFilms.filter(f => (f.film.costumesBudget || 0) > 1000000), 5, 12);
+            const bestMakeup = getTopNominees(nonAnimatedFilms.filter(f => (f.film.makeupBudget || 0) > 500000), 5, 13);
+            const bestVFX = getTopNominees(vfxFilms.filter(f => f.film.genre !== 'animation'), 5, 14);
+            const bestScore = getTopNominees(scoredFilms, 5, 15); // Animation IS eligible for Score
             
-            // Render a category section
-            const renderCategory = (title: string, data: { nominees: typeof scoredFilms, winner: typeof scoredFilms[0] | undefined }) => {
+            // Render a category section - different display for different category types
+            type CategoryType = 'film' | 'director' | 'actor' | 'actress' | 'screenplay' | 'score' | 'technical';
+            const renderCategory = (title: string, data: { nominees: typeof scoredFilms, winner: typeof scoredFilms[0] | undefined }, categoryType: CategoryType = 'film') => {
               if (data.nominees.length === 0) return null;
               return (
                 <div className="space-y-2">
                   <h3 className="font-bold text-lg border-b pb-2">{title}</h3>
                   <div className="space-y-1">
-                    {data.nominees.map(({ film, studioName }) => (
-                      <div key={film.id} className="flex items-center py-1 hover:bg-muted/30 rounded px-2 cursor-pointer" onClick={() => navigate(`/film/${film.id}`)}>
-                        <span className="font-medium">"{film.title}"</span>
-                        <span className="text-muted-foreground ml-2">({studioName})</span>
-                        {data.winner && film.id === data.winner.film.id && (
-                          <span className="text-yellow-500 font-bold ml-2">★★★</span>
-                        )}
-                      </div>
-                    ))}
+                    {data.nominees.map(({ film, studioName, directorName }) => {
+                      // Determine what name to show based on category type
+                      let displayName = `"${film.title}"`;
+                      let subText = studioName;
+                      
+                      if (categoryType === 'director') {
+                        displayName = directorName;
+                        subText = `"${film.title}"`;
+                      } else if (categoryType === 'actor' || categoryType === 'actress') {
+                        // For acting categories, show "Actor Name" for "Film Title"
+                        // Since we don't have specific actor data per film, show film title with director
+                        displayName = `"${film.title}"`;
+                        subText = `(${directorName})`;
+                      } else if (categoryType === 'screenplay') {
+                        displayName = `"${film.title}"`;
+                        subText = studioName;
+                      } else if (categoryType === 'score') {
+                        // For score, ideally show composer but we'll show film
+                        displayName = `"${film.title}"`;
+                        subText = studioName;
+                      }
+                      
+                      return (
+                        <div key={film.id} className="flex items-center py-1 hover:bg-muted/30 rounded px-2 cursor-pointer" onClick={() => navigate(`/film/${film.id}`)}>
+                          <span className="font-medium">{displayName}</span>
+                          <span className="text-muted-foreground ml-2">{subText}</span>
+                          {data.winner && film.id === data.winner.film.id && (
+                            <span className="text-yellow-500 font-bold ml-2">★★★</span>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               );
@@ -1049,21 +1101,21 @@ export function HollywoodInsider() {
                 <CardContent>
                   <ScrollArea className="h-[600px] pr-4">
                     <div className="space-y-6">
-                      {renderCategory('Best Picture', bestPicture)}
-                      {renderCategory('Best Director', bestDirector)}
-                      {renderCategory('Best Actor', bestActor)}
-                      {renderCategory('Best Actress', bestActress)}
-                      {renderCategory('Best Supporting Actor', bestSuppActor)}
-                      {renderCategory('Best Supporting Actress', bestSuppActress)}
-                      {renderCategory('Best Original Screenplay', bestOrigScreenplay)}
-                      {bestAnimated.nominees.length > 0 && renderCategory('Best Animated Feature', bestAnimated)}
-                      {renderCategory('Best Cinematography', bestCinematography)}
-                      {renderCategory('Best Film Editing', bestEditing)}
-                      {renderCategory('Best Production Design', bestProdDesign)}
-                      {renderCategory('Best Costume Design', bestCostume)}
-                      {renderCategory('Best Makeup and Hairstyling', bestMakeup)}
-                      {bestVFX.nominees.length > 0 && renderCategory('Best Visual Effects', bestVFX)}
-                      {renderCategory('Best Original Score', bestScore)}
+                      {renderCategory('Best Picture', bestPicture, 'film')}
+                      {renderCategory('Best Director', bestDirector, 'director')}
+                      {renderCategory('Best Actor', bestActor, 'actor')}
+                      {renderCategory('Best Actress', bestActress, 'actress')}
+                      {renderCategory('Best Supporting Actor', bestSuppActor, 'actor')}
+                      {renderCategory('Best Supporting Actress', bestSuppActress, 'actress')}
+                      {renderCategory('Best Original Screenplay', bestOrigScreenplay, 'screenplay')}
+                      {bestAnimated.nominees.length > 0 && renderCategory('Best Animated Feature', bestAnimated, 'film')}
+                      {renderCategory('Best Cinematography', bestCinematography, 'technical')}
+                      {renderCategory('Best Film Editing', bestEditing, 'technical')}
+                      {renderCategory('Best Production Design', bestProdDesign, 'technical')}
+                      {renderCategory('Best Costume Design', bestCostume, 'technical')}
+                      {renderCategory('Best Makeup and Hairstyling', bestMakeup, 'technical')}
+                      {bestVFX.nominees.length > 0 && renderCategory('Best Visual Effects', bestVFX, 'technical')}
+                      {renderCategory('Best Original Score', bestScore, 'score')}
                     </div>
                   </ScrollArea>
                 </CardContent>
