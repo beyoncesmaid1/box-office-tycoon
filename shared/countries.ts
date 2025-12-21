@@ -5,35 +5,28 @@
 // Genre factors for domestic (North America) vs international performance
 // Values > 1.0 = more domestic-heavy, < 1.0 = more international-heavy
 // Based on historical box office data patterns
+// Game genres: action, comedy, drama, horror, scifi, romance, thriller, animation, fantasy, musicals
 export const GENRE_DOMESTIC_FACTORS: Record<string, number> = {
   // Domestic-heavy genres (cultural specificity, language-dependent humor, local appeal)
   horror: 1.35,      // Horror is very domestic-heavy (cultural fears, doesn't translate well)
   comedy: 1.30,      // Comedy relies heavily on language/cultural humor
-  western: 1.35,     // Very American genre
-  sports: 1.40,      // Sports films are extremely domestic-heavy (American sports)
-  documentary: 1.45, // Documentaries are mostly domestic
   romance: 1.20,     // Rom-coms especially are domestic-leaning
   
   // Balanced genres
   drama: 1.05,       // Slightly domestic, but prestige dramas travel
   thriller: 1.05,    // Fairly balanced
-  crime: 1.05,       // Balanced
-  mystery: 1.05,     // Balanced
-  musical: 1.10,     // Slightly domestic
-  war: 1.15,         // American war films do better domestically
-  historical: 1.10,  // Depends on subject matter
+  musicals: 1.10,    // Slightly domestic
   
   // International-heavy genres (visual spectacle, universal appeal)
   action: 0.85,      // Action translates universally
   scifi: 0.80,       // Sci-fi has strong international appeal, especially Asia
   fantasy: 0.85,     // Fantasy travels well internationally
   animation: 0.75,   // Animation is very strong internationally, especially Asia
-  family: 0.85,      // Family films travel well
-  adventure: 0.85,   // Similar to action
 };
 
 // Genre factors for specific international markets
 // Some genres perform exceptionally well in certain territories
+// Game genres: action, comedy, drama, horror, scifi, romance, thriller, animation, fantasy, musicals
 export const GENRE_TERRITORY_FACTORS: Record<string, Record<string, number>> = {
   animation: {
     'Japan': 1.4,      // Anime culture = strong animation market
@@ -81,6 +74,16 @@ export const GENRE_TERRITORY_FACTORS: Record<string, Record<string, number>> = {
     'UK & Ireland': 1.2, // Fantasy does great in UK
     'Germany': 1.1,
     'France': 1.1,
+  },
+  thriller: {
+    'UK & Ireland': 1.1,
+    'Germany': 1.1,
+    'France': 1.05,
+  },
+  musicals: {
+    'UK & Ireland': 1.2, // West End tradition
+    'Australia': 1.1,
+    'Japan': 0.85,
   },
 };
 
