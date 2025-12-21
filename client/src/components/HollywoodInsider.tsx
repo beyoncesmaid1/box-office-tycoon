@@ -950,25 +950,20 @@ export function HollywoodInsider() {
               (f.releaseYear === state.currentYear || f.releaseYear === state.currentYear - 1)
             );
             
-            // Score films for Oscar potential
+            // Oscar-friendly genres boost
+            const oscarGenreBoost: Record<string, number> = {
+              'drama': 20, 'biography': 18, 'historical': 15, 'romance': 8,
+              'comedy': 5, 'musicals': 10, 'thriller': 3, 'scifi': 2,
+              'animation': 5, 'action': 0, 'horror': -5, 'fantasy': 0
+            };
+            
+            // Score films for general Oscar potential
             const scoredFilms = eligibleFilms.map(film => {
               const studio = studioMap.get(film.studioId);
               const criticScore = film.criticScore || 0;
-              const audienceScore = (film.audienceScore || 0) * 10;
-              
-              // Oscar-friendly genres get a boost
-              const oscarGenreBoost: Record<string, number> = {
-                'drama': 20, 'biography': 18, 'historical': 15, 'romance': 8,
-                'comedy': 5, 'musicals': 10, 'thriller': 3, 'scifi': 2,
-                'animation': 5, 'action': 0, 'horror': -5, 'fantasy': 0
-              };
-              
               const genreBoost = oscarGenreBoost[film.genre] || 0;
-              const boxOfficeBonus = Math.min(10, Math.log10(film.totalBoxOffice / 1000000) * 2);
-              
-              // Random factor for unpredictability (±15 points)
+              const boxOfficeBonus = Math.min(10, Math.log10(Math.max(1, film.totalBoxOffice) / 1000000) * 2);
               const randomFactor = (Math.random() - 0.5) * 30;
-              
               const oscarScore = criticScore + genreBoost + boxOfficeBonus + randomFactor;
               
               return {
@@ -977,18 +972,67 @@ export function HollywoodInsider() {
                 oscarScore,
                 criticScore
               };
-            }).sort((a, b) => b.oscarScore - a.oscarScore);
+            });
             
-            // Top 10 for Best Picture predictions
-            const bestPicturePredictions = scoredFilms.slice(0, 10);
-            const predictedWinner = bestPicturePredictions[0];
+            // Helper to get top N for a category with winner
+            const getTopNominees = (films: typeof scoredFilms, count: number = 5) => {
+              const sorted = [...films].sort((a, b) => b.oscarScore - a.oscarScore);
+              const nominees = sorted.slice(0, count);
+              const winner = nominees[0];
+              return { nominees: nominees.sort((a, b) => a.film.title.localeCompare(b.film.title)), winner };
+            };
+            
+            // Category-specific filtering
+            const animatedFilms = scoredFilms.filter(f => f.film.genre === 'animation');
+            const dramaFilms = scoredFilms.filter(f => ['drama', 'thriller', 'horror', 'scifi', 'fantasy', 'action'].includes(f.film.genre));
+            const comedyMusicalFilms = scoredFilms.filter(f => ['comedy', 'romance', 'musicals'].includes(f.film.genre));
+            const vfxFilms = scoredFilms.filter(f => (f.film.vfxBudget || 0) > 5000000 || ['scifi', 'fantasy', 'action', 'animation'].includes(f.film.genre));
+            
+            // Get predictions for each category
+            const bestPicture = getTopNominees(scoredFilms, 10);
+            const bestDirector = getTopNominees(scoredFilms, 5);
+            const bestActor = getTopNominees(scoredFilms, 5);
+            const bestActress = getTopNominees(scoredFilms, 5);
+            const bestSuppActor = getTopNominees(scoredFilms, 5);
+            const bestSuppActress = getTopNominees(scoredFilms, 5);
+            const bestOrigScreenplay = getTopNominees(scoredFilms.filter(f => !f.film.title.match(/\s[2-9]$|\sII|III|IV|Part\s/i)), 5);
+            const bestAdaptedScreenplay = getTopNominees(scoredFilms.filter(f => f.film.title.match(/\s[2-9]$|\sII|III|IV|Part\s/i) || Math.random() > 0.5), 5);
+            const bestAnimated = getTopNominees(animatedFilms, 5);
+            const bestCinematography = getTopNominees(scoredFilms, 5);
+            const bestEditing = getTopNominees(scoredFilms, 5);
+            const bestProdDesign = getTopNominees(scoredFilms.filter(f => (f.film.setsBudget || 0) > 3000000), 5);
+            const bestCostume = getTopNominees(scoredFilms.filter(f => (f.film.costumesBudget || 0) > 1000000), 5);
+            const bestMakeup = getTopNominees(scoredFilms.filter(f => (f.film.makeupBudget || 0) > 500000), 5);
+            const bestVFX = getTopNominees(vfxFilms, 5);
+            const bestScore = getTopNominees(scoredFilms, 5);
+            
+            // Render a category section
+            const renderCategory = (title: string, data: { nominees: typeof scoredFilms, winner: typeof scoredFilms[0] | undefined }) => {
+              if (data.nominees.length === 0) return null;
+              return (
+                <div className="space-y-2">
+                  <h3 className="font-bold text-lg border-b pb-2">{title}</h3>
+                  <div className="space-y-1">
+                    {data.nominees.map(({ film, studioName }) => (
+                      <div key={film.id} className="flex items-center py-1 hover:bg-muted/30 rounded px-2 cursor-pointer" onClick={() => navigate(`/film/${film.id}`)}>
+                        <span className="font-medium">"{film.title}"</span>
+                        <span className="text-muted-foreground ml-2">({studioName})</span>
+                        {data.winner && film.id === data.winner.film.id && (
+                          <span className="text-yellow-500 font-bold ml-2">★★★</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            };
             
             return (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Trophy className="w-5 h-5 text-yellow-500" />
-                    Oscar Predictions {isUpdated && <Badge variant="secondary">Updated</Badge>}
+                    Oscar Predictions {isUpdated && <Badge variant="secondary">Updated Predictions</Badge>}
                   </CardTitle>
                   <p className="text-sm text-muted-foreground">
                     <span className="text-yellow-600 font-semibold">★★★</span> = PREDICTED WINNER
@@ -998,28 +1042,26 @@ export function HollywoodInsider() {
                   </p>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <h3 className="font-bold text-lg border-b pb-2">Best Picture</h3>
-                    {bestPicturePredictions.length === 0 ? (
-                      <p className="text-muted-foreground">No eligible films yet</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {bestPicturePredictions
-                          .sort((a, b) => a.film.title.localeCompare(b.film.title))
-                          .map(({ film, studioName }) => (
-                            <div key={film.id} className="flex items-center justify-between py-2 hover:bg-muted/30 rounded px-2 cursor-pointer" onClick={() => navigate(`/film/${film.id}`)}>
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium">"{film.title}"</span>
-                                <span className="text-muted-foreground">({studioName})</span>
-                                {predictedWinner && film.id === predictedWinner.film.id && (
-                                  <span className="text-yellow-500 font-bold">★★★</span>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                      </div>
-                    )}
-                  </div>
+                  <ScrollArea className="h-[600px] pr-4">
+                    <div className="space-y-6">
+                      {renderCategory('Best Picture', bestPicture)}
+                      {renderCategory('Best Director', bestDirector)}
+                      {renderCategory('Best Actor', bestActor)}
+                      {renderCategory('Best Actress', bestActress)}
+                      {renderCategory('Best Supporting Actor', bestSuppActor)}
+                      {renderCategory('Best Supporting Actress', bestSuppActress)}
+                      {renderCategory('Best Original Screenplay', bestOrigScreenplay)}
+                      {renderCategory('Best Adapted Screenplay', bestAdaptedScreenplay)}
+                      {bestAnimated.nominees.length > 0 && renderCategory('Best Animated Feature', bestAnimated)}
+                      {renderCategory('Best Cinematography', bestCinematography)}
+                      {renderCategory('Best Film Editing', bestEditing)}
+                      {renderCategory('Best Production Design', bestProdDesign)}
+                      {renderCategory('Best Costume Design', bestCostume)}
+                      {renderCategory('Best Makeup and Hairstyling', bestMakeup)}
+                      {bestVFX.nominees.length > 0 && renderCategory('Best Visual Effects', bestVFX)}
+                      {renderCategory('Best Original Score', bestScore)}
+                    </div>
+                  </ScrollArea>
                 </CardContent>
               </Card>
             );
