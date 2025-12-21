@@ -1590,7 +1590,7 @@ async function processAwardCeremonies(
             // Skip films with negative scores (excluded from category)
             if (nominee.score < 0) continue;
             
-            // For acting categories, pick a talent from the film based on gender
+            // For acting categories, pick a talent from the film based on gender AND role importance
             let talentId: string | null = null;
             const categoryName = category.name.toLowerCase();
             const isActingCategory = category.isPerformance && (category.categoryType === 'acting' || category.categoryType === 'acting_drama' || category.categoryType === 'acting_comedy');
@@ -1599,40 +1599,64 @@ async function processAwardCeremonies(
               // Determine required gender based on category name
               const requiresMale = categoryName.includes('actor') && !categoryName.includes('actress');
               const requiresFemale = categoryName.includes('actress');
-              const isLeadCategory = categoryName.includes('lead') || (!categoryName.includes('supporting') && !categoryName.includes('supp.') && !categoryName.includes('ensemble'));
+              const isSupportingCategory = categoryName.includes('supporting') || categoryName.includes('supp.');
+              const isLeadCategory = !isSupportingCategory && !categoryName.includes('ensemble');
               
-              if (nominee.film.castIds && nominee.film.castIds.length > 0) {
-                // Get all cast members and filter by gender
-                const eligibleCast: string[] = [];
-                for (const castId of nominee.film.castIds) {
-                  const talent = await storage.getTalent(castId);
-                  if (talent) {
-                    if (requiresMale && talent.gender === 'male') {
-                      eligibleCast.push(castId);
-                    } else if (requiresFemale && talent.gender === 'female') {
-                      eligibleCast.push(castId);
-                    } else if (!requiresMale && !requiresFemale) {
-                      // Ensemble or other - any gender
-                      eligibleCast.push(castId);
-                    }
+              // Get film roles to find actors with proper role importance
+              const filmRoles = await storage.getFilmRolesByFilm(nominee.film.id);
+              const eligibleCast: Array<{ actorId: string; performance: number }> = [];
+              
+              for (const role of filmRoles) {
+                if (!role.actorId || !role.isCast) continue;
+                
+                // Check role importance matches category type
+                const roleImportance = role.importance || 'supporting';
+                if (isLeadCategory && roleImportance !== 'lead') continue;
+                if (isSupportingCategory && roleImportance !== 'supporting') continue;
+                
+                const talent = await storage.getTalent(role.actorId);
+                if (!talent || talent.type !== 'actor') continue;
+                
+                // Check gender matches category
+                if (requiresMale && talent.gender !== 'male') continue;
+                if (requiresFemale && talent.gender !== 'female') continue;
+                
+                eligibleCast.push({
+                  actorId: role.actorId,
+                  performance: talent.performance || 50
+                });
+              }
+              
+              if (eligibleCast.length > 0) {
+                // Pick the best performer (highest performance score) with some randomness
+                let bestCast = eligibleCast[0];
+                let bestPerf = bestCast.performance + Math.random() * 20;
+                for (const cast of eligibleCast) {
+                  const perf = cast.performance + Math.random() * 20;
+                  if (perf > bestPerf) {
+                    bestPerf = perf;
+                    bestCast = cast;
                   }
                 }
-                
-                if (eligibleCast.length > 0) {
-                  // Pick the best performer (highest performance score) or random if tied
-                  let bestCastId = eligibleCast[0];
-                  let bestPerf = 0;
-                  for (const castId of eligibleCast) {
+                talentId = bestCast.actorId;
+              } else {
+                // Fallback to castIds if no roles found (for older films without roles)
+                if (nominee.film.castIds && nominee.film.castIds.length > 0) {
+                  for (const castId of nominee.film.castIds) {
                     const talent = await storage.getTalent(castId);
-                    if (talent) {
-                      const perf = (talent.performance || 50) + Math.random() * 20;
-                      if (perf > bestPerf) {
-                        bestPerf = perf;
-                        bestCastId = castId;
+                    if (talent && talent.type === 'actor') {
+                      if (requiresMale && talent.gender === 'male') {
+                        talentId = castId;
+                        break;
+                      } else if (requiresFemale && talent.gender === 'female') {
+                        talentId = castId;
+                        break;
+                      } else if (!requiresMale && !requiresFemale) {
+                        talentId = castId;
+                        break;
                       }
                     }
                   }
-                  talentId = bestCastId;
                 }
               }
             }
