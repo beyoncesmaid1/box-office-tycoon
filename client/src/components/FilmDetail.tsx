@@ -443,7 +443,7 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="p-4 bg-muted/50 rounded-lg">
                 <p className="text-sm text-muted-foreground">Production Budget</p>
-                <p className="text-xl font-bold">{formatCompactMoney(film.totalBudget || 0)}</p>
+                <p className="text-xl font-bold">{formatCompactMoney(film.productionBudget || 0)}</p>
               </div>
               {actualMarketingBudget > 0 && (
                 <div className="p-4 bg-muted/50 rounded-lg">
