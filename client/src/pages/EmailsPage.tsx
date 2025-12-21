@@ -307,6 +307,8 @@ export default function EmailsPage() {
       queryClient.invalidateQueries({ queryKey: [`/api/emails/unread-count?playerGameId=${state.studioId}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/studio'] });
       queryClient.invalidateQueries({ queryKey: ['/api/streaming-deals'] });
+      // Invalidate films query to show newly created films from first-look deals
+      queryClient.invalidateQueries({ queryKey: ['/api/films'] });
       setSelectedEmailId(null);
       toast({
         title: 'Action Completed',
