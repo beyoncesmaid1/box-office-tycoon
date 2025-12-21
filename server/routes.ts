@@ -4416,8 +4416,9 @@ export async function registerRoutes(
           }
           film.releaseWeek = earliestWeek;
           film.releaseYear = earliestYear;
-        } else if ((!film.releaseWeek || !film.releaseYear) && film.phase !== 'released') {
-          // No territory releases scheduled - calculate based on production phases (AI films)
+        } else if (film.phase !== 'released') {
+          // No territory releases scheduled - always recalculate based on production phases (AI films)
+          // This ensures release dates stay current as films progress through production
           // Phases: development → awaiting-greenlight(1) → pre-production → production → filmed(1) → post-production → production-complete(1) → awaiting-release(1) → released
           let totalRemainingWeeks = 0;
           
