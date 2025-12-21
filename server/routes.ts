@@ -3328,7 +3328,7 @@ export async function registerRoutes(
             } else {
               // Week-based decay with audience score modifiers
               const audienceScore = (film.audienceScore || 7) * 10; // Convert to 0-100 scale
-              const coefficient = audienceScore >= 70 ? 0.85 : 0.75;
+              const coefficient = audienceScore >= 70 ? 0.70 : 0.60;
               let baseHold = (audienceScore / 100) * coefficient;
               
               // Week-based decay: films drop faster in later weeks
@@ -3358,8 +3358,8 @@ export async function registerRoutes(
               const randomMultiplier = 1 + (Math.random() - 0.5) * 0.30;
               hold = hold * randomMultiplier;
               
-              // Bound hold between 15% and 85% (lower minimum for streaming films)
-              hold = Math.max(hasActiveStreamingDeal ? 0.15 : 0.20, Math.min(0.85, hold));
+              // Bound hold between 15% and 70% (lower minimum for streaming films)
+              hold = Math.max(hasActiveStreamingDeal ? 0.15 : 0.20, Math.min(0.70, hold));
               
               globalWeeklyGross = Math.floor(lastWeekGross * hold);
             }
@@ -3536,7 +3536,7 @@ export async function registerRoutes(
           
           // Week-based decay with audience score modifiers
           const audienceScore = (film.audienceScore || 7) * 10; // Convert to 0-100 scale
-          const coefficient = audienceScore >= 70 ? 0.85 : 0.75;
+          const coefficient = audienceScore >= 70 ? 0.70 : 0.60;
           let baseHold = (audienceScore / 100) * coefficient;
           
           // Week-based decay: films drop faster in later weeks
@@ -3558,8 +3558,8 @@ export async function registerRoutes(
           const randomMultiplier = 1 + (Math.random() - 0.5) * 0.30;
           hold = hold * randomMultiplier;
           
-          // Bound hold between 20% and 85%
-          hold = Math.max(0.20, Math.min(0.85, hold));
+          // Bound hold between 20% and 70%
+          hold = Math.max(0.20, Math.min(0.70, hold));
           
           const newGross = Math.floor(lastWeek * hold);
           
