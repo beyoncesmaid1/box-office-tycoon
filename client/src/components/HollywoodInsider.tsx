@@ -372,7 +372,7 @@ export function HollywoodInsider() {
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
           <TabsTrigger value="box-office" className="gap-2">
             <TrendingUp className="w-4 h-4" />
             Box Office Charts
@@ -384,6 +384,10 @@ export function HollywoodInsider() {
           <TabsTrigger value="talent" className="gap-2">
             <Users className="w-4 h-4" />
             Talent Profiles
+          </TabsTrigger>
+          <TabsTrigger value="inside-scoop" className="gap-2">
+            <Star className="w-4 h-4" />
+            Inside Scoop
           </TabsTrigger>
         </TabsList>
 
@@ -824,6 +828,202 @@ export function HollywoodInsider() {
               </ScrollArea>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Inside Scoop Tab */}
+        <TabsContent value="inside-scoop" className="space-y-6">
+          {/* Box Office Projections */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5" />
+                Opening Weekend Projections
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Industry analysts predict the following opening weekends for upcoming releases
+              </p>
+            </CardHeader>
+            <CardContent>
+              {(() => {
+                // Get films that are awaiting release (will open next week)
+                const upcomingFilms = allFilms.filter(f => 
+                  f.phase === 'awaiting-release' || f.phase === 'production-complete'
+                );
+                
+                if (upcomingFilms.length === 0) {
+                  return (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No upcoming releases scheduled
+                    </div>
+                  );
+                }
+                
+                // Calculate projected openings based on genre, budget, marketing, sequel status
+                const projections = upcomingFilms.map(film => {
+                  const studio = studioMap.get(film.studioId);
+                  
+                  // Base projection from budget
+                  const totalBudget = film.totalBudget || film.productionBudget || 50000000;
+                  const marketingBudget = film.marketingBudget || 0;
+                  
+                  // Genre multipliers for expected opening
+                  const genreMultipliers: Record<string, number> = {
+                    'action': 0.45, 'scifi': 0.40, 'animation': 0.35, 'fantasy': 0.38,
+                    'horror': 0.55, 'comedy': 0.30, 'thriller': 0.28, 'drama': 0.15,
+                    'romance': 0.20, 'musicals': 0.25
+                  };
+                  const genreMultiplier = genreMultipliers[film.genre] || 0.25;
+                  
+                  // Marketing boost (up to 50% more)
+                  const marketingBoost = marketingBudget > 0 ? 1 + (marketingBudget / totalBudget) * 0.5 : 1;
+                  
+                  // Sequel boost (25-40%)
+                  const isSequel = film.title.match(/\s[2-9]$|\sII|III|IV|Part\s/i) !== null;
+                  const sequelBoost = isSequel ? 1.3 : 1;
+                  
+                  // Calculate base projection
+                  let baseProjection = totalBudget * genreMultiplier * marketingBoost * sequelBoost;
+                  
+                  // Add ±20% variance for display range
+                  const lowEstimate = Math.floor(baseProjection * 0.75);
+                  const highEstimate = Math.floor(baseProjection * 1.25);
+                  
+                  return {
+                    film,
+                    studioName: studio?.name || 'Unknown Studio',
+                    lowEstimate,
+                    highEstimate,
+                    isSequel
+                  };
+                }).sort((a, b) => b.highEstimate - a.highEstimate);
+                
+                return (
+                  <div className="space-y-3">
+                    {projections.slice(0, 10).map(({ film, studioName, lowEstimate, highEstimate, isSequel }) => (
+                      <div key={film.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          {film.posterUrl && (
+                            <img src={film.posterUrl} alt={film.title} className="w-10 h-14 object-cover rounded" />
+                          )}
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{film.title}</span>
+                              {isSequel && <Badge variant="secondary" className="text-xs">Sequel</Badge>}
+                            </div>
+                            <p className="text-sm text-muted-foreground">{studioName}</p>
+                            <Badge variant="outline" className="text-xs mt-1">
+                              {genreLabels[film.genre as keyof typeof genreLabels] || film.genre}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-mono font-bold text-green-600">
+                            {formatCompactMoney(lowEstimate)} - {formatCompactMoney(highEstimate)}
+                          </p>
+                          <p className="text-xs text-muted-foreground">Projected Opening</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </CardContent>
+          </Card>
+
+          {/* Oscar Predictions - Only show in Nov, Dec, Jan */}
+          {(() => {
+            const currentWeek = state.currentWeek;
+            const isNovember = currentWeek >= 44 && currentWeek <= 48; // Early November
+            const isDecember = currentWeek >= 48 && currentWeek <= 52; // December
+            const isJanuary = currentWeek >= 1 && currentWeek <= 4; // January
+            
+            const showPredictions = isNovember || isDecember || isJanuary;
+            const isUpdated = isDecember || isJanuary;
+            
+            if (!showPredictions) return null;
+            
+            // Get eligible films (released this year or last year, with good scores)
+            const eligibleFilms = allFilms.filter(f => 
+              f.phase === 'released' && 
+              f.criticScore !== null && 
+              f.criticScore !== undefined &&
+              (f.releaseYear === state.currentYear || f.releaseYear === state.currentYear - 1)
+            );
+            
+            // Score films for Oscar potential
+            const scoredFilms = eligibleFilms.map(film => {
+              const studio = studioMap.get(film.studioId);
+              const criticScore = film.criticScore || 0;
+              const audienceScore = (film.audienceScore || 0) * 10;
+              
+              // Oscar-friendly genres get a boost
+              const oscarGenreBoost: Record<string, number> = {
+                'drama': 20, 'biography': 18, 'historical': 15, 'romance': 8,
+                'comedy': 5, 'musicals': 10, 'thriller': 3, 'scifi': 2,
+                'animation': 5, 'action': 0, 'horror': -5, 'fantasy': 0
+              };
+              
+              const genreBoost = oscarGenreBoost[film.genre] || 0;
+              const boxOfficeBonus = Math.min(10, Math.log10(film.totalBoxOffice / 1000000) * 2);
+              
+              // Random factor for unpredictability (±15 points)
+              const randomFactor = (Math.random() - 0.5) * 30;
+              
+              const oscarScore = criticScore + genreBoost + boxOfficeBonus + randomFactor;
+              
+              return {
+                film,
+                studioName: studio?.name || 'Unknown Studio',
+                oscarScore,
+                criticScore
+              };
+            }).sort((a, b) => b.oscarScore - a.oscarScore);
+            
+            // Top 10 for Best Picture predictions
+            const bestPicturePredictions = scoredFilms.slice(0, 10);
+            const predictedWinner = bestPicturePredictions[0];
+            
+            return (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Trophy className="w-5 h-5 text-yellow-500" />
+                    Oscar Predictions {isUpdated && <Badge variant="secondary">Updated</Badge>}
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    <span className="text-yellow-600 font-semibold">★★★</span> = PREDICTED WINNER
+                  </p>
+                  <p className="text-xs text-muted-foreground italic">
+                    (All predicted nominees listed below are in alphabetical order)
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <h3 className="font-bold text-lg border-b pb-2">Best Picture</h3>
+                    {bestPicturePredictions.length === 0 ? (
+                      <p className="text-muted-foreground">No eligible films yet</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {bestPicturePredictions
+                          .sort((a, b) => a.film.title.localeCompare(b.film.title))
+                          .map(({ film, studioName }) => (
+                            <div key={film.id} className="flex items-center justify-between py-2 hover:bg-muted/30 rounded px-2 cursor-pointer" onClick={() => navigate(`/film/${film.id}`)}>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">"{film.title}"</span>
+                                <span className="text-muted-foreground">({studioName})</span>
+                                {predictedWinner && film.id === predictedWinner.film.id && (
+                                  <span className="text-yellow-500 font-bold">★★★</span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })()}
         </TabsContent>
       </Tabs>
     </div>

@@ -103,10 +103,10 @@ function clampInvestmentBudgetByGenre(budget: number, genre: string): number {
     'romance': 50000000,
     'thriller': 60000000,
     'horror': 150000000,
-    'action': Infinity,
-    'scifi': Infinity,
-    'animation': Infinity,
-    'fantasy': Infinity,
+    'action': 200000000,
+    'scifi': 200000000,
+    'animation': 200000000,
+    'fantasy': 200000000,
     'musicals': 100000000,
   };
   
