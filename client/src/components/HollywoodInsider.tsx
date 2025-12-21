@@ -559,7 +559,12 @@ export function HollywoodInsider() {
                           {formatCompactMoney(film.worldwideGross)}
                         </td>
                         <td className="py-3 px-2 text-right font-mono text-sm text-muted-foreground">
-                          {formatCompactMoney(film.totalBudget || 0)}
+                          {formatCompactMoney(
+                            (film.productionBudget || 0) + 
+                            (film.setsBudget || 0) + (film.costumesBudget || 0) + (film.stuntsBudget || 0) + 
+                            (film.makeupBudget || 0) + (film.practicalEffectsBudget || 0) + (film.soundCrewBudget || 0) +
+                            (film.talentBudget || 0)
+                          )}
                         </td>
                       </tr>
                     ))}
