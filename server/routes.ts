@@ -4345,10 +4345,15 @@ export async function registerRoutes(
       }
       
       // Filter to only show films for this game
-      const filtered = allFilms.filter(f => {
-        const filmStudio = allStudios.find(s => s.id === f.studioId);
-        return filmStudio && (filmStudio.id === playerId || filmStudio.playerGameId === playerId);
-      });
+      // Include films from player studio AND all AI studios that belong to this game
+      const gameStudios = allStudios.filter(s => 
+        s.id === playerId || 
+        s.playerGameId === playerId ||
+        (playerStudio.gameSessionId && s.gameSessionId === playerStudio.gameSessionId)
+      );
+      const gameStudioIds = new Set(gameStudios.map(s => s.id));
+      
+      const filtered = allFilms.filter(f => gameStudioIds.has(f.studioId));
       
       // Enrich films with lead/supporting actor info for Oscar predictions
       const enrichedFilms = await Promise.all(filtered.map(async (film) => {
