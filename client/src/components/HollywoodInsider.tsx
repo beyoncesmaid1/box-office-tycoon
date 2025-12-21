@@ -87,6 +87,8 @@ export function HollywoodInsider() {
 
   const { data: allFilms = [] } = useQuery<Film[]>({
     queryKey: ['/api/all-films', state.studioId],
+    refetchOnMount: 'always',
+    staleTime: 0,
   });
 
   const { data: allStudios = [] } = useQuery<Studio[]>({
