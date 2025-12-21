@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { Link } from 'wouter';
 import { TrendingUp, TrendingDown, Star, Award, Calendar, Users, ChevronLeft, ChevronRight, Play, X, Film, Clock, Globe } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -465,7 +466,7 @@ function ExpandedFilmDetail({ film, studioName, onClose }: { film: FilmType; stu
           )}
 
           {/* Crew & Cast Section (Rotten Tomatoes Style) */}
-          {(film.directorId || film.writerId || film.castIds?.length) && (
+          {(film.directorId || film.writerId || film.composerId || film.castIds?.length) && (
             <Card className="bg-muted/30 border-muted/50">
               <CardContent className="p-4">
                 <div className="space-y-4">
@@ -475,28 +476,30 @@ function ExpandedFilmDetail({ film, studioName, onClose }: { film: FilmType; stu
                       {(() => {
                         const director = allTalent.find(t => t.id === film.directorId);
                         return director ? (
-                          <div className="flex items-center gap-3 bg-black/30 p-3 rounded-lg">
-                            {director.imageUrl ? (
-                              <img 
-                                src={director.imageUrl} 
-                                alt={director.name}
-                                className="w-12 h-12 rounded-full object-cover flex-shrink-0"
-                              />
-                            ) : (
-                              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center flex-shrink-0">
-                                <Users className="w-6 h-6 text-white" />
+                          <Link href={`/talent/${director.id}`}>
+                            <div className="flex items-center gap-3 bg-black/30 p-3 rounded-lg hover:bg-black/50 transition-colors cursor-pointer">
+                              {director.imageUrl ? (
+                                <img 
+                                  src={director.imageUrl} 
+                                  alt={director.name}
+                                  className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center flex-shrink-0">
+                                  <Users className="w-6 h-6 text-white" />
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-sm text-white hover:underline">{director.name}</p>
                               </div>
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-sm text-white">{director.name}</p>
+                              {director.fame && (
+                                <span className="text-xs text-yellow-400 flex items-center gap-1 flex-shrink-0">
+                                  <Star className="w-3 h-3 fill-yellow-400" />
+                                  {director.fame}
+                                </span>
+                              )}
                             </div>
-                            {director.fame && (
-                              <span className="text-xs text-yellow-400 flex items-center gap-1 flex-shrink-0">
-                                <Star className="w-3 h-3 fill-yellow-400" />
-                                {director.fame}
-                              </span>
-                            )}
-                          </div>
+                          </Link>
                         ) : null;
                       })()}
                     </div>
@@ -508,28 +511,65 @@ function ExpandedFilmDetail({ film, studioName, onClose }: { film: FilmType; stu
                       {(() => {
                         const writer = allTalent.find(t => t.id === film.writerId);
                         return writer ? (
-                          <div className="flex items-center gap-3 bg-black/30 p-3 rounded-lg">
-                            {writer.imageUrl ? (
-                              <img 
-                                src={writer.imageUrl} 
-                                alt={writer.name}
-                                className="w-12 h-12 rounded-full object-cover flex-shrink-0"
-                              />
-                            ) : (
-                              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center flex-shrink-0">
-                                <Users className="w-6 h-6 text-white" />
+                          <Link href={`/talent/${writer.id}`}>
+                            <div className="flex items-center gap-3 bg-black/30 p-3 rounded-lg hover:bg-black/50 transition-colors cursor-pointer">
+                              {writer.imageUrl ? (
+                                <img 
+                                  src={writer.imageUrl} 
+                                  alt={writer.name}
+                                  className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center flex-shrink-0">
+                                  <Users className="w-6 h-6 text-white" />
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-sm text-white hover:underline">{writer.name}</p>
                               </div>
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-sm text-white">{writer.name}</p>
+                              {writer.fame && (
+                                <span className="text-xs text-yellow-400 flex items-center gap-1 flex-shrink-0">
+                                  <Star className="w-3 h-3 fill-yellow-400" />
+                                  {writer.fame}
+                                </span>
+                              )}
                             </div>
-                            {writer.fame && (
-                              <span className="text-xs text-yellow-400 flex items-center gap-1 flex-shrink-0">
-                                <Star className="w-3 h-3 fill-yellow-400" />
-                                {writer.fame}
-                              </span>
-                            )}
-                          </div>
+                          </Link>
+                        ) : null;
+                      })()}
+                    </div>
+                  )}
+                  
+                  {film.composerId && (
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Composer</p>
+                      {(() => {
+                        const composer = allTalent.find(t => t.id === film.composerId);
+                        return composer ? (
+                          <Link href={`/talent/${composer.id}`}>
+                            <div className="flex items-center gap-3 bg-black/30 p-3 rounded-lg hover:bg-black/50 transition-colors cursor-pointer">
+                              {composer.imageUrl ? (
+                                <img 
+                                  src={composer.imageUrl} 
+                                  alt={composer.name}
+                                  className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center flex-shrink-0">
+                                  <Users className="w-6 h-6 text-white" />
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-sm text-white hover:underline">{composer.name}</p>
+                              </div>
+                              {composer.fame && (
+                                <span className="text-xs text-yellow-400 flex items-center gap-1 flex-shrink-0">
+                                  <Star className="w-3 h-3 fill-yellow-400" />
+                                  {composer.fame}
+                                </span>
+                              )}
+                            </div>
+                          </Link>
                         ) : null;
                       })()}
                     </div>
@@ -572,44 +612,46 @@ function ExpandedFilmDetail({ film, studioName, onClose }: { film: FilmType; stu
                             });
                             
                             return actor ? (
-                              <div key={`cast-${castId}-${index}`} className="flex items-center gap-3 bg-black/30 p-3 rounded-lg">
-                                {/* Actor Profile Picture */}
-                                {actor.imageUrl ? (
-                                  <img 
-                                    src={actor.imageUrl} 
-                                    alt={actor.name}
-                                    className="w-12 h-12 rounded-full object-cover flex-shrink-0"
-                                  />
-                                ) : (
-                                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center flex-shrink-0">
-                                    <Users className="w-6 h-6 text-white" />
-                                  </div>
-                                )}
-                                
-                                {/* Actor Info */}
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-semibold text-sm text-white truncate">{actor.name}</p>
-                                  {roles.length > 0 ? (
-                                    <div className="space-y-0.5">
-                                      {roles.map((role) => (
-                                        <p key={role.id} className="text-xs text-gray-400">
-                                          {role.roleName} {role.importance && <span className="text-gray-500">({role.importance.toUpperCase()})</span>}
-                                        </p>
-                                      ))}
-                                    </div>
+                              <Link key={`cast-${castId}-${index}`} href={`/talent/${actor.id}`}>
+                                <div className="flex items-center gap-3 bg-black/30 p-3 rounded-lg hover:bg-black/50 transition-colors cursor-pointer">
+                                  {/* Actor Profile Picture */}
+                                  {actor.imageUrl ? (
+                                    <img 
+                                      src={actor.imageUrl} 
+                                      alt={actor.name}
+                                      className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                                    />
                                   ) : (
-                                    <p className="text-xs text-gray-400">Cast Member</p>
+                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center flex-shrink-0">
+                                      <Users className="w-6 h-6 text-white" />
+                                    </div>
+                                  )}
+                                  
+                                  {/* Actor Info */}
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-semibold text-sm text-white truncate hover:underline">{actor.name}</p>
+                                    {roles.length > 0 ? (
+                                      <div className="space-y-0.5">
+                                        {roles.map((role) => (
+                                          <p key={role.id} className="text-xs text-gray-400">
+                                            {role.roleName} {role.importance && <span className="text-gray-500">({role.importance.toUpperCase()})</span>}
+                                          </p>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <p className="text-xs text-gray-400">Cast Member</p>
+                                    )}
+                                  </div>
+                                  
+                                  {/* Fame Badge */}
+                                  {actor.fame && (
+                                    <span className="text-xs text-yellow-400 flex items-center gap-1 flex-shrink-0">
+                                      <Star className="w-3 h-3 fill-yellow-400" />
+                                      {actor.fame}
+                                    </span>
                                   )}
                                 </div>
-                                
-                                {/* Fame Badge */}
-                                {actor.fame && (
-                                  <span className="text-xs text-yellow-400 flex items-center gap-1 flex-shrink-0">
-                                    <Star className="w-3 h-3 fill-yellow-400" />
-                                    {actor.fame}
-                                  </span>
-                                )}
-                              </div>
+                              </Link>
                             ) : null;
                           });
                         })()}
