@@ -849,18 +849,18 @@ export function HollywoodInsider() {
             </CardHeader>
             <CardContent>
               {(() => {
-                // Get films that are awaiting release or have a scheduled release in the next 8 weeks
+                // Get films that are awaiting release or have a scheduled release in the next 4 weeks
                 const upcomingFilms = allFilms.filter(f => {
                   // Include films in awaiting-release or production-complete phases
                   if (f.phase === 'awaiting-release' || f.phase === 'production-complete') {
                     return true;
                   }
-                  // Also include films with a release date in the next 8 weeks
+                  // Also include films with a release date in the next 4 weeks
                   if (f.releaseWeek && f.releaseYear && f.phase !== 'released') {
                     const filmWeekNum = f.releaseYear * 52 + f.releaseWeek;
                     const currentWeekNum = state.currentYear * 52 + state.currentWeek;
                     const weeksUntilRelease = filmWeekNum - currentWeekNum;
-                    return weeksUntilRelease > 0 && weeksUntilRelease <= 8;
+                    return weeksUntilRelease > 0 && weeksUntilRelease <= 4;
                   }
                   return false;
                 });
