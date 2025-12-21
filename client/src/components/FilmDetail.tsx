@@ -263,13 +263,13 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
             </Badge>
             {film.releaseYear && film.releaseWeek && (
               <Badge variant="outline" className="text-sm">
-                <Calendar className="w-3 h-3 mr-1" />
-                {formatReleaseDate(film.releaseWeek, film.releaseYear)}
-              </Badge>
-            )}
-            {film.releaseYear && film.releaseWeek && (
-              <Badge variant="outline" className="text-sm opacity-75">
-                Week {film.releaseWeek}, {film.releaseYear}
+                <div className="flex items-start gap-1">
+                  <Calendar className="w-3 h-3 mt-0.5" />
+                  <div className="flex flex-col">
+                    <span>{formatReleaseDate(film.releaseWeek, film.releaseYear)}</span>
+                    <span className="text-xs opacity-75">Week {film.releaseWeek}, {film.releaseYear}</span>
+                  </div>
+                </div>
               </Badge>
             )}
           </div>
