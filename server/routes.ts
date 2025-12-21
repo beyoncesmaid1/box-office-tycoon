@@ -6643,8 +6643,7 @@ export async function registerRoutes(
     try {
       const { filmId } = req.params;
       const roles = await storage.getFilmRolesByFilm(filmId);
-      
-      
+      console.log(`[FILM-ROLES] Film ${filmId} has ${roles.length} roles`);
       res.json(roles);
     } catch (error) {
       console.error("Error getting film roles:", error);
