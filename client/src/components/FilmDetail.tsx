@@ -278,10 +278,6 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
                 {writer?.name || 'Unknown'}
               </p>
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Budget</p>
-              <p className="font-medium">{formatCompactMoney(film.totalBudget || 0)}</p>
-            </div>
           </div>
         </div>
       </div>
