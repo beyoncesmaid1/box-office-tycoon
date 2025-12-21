@@ -2368,19 +2368,26 @@ export async function registerRoutes(
         for (const film of saveReleasedFilms) {
           const lastWeek = film.weeklyBoxOffice[film.weeklyBoxOffice.length - 1];
           
-          // Simple audience score-based decay system with boost for good scores
-          // Formula: hold = (audienceScore / 100) * 0.70 for scores 70+, 0.60 for scores below 70
-          // 50% → 30% hold, 60% → 36%, 70% → 49%, 80% → 56%, 90% → 63%
+          // Audience score-based decay system - boosted for better legs
+          // Target: 90 audience score should give legs of ~3x (total/opening)
+          // To get 3x legs with ~10 weeks, need avg hold of ~65-70%
           const audienceScore = (film.audienceScore || 7) * 10; // Convert to 0-100 scale
-          const coefficient = audienceScore >= 70 ? 0.70 : 0.60;
+          
+          // Tiered coefficient: higher scores get much better holds
+          // 90+ → 0.85 coef (76% hold), 80+ → 0.78 (62%), 70+ → 0.72 (50%), below → 0.60 (36%)
+          let coefficient = 0.60;
+          if (audienceScore >= 90) coefficient = 0.85;
+          else if (audienceScore >= 80) coefficient = 0.78;
+          else if (audienceScore >= 70) coefficient = 0.72;
+          
           let hold = (audienceScore / 100) * coefficient;
           
           // Apply ±10% randomness
           const randomMultiplier = 1 + (Math.random() - 0.5) * 0.20;
           hold = hold * randomMultiplier;
           
-          // Bound hold between 20% and 70%
-          hold = Math.max(0.20, Math.min(0.70, hold));
+          // Bound hold between 20% and 80% (raised cap for great films)
+          hold = Math.max(0.20, Math.min(0.80, hold));
           
           const newGross = Math.floor(lastWeek * hold);
           
@@ -3464,9 +3471,13 @@ export async function registerRoutes(
             if (!lastWeekGross || isNaN(lastWeekGross)) {
               globalWeeklyGross = 0;
             } else {
-              // Week-based decay with audience score modifiers
+              // Week-based decay with audience score modifiers - boosted for better legs
               const audienceScore = (film.audienceScore || 7) * 10; // Convert to 0-100 scale
-              const coefficient = audienceScore >= 70 ? 0.70 : 0.60;
+              // Tiered coefficient: higher scores get much better holds
+              let coefficient = 0.60;
+              if (audienceScore >= 90) coefficient = 0.85;
+              else if (audienceScore >= 80) coefficient = 0.78;
+              else if (audienceScore >= 70) coefficient = 0.72;
               let baseHold = (audienceScore / 100) * coefficient;
               
               // Week-based decay: films drop faster in later weeks
@@ -3672,9 +3683,13 @@ export async function registerRoutes(
           
           const lastWeek = film.weeklyBoxOffice[film.weeklyBoxOffice.length - 1];
           
-          // Week-based decay with audience score modifiers
+          // Week-based decay with audience score modifiers - boosted for better legs
           const audienceScore = (film.audienceScore || 7) * 10; // Convert to 0-100 scale
-          const coefficient = audienceScore >= 70 ? 0.70 : 0.60;
+          // Tiered coefficient: higher scores get much better holds
+          let coefficient = 0.60;
+          if (audienceScore >= 90) coefficient = 0.85;
+          else if (audienceScore >= 80) coefficient = 0.78;
+          else if (audienceScore >= 70) coefficient = 0.72;
           let baseHold = (audienceScore / 100) * coefficient;
           
           // Week-based decay: films drop faster in later weeks
@@ -3696,8 +3711,8 @@ export async function registerRoutes(
           const randomMultiplier = 1 + (Math.random() - 0.5) * 0.30;
           hold = hold * randomMultiplier;
           
-          // Bound hold between 20% and 70%
-          hold = Math.max(0.20, Math.min(0.70, hold));
+          // Bound hold between 20% and 80% (raised cap for great films)
+          hold = Math.max(0.20, Math.min(0.80, hold));
           
           const newGross = Math.floor(lastWeek * hold);
           
