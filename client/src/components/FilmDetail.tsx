@@ -441,28 +441,33 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm text-muted-foreground">Production Budget</p>
-                <p className="text-xl font-bold">{formatCompactMoney(film.productionBudget || 0)}</p>
-              </div>
-              {actualMarketingBudget > 0 && (
-                <div className="p-4 bg-muted/50 rounded-lg">
-                  <p className="text-sm text-muted-foreground">Marketing Budget</p>
-                  <p className="text-xl font-bold">{formatCompactMoney(actualMarketingBudget)}</p>
-                </div>
-              )}
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm text-muted-foreground">Total Investment</p>
-                <p className="text-xl font-bold">{formatCompactMoney(film.totalBudget+actualMarketingBudget)}</p>
-              </div>
               {(() => {
-                const totalInvestment = (film.totalBudget || 0) + actualMarketingBudget;
+                // Use same calculation as BoxOfficeDetail
+                const investmentBudget = (film.productionBudget || 0) + 
+                  (film.setsBudget || 0) + (film.costumesBudget || 0) + (film.stuntsBudget || 0) + 
+                  (film.makeupBudget || 0) + (film.practicalEffectsBudget || 0) + (film.soundCrewBudget || 0) +
+                  (film.talentBudget || 0);
+                const totalInvestment = investmentBudget + actualMarketingBudget;
                 // Studios get 70% of box office revenue
                 const studioRevenue = film.totalBoxOffice * 0.7;
                 const profit = studioRevenue - totalInvestment;
                 const roi = totalInvestment > 0 ? (profit / totalInvestment * 100) : 0;
                 return (
                   <>
+                    <div className="p-4 bg-muted/50 rounded-lg">
+                      <p className="text-sm text-muted-foreground">Production Budget</p>
+                      <p className="text-xl font-bold">{formatCompactMoney(investmentBudget)}</p>
+                    </div>
+                    {actualMarketingBudget > 0 && (
+                      <div className="p-4 bg-muted/50 rounded-lg">
+                        <p className="text-sm text-muted-foreground">Marketing Budget</p>
+                        <p className="text-xl font-bold">{formatCompactMoney(actualMarketingBudget)}</p>
+                      </div>
+                    )}
+                    <div className="p-4 bg-muted/50 rounded-lg">
+                      <p className="text-sm text-muted-foreground">Total Investment</p>
+                      <p className="text-xl font-bold">{formatCompactMoney(totalInvestment)}</p>
+                    </div>
                     <div className={`p-4 rounded-lg ${profit >= 0 ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'}`}>
                       <p className="text-sm text-muted-foreground">Profit/Loss</p>
                       <p className={`text-xl font-bold ${profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
