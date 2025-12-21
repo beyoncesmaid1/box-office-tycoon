@@ -994,10 +994,31 @@ export function HollywoodInsider() {
               const randomFactor = (seededRandom(film.id) - 0.5) * 30;
               const oscarScore = criticScore + genreBoost + boxOfficeBonus + randomFactor;
               
+              // Get lead actor/actress from cast
+              const castIds = film.castIds as string[] | null;
+              let leadActorName = 'Unknown Actor';
+              let leadActressName = 'Unknown Actress';
+              
+              // Try to find lead actors by gender
+              if (castIds && castIds.length > 0) {
+                for (const castId of castIds) {
+                  const talent = talentMap.get(castId);
+                  if (talent && talent.type === 'actor') {
+                    if (talent.gender === 'male' && leadActorName === 'Unknown Actor') {
+                      leadActorName = talent.name;
+                    } else if (talent.gender === 'female' && leadActressName === 'Unknown Actress') {
+                      leadActressName = talent.name;
+                    }
+                  }
+                }
+              }
+              
               return {
                 film,
                 studioName: studio?.name || 'Unknown Studio',
                 directorName: director?.name || 'Unknown Director',
+                leadActorName,
+                leadActressName,
                 oscarScore,
                 criticScore
               };
@@ -1047,7 +1068,7 @@ export function HollywoodInsider() {
                 <div className="space-y-2">
                   <h3 className="font-bold text-lg border-b pb-2">{title}</h3>
                   <div className="space-y-1">
-                    {data.nominees.map(({ film, studioName, directorName }) => {
+                    {data.nominees.map(({ film, studioName, directorName, leadActorName, leadActressName }) => {
                       // Determine what name to show based on category type
                       let displayName = `"${film.title}"`;
                       let subText = studioName;
@@ -1055,16 +1076,18 @@ export function HollywoodInsider() {
                       if (categoryType === 'director') {
                         displayName = directorName;
                         subText = `"${film.title}"`;
-                      } else if (categoryType === 'actor' || categoryType === 'actress') {
-                        // For acting categories, show "Actor Name" for "Film Title"
-                        // Since we don't have specific actor data per film, show film title with director
-                        displayName = `"${film.title}"`;
-                        subText = `(${directorName})`;
+                      } else if (categoryType === 'actor') {
+                        // For actor categories, show actor name with film title
+                        displayName = leadActorName;
+                        subText = `"${film.title}"`;
+                      } else if (categoryType === 'actress') {
+                        // For actress categories, show actress name with film title
+                        displayName = leadActressName;
+                        subText = `"${film.title}"`;
                       } else if (categoryType === 'screenplay') {
                         displayName = `"${film.title}"`;
                         subText = studioName;
                       } else if (categoryType === 'score') {
-                        // For score, ideally show composer but we'll show film
                         displayName = `"${film.title}"`;
                         subText = studioName;
                       }
