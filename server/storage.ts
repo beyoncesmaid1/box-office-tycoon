@@ -935,7 +935,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   private async seedAwardCategories(): Promise<void> {
-    // Academy Awards categories (excluding short films, best sound, best original song)
+    // Academy Awards categories (excluding short films, best sound, best original song, adapted screenplay, international)
     const academyCategories: InsertAwardCategory[] = [
       { awardShowId: 'academy_awards', name: 'Best Picture', shortName: 'Picture', categoryType: 'film', isPerformance: false },
       { awardShowId: 'academy_awards', name: 'Best Director', shortName: 'Director', categoryType: 'film', isPerformance: false },
@@ -944,9 +944,7 @@ export class DatabaseStorage implements IStorage {
       { awardShowId: 'academy_awards', name: 'Best Supporting Actor', shortName: 'Supp. Actor', categoryType: 'acting', isPerformance: true },
       { awardShowId: 'academy_awards', name: 'Best Supporting Actress', shortName: 'Supp. Actress', categoryType: 'acting', isPerformance: true },
       { awardShowId: 'academy_awards', name: 'Best Original Screenplay', shortName: 'Orig. Screenplay', categoryType: 'writing', isPerformance: false },
-      { awardShowId: 'academy_awards', name: 'Best Adapted Screenplay', shortName: 'Adpt. Screenplay', categoryType: 'writing', isPerformance: false },
       { awardShowId: 'academy_awards', name: 'Best Animated Feature', shortName: 'Animation', categoryType: 'film', requiresGenre: 'animation', isPerformance: false },
-      { awardShowId: 'academy_awards', name: 'Best International Feature Film', shortName: 'International', categoryType: 'film', isPerformance: false, isInternational: true },
       { awardShowId: 'academy_awards', name: 'Best Cinematography', shortName: 'Cinematography', categoryType: 'technical', isPerformance: false },
       { awardShowId: 'academy_awards', name: 'Best Film Editing', shortName: 'Editing', categoryType: 'technical', isPerformance: false },
       { awardShowId: 'academy_awards', name: 'Best Production Design', shortName: 'Prod. Design', categoryType: 'technical', isPerformance: false },
@@ -956,24 +954,23 @@ export class DatabaseStorage implements IStorage {
       { awardShowId: 'academy_awards', name: 'Best Original Score', shortName: 'Score', categoryType: 'music', isPerformance: false },
     ];
 
-    // Golden Globes categories
+    // Golden Globes categories (removed Foreign Language Film)
     const goldenGlobesCategories: InsertAwardCategory[] = [
-      { awardShowId: 'golden_globes', name: 'Best Motion Picture - Drama', shortName: 'Picture (Drama)', categoryType: 'film', isPerformance: false },
-      { awardShowId: 'golden_globes', name: 'Best Motion Picture - Musical or Comedy', shortName: 'Picture (Comedy)', categoryType: 'film', isPerformance: false },
+      { awardShowId: 'golden_globes', name: 'Best Motion Picture - Drama', shortName: 'Picture (Drama)', categoryType: 'film_drama', isPerformance: false },
+      { awardShowId: 'golden_globes', name: 'Best Motion Picture - Musical or Comedy', shortName: 'Picture (Comedy)', categoryType: 'film_comedy', isPerformance: false },
       { awardShowId: 'golden_globes', name: 'Best Animated Feature', shortName: 'Animation', categoryType: 'film', requiresGenre: 'animation', isPerformance: false },
-      { awardShowId: 'golden_globes', name: 'Best Foreign Language Film', shortName: 'Foreign', categoryType: 'film', isPerformance: false, isInternational: true },
       { awardShowId: 'golden_globes', name: 'Best Director', shortName: 'Director', categoryType: 'film', isPerformance: false },
-      { awardShowId: 'golden_globes', name: 'Best Actor - Drama', shortName: 'Actor (Drama)', categoryType: 'acting', isPerformance: true },
-      { awardShowId: 'golden_globes', name: 'Best Actress - Drama', shortName: 'Actress (Drama)', categoryType: 'acting', isPerformance: true },
-      { awardShowId: 'golden_globes', name: 'Best Actor - Musical or Comedy', shortName: 'Actor (Comedy)', categoryType: 'acting', isPerformance: true },
-      { awardShowId: 'golden_globes', name: 'Best Actress - Musical or Comedy', shortName: 'Actress (Comedy)', categoryType: 'acting', isPerformance: true },
+      { awardShowId: 'golden_globes', name: 'Best Actor - Drama', shortName: 'Actor (Drama)', categoryType: 'acting_drama', isPerformance: true },
+      { awardShowId: 'golden_globes', name: 'Best Actress - Drama', shortName: 'Actress (Drama)', categoryType: 'acting_drama', isPerformance: true },
+      { awardShowId: 'golden_globes', name: 'Best Actor - Musical or Comedy', shortName: 'Actor (Comedy)', categoryType: 'acting_comedy', isPerformance: true },
+      { awardShowId: 'golden_globes', name: 'Best Actress - Musical or Comedy', shortName: 'Actress (Comedy)', categoryType: 'acting_comedy', isPerformance: true },
       { awardShowId: 'golden_globes', name: 'Best Supporting Actor', shortName: 'Supp. Actor', categoryType: 'acting', isPerformance: true },
       { awardShowId: 'golden_globes', name: 'Best Supporting Actress', shortName: 'Supp. Actress', categoryType: 'acting', isPerformance: true },
       { awardShowId: 'golden_globes', name: 'Best Screenplay', shortName: 'Screenplay', categoryType: 'writing', isPerformance: false },
       { awardShowId: 'golden_globes', name: 'Best Original Score', shortName: 'Score', categoryType: 'music', isPerformance: false },
     ];
 
-    // BAFTA categories
+    // BAFTA categories (removed Adapted Screenplay and Foreign Language)
     const baftaCategories: InsertAwardCategory[] = [
       { awardShowId: 'bafta', name: 'Best Film', shortName: 'Film', categoryType: 'film', isPerformance: false },
       { awardShowId: 'bafta', name: 'Best Director', shortName: 'Director', categoryType: 'film', isPerformance: false },
@@ -982,9 +979,7 @@ export class DatabaseStorage implements IStorage {
       { awardShowId: 'bafta', name: 'Best Supporting Actor', shortName: 'Supp. Actor', categoryType: 'acting', isPerformance: true },
       { awardShowId: 'bafta', name: 'Best Supporting Actress', shortName: 'Supp. Actress', categoryType: 'acting', isPerformance: true },
       { awardShowId: 'bafta', name: 'Best Original Screenplay', shortName: 'Orig. Screenplay', categoryType: 'writing', isPerformance: false },
-      { awardShowId: 'bafta', name: 'Best Adapted Screenplay', shortName: 'Adpt. Screenplay', categoryType: 'writing', isPerformance: false },
       { awardShowId: 'bafta', name: 'Best Animated Film', shortName: 'Animation', categoryType: 'film', requiresGenre: 'animation', isPerformance: false },
-      { awardShowId: 'bafta', name: 'Best Film Not in the English Language', shortName: 'Foreign', categoryType: 'film', isPerformance: false, isInternational: true },
       { awardShowId: 'bafta', name: 'Best Cinematography', shortName: 'Cinematography', categoryType: 'technical', isPerformance: false },
       { awardShowId: 'bafta', name: 'Best Editing', shortName: 'Editing', categoryType: 'technical', isPerformance: false },
       { awardShowId: 'bafta', name: 'Best Production Design', shortName: 'Prod. Design', categoryType: 'technical', isPerformance: false },
@@ -1003,7 +998,7 @@ export class DatabaseStorage implements IStorage {
       { awardShowId: 'sag_awards', name: 'Outstanding Female Actor in a Supporting Role', shortName: 'Supp. Actress', categoryType: 'acting', isPerformance: true },
     ];
 
-    // Critics Choice categories
+    // Critics Choice categories (removed Adapted Screenplay and Foreign Language)
     const criticsChoiceCategories: InsertAwardCategory[] = [
       { awardShowId: 'critics_choice', name: 'Best Picture', shortName: 'Picture', categoryType: 'film', isPerformance: false },
       { awardShowId: 'critics_choice', name: 'Best Director', shortName: 'Director', categoryType: 'film', isPerformance: false },
@@ -1014,7 +1009,6 @@ export class DatabaseStorage implements IStorage {
       { awardShowId: 'critics_choice', name: 'Best Acting Ensemble', shortName: 'Ensemble', categoryType: 'acting', isPerformance: true },
       { awardShowId: 'critics_choice', name: 'Best Young Actor/Actress', shortName: 'Young Performer', categoryType: 'acting', isPerformance: true },
       { awardShowId: 'critics_choice', name: 'Best Original Screenplay', shortName: 'Orig. Screenplay', categoryType: 'writing', isPerformance: false },
-      { awardShowId: 'critics_choice', name: 'Best Adapted Screenplay', shortName: 'Adpt. Screenplay', categoryType: 'writing', isPerformance: false },
       { awardShowId: 'critics_choice', name: 'Best Cinematography', shortName: 'Cinematography', categoryType: 'technical', isPerformance: false },
       { awardShowId: 'critics_choice', name: 'Best Production Design', shortName: 'Prod. Design', categoryType: 'technical', isPerformance: false },
       { awardShowId: 'critics_choice', name: 'Best Editing', shortName: 'Editing', categoryType: 'technical', isPerformance: false },
@@ -1023,7 +1017,6 @@ export class DatabaseStorage implements IStorage {
       { awardShowId: 'critics_choice', name: 'Best Visual Effects', shortName: 'VFX', categoryType: 'technical', isPerformance: false },
       { awardShowId: 'critics_choice', name: 'Best Score', shortName: 'Score', categoryType: 'music', isPerformance: false },
       { awardShowId: 'critics_choice', name: 'Best Animated Feature', shortName: 'Animation', categoryType: 'film', requiresGenre: 'animation', isPerformance: false },
-      { awardShowId: 'critics_choice', name: 'Best Foreign Language Film', shortName: 'Foreign', categoryType: 'film', isPerformance: false, isInternational: true },
       { awardShowId: 'critics_choice', name: 'Best Comedy', shortName: 'Comedy', categoryType: 'film', requiresGenre: 'comedy', isPerformance: false },
     ];
 

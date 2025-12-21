@@ -986,17 +986,18 @@ export function HollywoodInsider() {
             const animatedFilms = scoredFilms.filter(f => f.film.genre === 'animation');
             const dramaFilms = scoredFilms.filter(f => ['drama', 'thriller', 'horror', 'scifi', 'fantasy', 'action'].includes(f.film.genre));
             const comedyMusicalFilms = scoredFilms.filter(f => ['comedy', 'romance', 'musicals'].includes(f.film.genre));
-            const vfxFilms = scoredFilms.filter(f => (f.film.vfxBudget || 0) > 5000000 || ['scifi', 'fantasy', 'action', 'animation'].includes(f.film.genre));
+            const vfxFilms = scoredFilms.filter(f => (f.film.practicalEffectsBudget || 0) > 5000000 || ['scifi', 'fantasy', 'action', 'animation'].includes(f.film.genre));
             
             // Get predictions for each category
-            const bestPicture = getTopNominees(scoredFilms, 10);
-            const bestDirector = getTopNominees(scoredFilms, 5);
-            const bestActor = getTopNominees(scoredFilms, 5);
-            const bestActress = getTopNominees(scoredFilms, 5);
-            const bestSuppActor = getTopNominees(scoredFilms, 5);
-            const bestSuppActress = getTopNominees(scoredFilms, 5);
-            const bestOrigScreenplay = getTopNominees(scoredFilms.filter(f => !f.film.title.match(/\s[2-9]$|\sII|III|IV|Part\s/i)), 5);
-            const bestAdaptedScreenplay = getTopNominees(scoredFilms.filter(f => f.film.title.match(/\s[2-9]$|\sII|III|IV|Part\s/i) || Math.random() > 0.5), 5);
+            // Best Picture excludes animation
+            const nonAnimatedFilms = scoredFilms.filter(f => f.film.genre !== 'animation');
+            const bestPicture = getTopNominees(nonAnimatedFilms, 10);
+            const bestDirector = getTopNominees(nonAnimatedFilms, 5);
+            const bestActor = getTopNominees(nonAnimatedFilms, 5);
+            const bestActress = getTopNominees(nonAnimatedFilms, 5);
+            const bestSuppActor = getTopNominees(nonAnimatedFilms, 5);
+            const bestSuppActress = getTopNominees(nonAnimatedFilms, 5);
+            const bestOrigScreenplay = getTopNominees(nonAnimatedFilms.filter(f => !f.film.title.match(/\s[2-9]$|\sII|III|IV|Part\s/i)), 5);
             const bestAnimated = getTopNominees(animatedFilms, 5);
             const bestCinematography = getTopNominees(scoredFilms, 5);
             const bestEditing = getTopNominees(scoredFilms, 5);
@@ -1051,7 +1052,6 @@ export function HollywoodInsider() {
                       {renderCategory('Best Supporting Actor', bestSuppActor)}
                       {renderCategory('Best Supporting Actress', bestSuppActress)}
                       {renderCategory('Best Original Screenplay', bestOrigScreenplay)}
-                      {renderCategory('Best Adapted Screenplay', bestAdaptedScreenplay)}
                       {bestAnimated.nominees.length > 0 && renderCategory('Best Animated Feature', bestAnimated)}
                       {renderCategory('Best Cinematography', bestCinematography)}
                       {renderCategory('Best Film Editing', bestEditing)}

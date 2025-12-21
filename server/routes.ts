@@ -1463,16 +1463,101 @@ async function processAwardCeremonies(
           // Skip if no films for this category
           if (categoryFilms.length === 0) continue;
           
-          // Score films based on critic score, audience score, and box office
-          const scoredFilms = categoryFilms.map(film => {
+          // Score films based on category-specific criteria
+          const scoredFilmsPromises = categoryFilms.map(async (film) => {
             let score = 0;
-            score += (film.criticScore || 0) * 2; // Critics matter most for awards
-            score += ((film.audienceScore || 0) * 10) * 0.5; // Audience matters less
-            score += Math.min(50, (film.totalBoxOffice || 0) / 10000000); // Box office adds some
+            const criticScore = film.criticScore || 0;
+            const categoryName = category.name.toLowerCase();
+            const categoryType = category.categoryType;
+            
+            // Base critic score for ALL categories
+            score += criticScore * 2;
+            
+            // Drama genre boost for most categories (except animation/VFX specific)
+            if (film.genre === 'drama' && !categoryName.includes('animation') && !categoryName.includes('vfx') && !categoryName.includes('visual effects')) {
+              score += 15;
+            }
+            
+            // Category-specific scoring
+            if (categoryName.includes('picture') || categoryName.includes('film')) {
+              // Best Picture/Film - exclude animation, favor dramas
+              if (film.genre === 'animation' && !categoryName.includes('animation')) {
+                score = -1000; // Exclude animated films from Best Picture
+              }
+              // Golden Globes drama category - only drama films
+              if (categoryType === 'film_drama') {
+                if (film.genre !== 'drama') score = -1000;
+              }
+              // Golden Globes comedy/musical category - comedy, horror, thriller, musicals, animation
+              if (categoryType === 'film_comedy') {
+                const comedyGenres = ['comedy', 'horror', 'thriller', 'musicals', 'animation'];
+                if (!comedyGenres.includes(film.genre)) score = -1000;
+              }
+            }
+            
+            if (categoryName.includes('director') || categoryName.includes('cinematography') || categoryName.includes('editing')) {
+              // Director, Cinematography, Editing - based on director score
+              if (film.directorId) {
+                const director = await storage.getTalent(film.directorId);
+                if (director) {
+                  score += (director.performance || 50) * 0.5;
+                  score += (director.experience || 50) * 0.3;
+                }
+              }
+            }
+            
+            if (categoryName.includes('screenplay') || categoryName.includes('writing')) {
+              // Screenplay - writer score + drama boost + random
+              if (film.writerId) {
+                const writer = await storage.getTalent(film.writerId);
+                if (writer) {
+                  score += (writer.performance || 50) * 0.5;
+                  score += (writer.experience || 50) * 0.3;
+                }
+              }
+              score += Math.random() * 15;
+            }
+            
+            if (categoryName.includes('score') || categoryName.includes('music')) {
+              // Original Score - composer score + random factor
+              // Animation IS eligible for score awards
+              if (film.composerId) {
+                const composer = await storage.getTalent(film.composerId);
+                if (composer) {
+                  score += (composer.performance || 50) * 0.8;
+                  score += (composer.experience || 50) * 0.4;
+                }
+              }
+              score += Math.random() * 25;
+            }
+            
+            if (categoryName.includes('production design') || categoryName.includes('prod. design')) {
+              // Production Design - sets budget + drama/fantasy boost
+              score += Math.min(30, (film.setsBudget || 0) / 1000000);
+              if (film.genre === 'fantasy') score += 10;
+            }
+            
+            if (categoryName.includes('costume')) {
+              // Costume Design - costume budget + drama/fantasy boost
+              score += Math.min(30, (film.costumesBudget || 0) / 500000);
+              if (film.genre === 'fantasy') score += 10;
+            }
+            
+            if (categoryName.includes('makeup') || categoryName.includes('hair')) {
+              // Makeup - makeup budget + horror/fantasy boost
+              score += Math.min(30, (film.makeupBudget || 0) / 300000);
+              if (film.genre === 'horror' || film.genre === 'fantasy') score += 15;
+            }
+            
+            if (categoryName.includes('vfx') || categoryName.includes('visual effects')) {
+              // VFX - practical effects budget + scifi/fantasy/action boost
+              score += Math.min(40, (film.practicalEffectsBudget || 0) / 2000000);
+              if (['scifi', 'fantasy', 'action'].includes(film.genre)) score += 10;
+            }
             
             // Check if film has awards campaign
             if (film.awards?.includes('Awards Campaign')) {
-              score += 20; // Campaign boost
+              score += 20;
             }
             
             // Random factor to add variety
@@ -1481,21 +1566,61 @@ async function processAwardCeremonies(
             return { film, score };
           });
           
+          const scoredFilms = await Promise.all(scoredFilmsPromises);
+          
           // Sort by score and take top 5 nominees
           scoredFilms.sort((a, b) => b.score - a.score);
           const nominees = scoredFilms.slice(0, Math.min(5, scoredFilms.length));
           
           // Create nominations
           for (const nominee of nominees) {
-            // For acting categories, pick a talent from the film
+            // Skip films with negative scores (excluded from category)
+            if (nominee.score < 0) continue;
+            
+            // For acting categories, pick a talent from the film based on gender
             let talentId: string | null = null;
-            if (category.isPerformance && category.categoryType === 'acting') {
-              // Pick director for director categories, cast for acting
-              if (category.name.toLowerCase().includes('director')) {
-                talentId = nominee.film.directorId || null;
-              } else if (nominee.film.castIds && nominee.film.castIds.length > 0) {
-                // Pick a random cast member
-                talentId = nominee.film.castIds[Math.floor(Math.random() * nominee.film.castIds.length)];
+            const categoryName = category.name.toLowerCase();
+            const isActingCategory = category.isPerformance && (category.categoryType === 'acting' || category.categoryType === 'acting_drama' || category.categoryType === 'acting_comedy');
+            
+            if (isActingCategory) {
+              // Determine required gender based on category name
+              const requiresMale = categoryName.includes('actor') && !categoryName.includes('actress');
+              const requiresFemale = categoryName.includes('actress');
+              const isLeadCategory = categoryName.includes('lead') || (!categoryName.includes('supporting') && !categoryName.includes('supp.') && !categoryName.includes('ensemble'));
+              
+              if (nominee.film.castIds && nominee.film.castIds.length > 0) {
+                // Get all cast members and filter by gender
+                const eligibleCast: string[] = [];
+                for (const castId of nominee.film.castIds) {
+                  const talent = await storage.getTalent(castId);
+                  if (talent) {
+                    if (requiresMale && talent.gender === 'male') {
+                      eligibleCast.push(castId);
+                    } else if (requiresFemale && talent.gender === 'female') {
+                      eligibleCast.push(castId);
+                    } else if (!requiresMale && !requiresFemale) {
+                      // Ensemble or other - any gender
+                      eligibleCast.push(castId);
+                    }
+                  }
+                }
+                
+                if (eligibleCast.length > 0) {
+                  // Pick the best performer (highest performance score) or random if tied
+                  let bestCastId = eligibleCast[0];
+                  let bestPerf = 0;
+                  for (const castId of eligibleCast) {
+                    const talent = await storage.getTalent(castId);
+                    if (talent) {
+                      const perf = (talent.performance || 50) + Math.random() * 20;
+                      if (perf > bestPerf) {
+                        bestPerf = perf;
+                        bestCastId = castId;
+                      }
+                    }
+                  }
+                  talentId = bestCastId;
+                }
               }
             }
             
