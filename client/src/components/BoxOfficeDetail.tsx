@@ -232,11 +232,7 @@ function UpcomingFilmCard({ film, isYours, studioName }: { film: FilmType; isYou
           
           <div className="flex items-center justify-between text-xs">
             <span className="text-gray-400">Budget</span>
-            <span className="text-white font-medium">{formatMoney(
-              (film.productionBudget || 0) + (film.setsBudget || 0) + (film.costumesBudget || 0) + 
-              (film.stuntsBudget || 0) + (film.makeupBudget || 0) + (film.practicalEffectsBudget || 0) + 
-              (film.soundCrewBudget || 0) + (film.talentBudget || 0)
-            )}</span>
+            <span className="text-white font-medium">{formatMoney(film.totalBudget || 0)}</span>
           </div>
         </div>
       </div>
@@ -375,11 +371,8 @@ function HeroBanner({ film, studioName, isYours, onExpand }: { film: FilmType; s
 }
 
 function ExpandedFilmDetail({ film, studioName, onClose }: { film: FilmType; studioName: string; onClose: () => void }) {
-  // Calculate investment budget directly from components (production + departments + talent)
-  const investmentBudget = (film.productionBudget || 0) + 
-    (film.setsBudget || 0) + (film.costumesBudget || 0) + (film.stuntsBudget || 0) + 
-    (film.makeupBudget || 0) + (film.practicalEffectsBudget || 0) + (film.soundCrewBudget || 0) +
-    (film.talentBudget || 0);
+  // Use totalBudget which includes all production costs
+  const investmentBudget = film.totalBudget || 0;
   const profit = film.totalBoxOffice * 0.7 - investmentBudget;
   const isProfitable = profit > 0;
   

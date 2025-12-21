@@ -280,7 +280,7 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Budget</p>
-              <p className="font-medium">{formatCompactMoney(film.productionBudget || 0)}</p>
+              <p className="font-medium">{formatCompactMoney(film.totalBudget || 0)}</p>
             </div>
           </div>
         </div>

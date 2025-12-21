@@ -519,7 +519,7 @@ export function HollywoodInsider() {
                       <th className="py-3 px-2 text-right">Domestic</th>
                       <th className="py-3 px-2 text-right">International</th>
                       <th className="py-3 px-2 text-right font-semibold">Worldwide</th>
-                      <th className="py-3 px-2 text-right">Production Budget</th>
+                      <th className="py-3 px-2 text-right">Total Budget</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
