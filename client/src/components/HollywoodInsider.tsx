@@ -1038,12 +1038,19 @@ export function HollywoodInsider() {
             // Get predictions for each category (with unique category offsets for variety)
             // Animation is ONLY eligible for Score and Animated Feature
             const nonAnimatedFilms = scoredFilms.filter(f => f.film.genre !== 'animation');
+            
+            // For acting categories, only include films with eligible actors for that category
+            const filmsWithLeadActor = nonAnimatedFilms.filter(f => f.leadActorName !== 'Unknown Actor');
+            const filmsWithLeadActress = nonAnimatedFilms.filter(f => f.leadActressName !== 'Unknown Actress');
+            const filmsWithSupportingActor = nonAnimatedFilms.filter(f => f.supportingActorName !== 'Unknown Actor');
+            const filmsWithSupportingActress = nonAnimatedFilms.filter(f => f.supportingActressName !== 'Unknown Actress');
+            
             const bestPicture = getTopNominees(nonAnimatedFilms, 10, 1);
             const bestDirector = getTopNominees(nonAnimatedFilms, 5, 2);
-            const bestActor = getTopNominees(nonAnimatedFilms, 5, 3);
-            const bestActress = getTopNominees(nonAnimatedFilms, 5, 4);
-            const bestSuppActor = getTopNominees(nonAnimatedFilms, 5, 5);
-            const bestSuppActress = getTopNominees(nonAnimatedFilms, 5, 6);
+            const bestActor = getTopNominees(filmsWithLeadActor, 5, 3);
+            const bestActress = getTopNominees(filmsWithLeadActress, 5, 4);
+            const bestSuppActor = getTopNominees(filmsWithSupportingActor, 5, 5);
+            const bestSuppActress = getTopNominees(filmsWithSupportingActress, 5, 6);
             const bestOrigScreenplay = getTopNominees(nonAnimatedFilms.filter(f => !f.film.title.match(/\s[2-9]$|\sII|III|IV|Part\s/i)), 5, 7);
             const bestAnimated = getTopNominees(animatedFilms, 5, 8);
             const bestCinematography = getTopNominees(nonAnimatedFilms, 5, 9);
