@@ -267,7 +267,7 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
                   <Calendar className="w-3 h-3 mt-0.5" />
                   <div className="flex flex-col">
                     <span>{formatReleaseDate(film.releaseWeek, film.releaseYear)}</span>
-                    <span className="text-xs opacity-75">Week {film.releaseWeek}, {film.releaseYear}</span>
+                    <span className="text-xs opacity-75">Week {film.releaseWeek}</span>
                   </div>
                 </div>
               </Badge>
