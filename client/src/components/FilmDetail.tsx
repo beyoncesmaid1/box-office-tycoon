@@ -495,23 +495,25 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
           <CardContent>
             <div className="divide-y">
               {cast.map((actor, index) => (
-                <div key={actor.id} className="flex items-center justify-between py-3">
-                  <div className="flex items-center gap-3">
-                    {actor.imageUrl ? (
-                      <img 
-                        src={actor.imageUrl} 
-                        alt={actor.name}
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                        <Users className="w-5 h-5 text-muted-foreground" />
-                      </div>
-                    )}
-                    <span className="font-medium">{actor.name}</span>
+                <Link key={actor.id} href={`/talent/${actor.id}`}>
+                  <div className="flex items-center justify-between py-3 hover:bg-muted/50 px-2 -mx-2 rounded-lg transition-colors cursor-pointer">
+                    <div className="flex items-center gap-3">
+                      {actor.imageUrl ? (
+                        <img 
+                          src={actor.imageUrl} 
+                          alt={actor.name}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                          <Users className="w-5 h-5 text-muted-foreground" />
+                        </div>
+                      )}
+                      <span className="font-medium hover:underline">{actor.name}</span>
+                    </div>
+                    <span className="text-muted-foreground">{actor.roleName}</span>
                   </div>
-                  <span className="text-muted-foreground">{actor.roleName}</span>
-                </div>
+                </Link>
               ))}
             </div>
           </CardContent>
@@ -529,61 +531,67 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
         <CardContent>
           <div className="divide-y">
             {director && (
-              <div className="flex items-center justify-between py-3">
-                <div className="flex items-center gap-3">
-                  {director.imageUrl ? (
-                    <img 
-                      src={director.imageUrl} 
-                      alt={director.name}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                      <Clapperboard className="w-5 h-5 text-muted-foreground" />
-                    </div>
-                  )}
-                  <span className="font-medium">{director.name}</span>
+              <Link href={`/talent/${director.id}`}>
+                <div className="flex items-center justify-between py-3 hover:bg-muted/50 px-2 -mx-2 rounded-lg transition-colors cursor-pointer">
+                  <div className="flex items-center gap-3">
+                    {director.imageUrl ? (
+                      <img 
+                        src={director.imageUrl} 
+                        alt={director.name}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                        <Clapperboard className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                    )}
+                    <span className="font-medium hover:underline">{director.name}</span>
+                  </div>
+                  <span className="text-muted-foreground">Director</span>
                 </div>
-                <span className="text-muted-foreground">Director</span>
-              </div>
+              </Link>
             )}
             {writer && (
-              <div className="flex items-center justify-between py-3">
-                <div className="flex items-center gap-3">
-                  {writer.imageUrl ? (
-                    <img 
-                      src={writer.imageUrl} 
-                      alt={writer.name}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                      <PenTool className="w-5 h-5 text-muted-foreground" />
-                    </div>
-                  )}
-                  <span className="font-medium">{writer.name}</span>
+              <Link href={`/talent/${writer.id}`}>
+                <div className="flex items-center justify-between py-3 hover:bg-muted/50 px-2 -mx-2 rounded-lg transition-colors cursor-pointer">
+                  <div className="flex items-center gap-3">
+                    {writer.imageUrl ? (
+                      <img 
+                        src={writer.imageUrl} 
+                        alt={writer.name}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                        <PenTool className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                    )}
+                    <span className="font-medium hover:underline">{writer.name}</span>
+                  </div>
+                  <span className="text-muted-foreground">Writer</span>
                 </div>
-                <span className="text-muted-foreground">Writer</span>
-              </div>
+              </Link>
             )}
             {composer && (
-              <div className="flex items-center justify-between py-3">
-                <div className="flex items-center gap-3">
-                  {composer.imageUrl ? (
-                    <img 
-                      src={composer.imageUrl} 
-                      alt={composer.name}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                      <Music className="w-5 h-5 text-muted-foreground" />
-                    </div>
-                  )}
-                  <span className="font-medium">{composer.name}</span>
+              <Link href={`/talent/${composer.id}`}>
+                <div className="flex items-center justify-between py-3 hover:bg-muted/50 px-2 -mx-2 rounded-lg transition-colors cursor-pointer">
+                  <div className="flex items-center gap-3">
+                    {composer.imageUrl ? (
+                      <img 
+                        src={composer.imageUrl} 
+                        alt={composer.name}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                        <Music className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                    )}
+                    <span className="font-medium hover:underline">{composer.name}</span>
+                  </div>
+                  <span className="text-muted-foreground">Composer</span>
                 </div>
-                <span className="text-muted-foreground">Composer</span>
-              </div>
+              </Link>
             )}
           </div>
         </CardContent>
