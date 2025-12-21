@@ -849,10 +849,21 @@ export function HollywoodInsider() {
             </CardHeader>
             <CardContent>
               {(() => {
-                // Get films that are awaiting release (will open next week)
-                const upcomingFilms = allFilms.filter(f => 
-                  f.phase === 'awaiting-release' || f.phase === 'production-complete'
-                );
+                // Get films that are awaiting release or have a scheduled release in the next 8 weeks
+                const upcomingFilms = allFilms.filter(f => {
+                  // Include films in awaiting-release or production-complete phases
+                  if (f.phase === 'awaiting-release' || f.phase === 'production-complete') {
+                    return true;
+                  }
+                  // Also include films with a release date in the next 8 weeks
+                  if (f.releaseWeek && f.releaseYear && f.phase !== 'released') {
+                    const filmWeekNum = f.releaseYear * 52 + f.releaseWeek;
+                    const currentWeekNum = state.currentYear * 52 + state.currentWeek;
+                    const weeksUntilRelease = filmWeekNum - currentWeekNum;
+                    return weeksUntilRelease > 0 && weeksUntilRelease <= 8;
+                  }
+                  return false;
+                });
                 
                 if (upcomingFilms.length === 0) {
                   return (
@@ -892,18 +903,26 @@ export function HollywoodInsider() {
                   const lowEstimate = Math.floor(baseProjection * 0.75);
                   const highEstimate = Math.floor(baseProjection * 1.25);
                   
+                  // Calculate weeks until release
+                  const filmWeekNum = (film.releaseYear || state.currentYear) * 52 + (film.releaseWeek || state.currentWeek);
+                  const currentWeekNum = state.currentYear * 52 + state.currentWeek;
+                  const weeksUntilRelease = Math.max(0, filmWeekNum - currentWeekNum);
+                  
                   return {
                     film,
                     studioName: studio?.name || 'Unknown Studio',
                     lowEstimate,
                     highEstimate,
-                    isSequel
+                    isSequel,
+                    weeksUntilRelease,
+                    releaseWeek: film.releaseWeek,
+                    releaseYear: film.releaseYear
                   };
-                }).sort((a, b) => b.highEstimate - a.highEstimate);
+                }).sort((a, b) => a.weeksUntilRelease - b.weeksUntilRelease); // Sort by release date (soonest first);
                 
                 return (
                   <div className="space-y-3">
-                    {projections.slice(0, 10).map(({ film, studioName, lowEstimate, highEstimate, isSequel }) => (
+                    {projections.slice(0, 10).map(({ film, studioName, lowEstimate, highEstimate, isSequel, weeksUntilRelease, releaseWeek }) => (
                       <div key={film.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
                         <div className="flex items-center gap-3">
                           {film.posterUrl && (
@@ -925,6 +944,11 @@ export function HollywoodInsider() {
                             {formatCompactMoney(lowEstimate)} - {formatCompactMoney(highEstimate)}
                           </p>
                           <p className="text-xs text-muted-foreground">Projected Opening</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {weeksUntilRelease === 0 ? 'This week' : 
+                             weeksUntilRelease === 1 ? 'Next week' : 
+                             `Week ${releaseWeek} (${weeksUntilRelease}w)`}
+                          </p>
                         </div>
                       </div>
                     ))}
