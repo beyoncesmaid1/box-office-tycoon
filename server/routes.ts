@@ -1563,7 +1563,7 @@ async function processAwardCeremonies(
               // Box Office Achievement - based on box office + audience score
               // Override the base critic score for this category
               score = 0; // Reset score
-              score += Math.min(100, (film.totalBoxOffice || 0) / 5000000); // Box office (up to 100 points for $500M+)
+              score += Math.min(100, (film.totalBoxOffice || 0) / 10000000); // Box office (up to 100 points for $1B+)
               score += ((film.audienceScore || 7) * 10) * 2; // Audience score matters a lot (up to 200 points)
               score += Math.random() * 20; // Small random factor
             }
