@@ -3566,9 +3566,10 @@ export async function registerRoutes(
           
           // Distribute global box office to territories using fixed percentages
           // Use stored percentages if available, otherwise generate new ones (first week)
+          // Genre affects domestic/international split
           let territoryPcts = film.territoryPercentages as Record<string, number> | null;
           if (!territoryPcts || Object.keys(territoryPcts).length === 0) {
-            territoryPcts = generateTerritoryPercentages();
+            territoryPcts = generateTerritoryPercentages(film.genre);
           }
           const weeklyByCountry = globalWeeklyGross > 0 ? distributeBoxOfficeWithFixedPercentages(globalWeeklyGross, territoryPcts) : {};
           const releaseUpdatePromises: Promise<any>[] = [];
@@ -3685,7 +3686,8 @@ export async function registerRoutes(
             const newWeeklyBoxOffice = [globalWeeklyGross];
             const newTotalBoxOffice = globalWeeklyGross;
             // Generate and store fixed territory percentages for this film's first week
-            const aiTerritoryPcts = generateTerritoryPercentages();
+            // Genre affects domestic/international split
+            const aiTerritoryPcts = generateTerritoryPercentages(film.genre);
             const weeklyByCountry = globalWeeklyGross > 0 ? distributeBoxOfficeWithFixedPercentages(globalWeeklyGross, aiTerritoryPcts) : {};
             const newWeeklyByCountry = [weeklyByCountry];
             
@@ -7055,10 +7057,10 @@ export async function registerRoutes(
           Object.keys(film.totalBoxOfficeByCountry as object).length > 0;
         
         if (!hasCountryData || force === 'true') {
-          // Generate weekly breakdown for each week
+          // Generate weekly breakdown for each week (with genre-based distribution)
           const weeklyByCountry: Record<string, number>[] = [];
           for (const weeklyGross of film.weeklyBoxOffice) {
-            weeklyByCountry.push(distributeBoxOfficeByCountry(weeklyGross));
+            weeklyByCountry.push(distributeBoxOfficeByCountry(weeklyGross, film.genre));
           }
           
           // Calculate total by summing up all weekly data (ensures consistency)

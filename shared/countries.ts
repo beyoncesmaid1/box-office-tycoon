@@ -2,6 +2,88 @@
 // Based on 2024 global box office data from Box Office Mojo, The Numbers, and Deadline
 // Total global box office 2024: ~$30 billion
 
+// Genre factors for domestic (North America) vs international performance
+// Values > 1.0 = more domestic-heavy, < 1.0 = more international-heavy
+// Based on historical box office data patterns
+export const GENRE_DOMESTIC_FACTORS: Record<string, number> = {
+  // Domestic-heavy genres (cultural specificity, language-dependent humor, local appeal)
+  horror: 1.35,      // Horror is very domestic-heavy (cultural fears, doesn't translate well)
+  comedy: 1.30,      // Comedy relies heavily on language/cultural humor
+  western: 1.35,     // Very American genre
+  sports: 1.40,      // Sports films are extremely domestic-heavy (American sports)
+  documentary: 1.45, // Documentaries are mostly domestic
+  romance: 1.20,     // Rom-coms especially are domestic-leaning
+  
+  // Balanced genres
+  drama: 1.05,       // Slightly domestic, but prestige dramas travel
+  thriller: 1.05,    // Fairly balanced
+  crime: 1.05,       // Balanced
+  mystery: 1.05,     // Balanced
+  musical: 1.10,     // Slightly domestic
+  war: 1.15,         // American war films do better domestically
+  historical: 1.10,  // Depends on subject matter
+  
+  // International-heavy genres (visual spectacle, universal appeal)
+  action: 0.85,      // Action translates universally
+  scifi: 0.80,       // Sci-fi has strong international appeal, especially Asia
+  fantasy: 0.85,     // Fantasy travels well internationally
+  animation: 0.75,   // Animation is very strong internationally, especially Asia
+  family: 0.85,      // Family films travel well
+  adventure: 0.85,   // Similar to action
+};
+
+// Genre factors for specific international markets
+// Some genres perform exceptionally well in certain territories
+export const GENRE_TERRITORY_FACTORS: Record<string, Record<string, number>> = {
+  animation: {
+    'Japan': 1.4,      // Anime culture = strong animation market
+    'China': 1.3,      // Growing animation market
+    'South Korea': 1.2,
+    'France': 1.15,    // Strong animation tradition
+  },
+  scifi: {
+    'China': 1.25,     // Sci-fi does very well in China
+    'Japan': 1.2,
+    'South Korea': 1.15,
+  },
+  action: {
+    'China': 1.2,      // Action blockbusters dominate in China
+    'Mexico': 1.15,
+    'South Korea': 1.1,
+  },
+  horror: {
+    'Japan': 1.3,      // J-horror influence means horror travels better to Japan
+    'South Korea': 1.2,
+    'Mexico': 1.15,    // Strong horror tradition
+    'UK & Ireland': 0.9,
+    'Germany': 0.85,
+    'France': 0.85,
+  },
+  comedy: {
+    'UK & Ireland': 1.15, // English-speaking, similar humor
+    'Australia': 1.15,
+    'France': 0.8,     // Humor doesn't translate well
+    'Germany': 0.8,
+    'Japan': 0.7,      // Comedy rarely translates to Japan
+    'China': 0.7,
+  },
+  romance: {
+    'France': 1.2,     // French love romance
+    'UK & Ireland': 1.1,
+    'Japan': 0.9,
+  },
+  drama: {
+    'UK & Ireland': 1.15,
+    'France': 1.15,
+    'Germany': 1.1,
+  },
+  fantasy: {
+    'UK & Ireland': 1.2, // Fantasy does great in UK
+    'Germany': 1.1,
+    'France': 1.1,
+  },
+};
+
 export const BOX_OFFICE_COUNTRIES = [
   // North America: Boosted to 35% base (range 20-75% for strong domestic performance)
   { code: 'NA', name: 'North America', percentage: 0.35, minPct: 0.20, maxPct: 0.75 },
@@ -43,8 +125,36 @@ export type BoxOfficeCountry = (typeof BOX_OFFICE_COUNTRIES)[number];
 
 // Generate a highly randomized percentage within a country's min/max range
 // Uses multiple random components to ensure each film gets a unique distribution
-function getRandomizedPercentage(country: BoxOfficeCountry): number {
-  const range = country.maxPct - country.minPct;
+// Now accepts an optional genre parameter to adjust domestic/international split
+function getRandomizedPercentage(country: BoxOfficeCountry, genre?: string): number {
+  let basePercentage = country.percentage;
+  let minPct = country.minPct;
+  let maxPct = country.maxPct;
+  
+  // Apply genre-based adjustments
+  if (genre) {
+    const genreLower = genre.toLowerCase();
+    const domesticFactor = GENRE_DOMESTIC_FACTORS[genreLower] || 1.0;
+    const territoryFactor = GENRE_TERRITORY_FACTORS[genreLower]?.[country.name] || 1.0;
+    
+    if (country.name === 'North America') {
+      // Apply domestic factor to North America
+      // Factor > 1.0 = more domestic, < 1.0 = less domestic
+      basePercentage *= domesticFactor;
+      minPct *= domesticFactor;
+      maxPct = Math.min(0.85, maxPct * domesticFactor); // Cap at 85% domestic max
+    } else {
+      // Apply inverse factor to international territories (if domestic is up, international is down)
+      const inverseFactor = 1 / domesticFactor;
+      // But also apply territory-specific genre boost
+      const combinedFactor = inverseFactor * territoryFactor;
+      basePercentage *= combinedFactor;
+      minPct *= Math.max(0.5, combinedFactor); // Don't reduce min too much
+      maxPct *= Math.min(1.5, combinedFactor); // Don't increase max too much
+    }
+  }
+  
+  const range = maxPct - minPct;
   
   // Multiple random factors for more variation
   const baseRandom = Math.random();
@@ -60,20 +170,21 @@ function getRandomizedPercentage(country: BoxOfficeCountry): number {
                    (fineRandom * direction * range * 0.3) +
                    (microRandom * (Math.random() > 0.5 ? 1 : -1) * range);
   
-  const result = country.percentage + variance;
+  const result = basePercentage + variance;
   
   // Add a tiny unique offset to prevent identical distributions (up to 0.01%)
   const uniqueOffset = (Math.random() - 0.5) * 0.0002;
   
-  return Math.max(country.minPct, Math.min(country.maxPct, result + uniqueOffset));
+  return Math.max(minPct, Math.min(maxPct, result + uniqueOffset));
 }
 
 // Distribute a total box office amount across countries with randomized percentages
-export function distributeBoxOfficeByCountry(total: number): Record<string, number> {
-  // Generate randomized percentages for each country
+// Now accepts an optional genre parameter to adjust domestic/international split
+export function distributeBoxOfficeByCountry(total: number, genre?: string): Record<string, number> {
+  // Generate randomized percentages for each country (with genre adjustments)
   const randomizedPcts: { name: string; pct: number }[] = BOX_OFFICE_COUNTRIES.map(country => ({
     name: country.name,
-    pct: getRandomizedPercentage(country),
+    pct: getRandomizedPercentage(country, genre),
   }));
   
   // Normalize so percentages sum to 1.0
@@ -100,10 +211,11 @@ export function distributeBoxOfficeByCountry(total: number): Record<string, numb
 }
 
 // Generate territory percentages (for first week - these should be stored and reused)
-export function generateTerritoryPercentages(): Record<string, number> {
+// Now accepts an optional genre parameter to adjust domestic/international split
+export function generateTerritoryPercentages(genre?: string): Record<string, number> {
   const randomizedPcts: { name: string; pct: number }[] = BOX_OFFICE_COUNTRIES.map(country => ({
     name: country.name,
-    pct: getRandomizedPercentage(country),
+    pct: getRandomizedPercentage(country, genre),
   }));
   
   const totalPct = randomizedPcts.reduce((sum, c) => sum + c.pct, 0);
@@ -207,9 +319,11 @@ export function calculateTerritoryBoxOffice(
 
 
 // Distribute box office only to specific released territories
+// Now accepts an optional genre parameter to adjust domestic/international split
 export function distributeBoxOfficeToTerritories(
   total: number,
-  releasedTerritories: string[]
+  releasedTerritories: string[],
+  genre?: string
 ): Record<string, number> {
   if (releasedTerritories.length === 0) return {};
   
@@ -220,10 +334,10 @@ export function distributeBoxOfficeToTerritories(
   
   if (countries.length === 0) return {};
   
-  // Generate randomized percentages for each released country
+  // Generate randomized percentages for each released country (with genre adjustments)
   const randomizedPcts: { name: string; pct: number }[] = countries.map(country => ({
     name: country.name,
-    pct: getRandomizedPercentage(country),
+    pct: getRandomizedPercentage(country, genre),
   }));
   
   // Normalize so percentages sum to 1.0
