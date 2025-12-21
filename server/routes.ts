@@ -6426,24 +6426,6 @@ export async function registerRoutes(
     try {
       const { playerGameId } = req.params;
       const nominations = await storage.getNominationsByPlayer(playerGameId);
-      
-      // Filter nominations to only include those for films in the current game session
-      const allStudios = await storage.getAllStudios();
-      const playerStudio = allStudios.find(s => s.id === playerGameId);
-      if (playerStudio) {
-        const gameStudioIds = new Set(
-          allStudios.filter(s => 
-            s.id === playerGameId || 
-            s.playerGameId === playerGameId ||
-            (playerStudio.gameSessionId && s.gameSessionId === playerStudio.gameSessionId)
-          ).map(s => s.id)
-        );
-        const allFilms = await storage.getAllFilms();
-        const gameFilmIds = new Set(allFilms.filter(f => gameStudioIds.has(f.studioId)).map(f => f.id));
-        const filteredNominations = nominations.filter(n => gameFilmIds.has(n.filmId));
-        return res.json(filteredNominations);
-      }
-      
       res.json(nominations);
     } catch (error) {
       console.error("Error fetching nominations:", error);
