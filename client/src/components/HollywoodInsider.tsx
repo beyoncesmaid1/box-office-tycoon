@@ -743,7 +743,11 @@ export function HollywoodInsider() {
               <ScrollArea className="h-[600px]">
                 <div className="space-y-6">
                   {filteredTalent.slice(0, 50).map((talent, index) => (
-                    <div key={talent.id} className="p-4 rounded-lg border border-border">
+                    <div 
+                      key={talent.id} 
+                      className="p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer"
+                      onClick={() => navigate(`/talent/${talent.id}`)}
+                    >
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center gap-4">
                           {/* Profile Picture */}
@@ -764,7 +768,7 @@ export function HollywoodInsider() {
                           <div>
                             <div className="flex items-center gap-2">
                               <span className="text-lg font-bold text-muted-foreground">#{index + 1}</span>
-                              <h3 className="font-semibold text-lg">{talent.name}</h3>
+                              <h3 className="font-semibold text-lg hover:underline">{talent.name}</h3>
                             </div>
                             <div className="flex items-center gap-2 mt-1">
                               <Badge variant="outline" className="text-xs capitalize">

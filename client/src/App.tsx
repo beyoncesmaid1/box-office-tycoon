@@ -29,6 +29,7 @@ import ScriptMarketplacePage from "@/pages/ScriptMarketplacePage";
 import TVShowsPage from "@/pages/TVShowsPage";
 import HollywoodInsiderPage from "@/pages/HollywoodInsiderPage";
 import FilmDetailPage from "@/pages/FilmDetailPage";
+import TalentDetailPage from "@/pages/TalentDetailPage";
 
 function Router() {
   return (
@@ -46,6 +47,7 @@ function Router() {
       <Route path="/scripts" component={ScriptMarketplacePage} />
       <Route path="/insider" component={HollywoodInsiderPage} />
       <Route path="/film/:filmId" component={FilmDetailPage} />
+      <Route path="/talent/:talentId" component={TalentDetailPage} />
       <Route component={NotFound} />
     </Switch>
   );
