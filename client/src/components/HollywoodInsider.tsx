@@ -114,10 +114,10 @@ export function HollywoodInsider() {
     return Array.from(years).sort((a, b) => b - a);
   }, [allFilms, state.currentYear]);
 
-  // Process films with stats
+  // Process films with stats (only show films released up to current game year)
   const filmsWithStats: FilmWithStats[] = useMemo(() => {
     return allFilms
-      .filter(f => f.phase === 'released' && f.totalBoxOffice > 0)
+      .filter(f => f.phase === 'released' && f.totalBoxOffice > 0 && (!f.releaseYear || f.releaseYear <= state.currentYear))
       .map(film => {
         const studio = studioMap.get(film.studioId);
         const director = film.directorId ? talentMap.get(film.directorId) : null;
@@ -147,7 +147,7 @@ export function HollywoodInsider() {
           roi,
         };
       });
-  }, [allFilms, studioMap, talentMap]);
+  }, [allFilms, studioMap, talentMap, state.currentYear]);
 
   // Filter and sort films
   const filteredFilms = useMemo(() => {
