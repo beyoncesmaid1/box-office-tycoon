@@ -626,6 +626,68 @@ export function AwardsSystem() {
         </CardContent>
       </Card>
 
+      {/* Upcoming Award Dates Schedule */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="w-5 h-5" />
+            Award Season Schedule - {state.currentYear}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {sortedShows.map(show => {
+              const ceremony = ceremonies.find(c => c.awardShowId === show.id && c.ceremonyYear === state.currentYear);
+              const isNominationsAnnounced = ceremony?.nominationsAnnounced || false;
+              const isCeremonyComplete = ceremony?.ceremonyComplete || false;
+              const weeksToNominations = show.nominationsWeek - state.currentWeek;
+              const weeksToCeremony = show.ceremonyWeek - state.currentWeek;
+              
+              return (
+                <div key={show.id} className={`p-3 rounded-lg border bg-gradient-to-r ${getShowColor(show.shortName)}`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    {getShowIcon(show.shortName)}
+                    <span className="font-medium">{show.shortName}</span>
+                  </div>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Nominations:</span>
+                      {isNominationsAnnounced ? (
+                        <span className="text-green-600 flex items-center gap-1">
+                          <Check className="w-3 h-3" /> Done
+                        </span>
+                      ) : (
+                        <span>
+                          Week {show.nominationsWeek}
+                          {weeksToNominations > 0 && weeksToNominations <= 20 && (
+                            <span className="text-muted-foreground ml-1">({weeksToNominations}w)</span>
+                          )}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Ceremony:</span>
+                      {isCeremonyComplete ? (
+                        <span className="text-green-600 flex items-center gap-1">
+                          <Check className="w-3 h-3" /> Done
+                        </span>
+                      ) : (
+                        <span>
+                          Week {show.ceremonyWeek}
+                          {weeksToCeremony > 0 && weeksToCeremony <= 20 && (
+                            <span className="text-muted-foreground ml-1">({weeksToCeremony}w)</span>
+                          )}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
           <TabsTrigger value="shows" data-testid="tab-shows">
