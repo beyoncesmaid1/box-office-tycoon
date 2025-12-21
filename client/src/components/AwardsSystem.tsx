@@ -128,9 +128,6 @@ function AwardShowCard({ show, ceremony, nominations, categories, films, playerS
   const isNominationsAnnounced = ceremony?.nominationsAnnounced || false;
   const isCeremonyComplete = ceremony?.ceremonyComplete || false;
   
-  const weeksToNominations = show.nominationsWeek - currentWeek;
-  const weeksToCeremony = show.ceremonyWeek - currentWeek;
-  
   const playerNominations = showNominations.filter(n => {
     const film = films.find(f => f.id === n.filmId);
     return film && film.studioId === playerStudioId;
@@ -164,50 +161,7 @@ function AwardShowCard({ show, ceremony, nominations, categories, films, playerS
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="p-3 rounded-lg bg-background/50">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-              <Calendar className="w-4 h-4" />
-              Nominations
-            </div>
-            {isNominationsAnnounced ? (
-              <p className="font-medium text-green-600 flex items-center gap-1">
-                <Check className="w-4 h-4" /> Announced
-              </p>
-            ) : (
-              <p className="font-medium">
-                Week {show.nominationsWeek} ({getWeekDescription(show.nominationsWeek)})
-                {weeksToNominations > 0 && weeksToNominations <= 12 && (
-                  <span className="text-sm text-muted-foreground ml-2">
-                    ({weeksToNominations} weeks)
-                  </span>
-                )}
-              </p>
-            )}
-          </div>
-          <div className="p-3 rounded-lg bg-background/50">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-              <Trophy className="w-4 h-4" />
-              Ceremony
-            </div>
-            {isCeremonyComplete ? (
-              <p className="font-medium text-green-600 flex items-center gap-1">
-                <Check className="w-4 h-4" /> Complete
-              </p>
-            ) : (
-              <p className="font-medium">
-                Week {show.ceremonyWeek} ({getWeekDescription(show.ceremonyWeek)})
-                {weeksToCeremony > 0 && weeksToCeremony <= 12 && (
-                  <span className="text-sm text-muted-foreground ml-2">
-                    ({weeksToCeremony} weeks)
-                  </span>
-                )}
-              </p>
-            )}
-          </div>
-        </div>
-        
+      <CardContent className="space-y-4">        
         {isNominationsAnnounced && (
           <div className="pt-2 border-t border-border/50">
             <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
