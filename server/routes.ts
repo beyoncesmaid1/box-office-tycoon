@@ -278,6 +278,7 @@ async function generateAIFilmSynopsis(filmId: string, title: string, genre: stri
 
 // AI Talent Hiring Helpers
 async function generateFilmRoles(filmId: string, genre: string, prodBudget: number) {
+  console.log(`[GENERATE-ROLES] Creating roles for film ${filmId}, genre: ${genre}, budget: ${prodBudget}`);
   // Generate roles based on genre and budget
   const roleCount = genre === 'action' ? 6 : genre === 'animation' ? 5 : 4;
   const importances: Array<'lead' | 'supporting' | 'minor'> = ['lead', 'lead', 'supporting', 'supporting', 'minor', 'minor'];
@@ -305,7 +306,9 @@ async function generateFilmRoles(filmId: string, genre: string, prodBudget: numb
   }
   
   // Create all roles in parallel
-  return Promise.all(roles.map(role => storage.createFilmRole(role)));
+  const createdRoles = await Promise.all(roles.map(role => storage.createFilmRole(role)));
+  console.log(`[GENERATE-ROLES] Created ${createdRoles.length} roles for film ${filmId}`);
+  return createdRoles;
 }
 
 async function hireAITalent(filmId: string, genre: string, aiStudio: any): Promise<number> {
@@ -6159,7 +6162,11 @@ export async function registerRoutes(
           });
           
           // Generate roles for the film so player can cast actors
-          await generateFilmRoles(newFilm.id, filmGenre, suggestedBudget);
+          try {
+            await generateFilmRoles(newFilm.id, filmGenre, suggestedBudget);
+          } catch (roleError) {
+            console.error(`[FIRST-LOOK] Error generating roles for film ${newFilm.id}:`, roleError);
+          }
           
           // Archive the email
           await storage.updateEmail(id, { isArchived: true });
