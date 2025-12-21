@@ -4396,8 +4396,28 @@ export async function registerRoutes(
       const currentWeek = playerStudio.currentWeek;
       const currentYear = playerStudio.currentYear;
       for (const film of enrichedFilms) {
-        if ((!film.releaseWeek || !film.releaseYear) && film.phase !== 'released') {
-          // Calculate remaining weeks based on current phase and durations
+        // First, check if this film has scheduled territory releases (player films)
+        const territoryReleases = await storage.getFilmReleasesByFilm(film.id);
+        if (territoryReleases.length > 0) {
+          // Use the earliest scheduled territory release date
+          let earliestWeek = territoryReleases[0].releaseWeek;
+          let earliestYear = territoryReleases[0].releaseYear;
+          for (const release of territoryReleases) {
+            const releaseNum = release.releaseYear * 52 + release.releaseWeek;
+            const earliestNum = earliestYear * 52 + earliestWeek;
+            if (releaseNum < earliestNum) {
+              earliestWeek = release.releaseWeek;
+              earliestYear = release.releaseYear;
+            }
+          }
+          // Update film's release date to match scheduled territory release
+          if (film.releaseWeek !== earliestWeek || film.releaseYear !== earliestYear) {
+            await storage.updateFilm(film.id, { releaseWeek: earliestWeek, releaseYear: earliestYear });
+          }
+          film.releaseWeek = earliestWeek;
+          film.releaseYear = earliestYear;
+        } else if ((!film.releaseWeek || !film.releaseYear) && film.phase !== 'released') {
+          // No territory releases scheduled - calculate based on production phases (AI films)
           // Phases: development → awaiting-greenlight(1) → pre-production → production → filmed(1) → post-production → production-complete(1) → awaiting-release(1) → released
           let totalRemainingWeeks = 0;
           
