@@ -4400,7 +4400,22 @@ export async function registerRoutes(
           film.releaseWeek = earliestWeek;
           film.releaseYear = earliestYear;
         } else if (film.phase !== 'released') {
-          // No territory releases scheduled - always recalculate based on production phases (AI films)
+          // No territory releases scheduled - only calculate release dates for AI films
+          // Player films should NOT appear on calendar until they schedule territory releases
+          const filmStudio = allStudios.find(s => s.id === film.studioId);
+          const isAIFilm = filmStudio?.isAI === true;
+          
+          if (!isAIFilm) {
+            // Player film without scheduled releases - clear any stale release dates
+            if (film.releaseWeek || film.releaseYear) {
+              await storage.updateFilm(film.id, { releaseWeek: null, releaseYear: null });
+              film.releaseWeek = null;
+              film.releaseYear = null;
+            }
+            continue;
+          }
+          
+          // AI films - recalculate based on production phases
           // This ensures release dates stay current as films progress through production
           // Phases: development → awaiting-greenlight(1) → pre-production → production → filmed(1) → post-production → production-complete(1) → awaiting-release(1) → released
           let totalRemainingWeeks = 0;
