@@ -849,7 +849,7 @@ export function HollywoodInsider() {
             </CardHeader>
             <CardContent>
               {(() => {
-                // Get all unreleased films with a scheduled release in the next 4 weeks
+                // Get all films with a scheduled release in the next 4 weeks
                 const upcomingFilms = allFilms.filter(f => {
                   // Skip already released films
                   if (f.phase === 'released') {
@@ -860,7 +860,8 @@ export function HollywoodInsider() {
                     const filmWeekNum = f.releaseYear * 52 + f.releaseWeek;
                     const currentWeekNum = state.currentYear * 52 + state.currentWeek;
                     const weeksUntilRelease = filmWeekNum - currentWeekNum;
-                    return weeksUntilRelease > 0 && weeksUntilRelease <= 4;
+                    // Include films releasing in the next 4 weeks (weeksUntilRelease >= 0 to include this week)
+                    return weeksUntilRelease >= 0 && weeksUntilRelease <= 4;
                   }
                   return false;
                 });
