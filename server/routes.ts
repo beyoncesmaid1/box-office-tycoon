@@ -1416,8 +1416,11 @@ async function processAwardCeremonies(
   });
   
   for (const show of awardShows) {
-    // Check if it's nominations week for this show
-    if (currentWeek === show.nominationsWeek) {
+    // Check if it's nominations week for this show (or if we've passed it and need to catch up)
+    const nominationsWeekPassed = currentWeek >= show.nominationsWeek || 
+      (show.nominationsWeek > 40 && currentWeek < 10); // Handle year wrap (e.g., nominations week 50, current week 3)
+    
+    if (nominationsWeekPassed) {
       const ceremonyYear = show.ceremonyWeek < show.nominationsWeek ? currentYear + 1 : currentYear;
       
       // Check if ceremony already exists
@@ -1693,9 +1696,17 @@ async function processAwardCeremonies(
       }
     }
     
-    // Check if it's ceremony week for this show
-    if (currentWeek === show.ceremonyWeek) {
-      const ceremonyYear = currentYear;
+    // Check if it's ceremony week for this show (or if we've passed it and need to catch up)
+    const ceremonyWeekPassed = currentWeek >= show.ceremonyWeek || 
+      (show.ceremonyWeek > 40 && currentWeek < 10); // Handle year wrap
+    
+    if (ceremonyWeekPassed) {
+      // Determine ceremony year - if ceremony week is in early year but we're past it, it's this year
+      // If ceremony week is late year and we're early year, it was last year
+      let ceremonyYear = currentYear;
+      if (show.ceremonyWeek > 40 && currentWeek < 10) {
+        ceremonyYear = currentYear - 1; // Ceremony was last year
+      }
       
       const ceremony = await storage.getCeremonyByShowAndYear(playerGameId, show.id, ceremonyYear);
       if (ceremony && ceremony.nominationsAnnounced && !ceremony.winnersAnnounced) {
@@ -4207,12 +4218,12 @@ export async function registerRoutes(
       
       // Filter films to only this game session for awards processing
       const allStudiosForAwards = await storage.getAllStudios();
-      const isMultiplayer = !!studio.gameSessionId;
+      const isMultiplayerForAwards = !!studio.gameSessionId;
       const gameStudioIds = new Set(
         allStudiosForAwards.filter(s => 
           s.id === id || 
           s.playerGameId === id ||
-          (isMultiplayer && s.gameSessionId === studio.gameSessionId)
+          (isMultiplayerForAwards && s.gameSessionId === studio.gameSessionId)
         ).map(s => s.id)
       );
       const gameFilmsForAwards = finalFilms.filter(f => gameStudioIds.has(f.studioId));
