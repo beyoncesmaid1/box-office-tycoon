@@ -989,7 +989,7 @@ export function HollywoodInsider() {
             const vfxFilms = scoredFilms.filter(f => (f.film.practicalEffectsBudget || 0) > 5000000 || ['scifi', 'fantasy', 'action', 'animation'].includes(f.film.genre));
             
             // Get predictions for each category
-            // Best Picture excludes animation
+            // Animation is ONLY eligible for Score and Animated Feature
             const nonAnimatedFilms = scoredFilms.filter(f => f.film.genre !== 'animation');
             const bestPicture = getTopNominees(nonAnimatedFilms, 10);
             const bestDirector = getTopNominees(nonAnimatedFilms, 5);
@@ -999,13 +999,13 @@ export function HollywoodInsider() {
             const bestSuppActress = getTopNominees(nonAnimatedFilms, 5);
             const bestOrigScreenplay = getTopNominees(nonAnimatedFilms.filter(f => !f.film.title.match(/\s[2-9]$|\sII|III|IV|Part\s/i)), 5);
             const bestAnimated = getTopNominees(animatedFilms, 5);
-            const bestCinematography = getTopNominees(scoredFilms, 5);
-            const bestEditing = getTopNominees(scoredFilms, 5);
-            const bestProdDesign = getTopNominees(scoredFilms.filter(f => (f.film.setsBudget || 0) > 3000000), 5);
-            const bestCostume = getTopNominees(scoredFilms.filter(f => (f.film.costumesBudget || 0) > 1000000), 5);
-            const bestMakeup = getTopNominees(scoredFilms.filter(f => (f.film.makeupBudget || 0) > 500000), 5);
-            const bestVFX = getTopNominees(vfxFilms, 5);
-            const bestScore = getTopNominees(scoredFilms, 5);
+            const bestCinematography = getTopNominees(nonAnimatedFilms, 5);
+            const bestEditing = getTopNominees(nonAnimatedFilms, 5);
+            const bestProdDesign = getTopNominees(nonAnimatedFilms.filter(f => (f.film.setsBudget || 0) > 3000000), 5);
+            const bestCostume = getTopNominees(nonAnimatedFilms.filter(f => (f.film.costumesBudget || 0) > 1000000), 5);
+            const bestMakeup = getTopNominees(nonAnimatedFilms.filter(f => (f.film.makeupBudget || 0) > 500000), 5);
+            const bestVFX = getTopNominees(vfxFilms.filter(f => f.film.genre !== 'animation'), 5);
+            const bestScore = getTopNominees(scoredFilms, 5); // Animation IS eligible for Score
             
             // Render a category section
             const renderCategory = (title: string, data: { nominees: typeof scoredFilms, winner: typeof scoredFilms[0] | undefined }) => {

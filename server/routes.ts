@@ -1473,17 +1473,21 @@ async function processAwardCeremonies(
             // Base critic score for ALL categories
             score += criticScore * 2;
             
+            // Animation is ONLY eligible for Score and Animated Feature categories
+            const isScoreCategory = categoryName.includes('score') || categoryName.includes('music');
+            const isAnimatedCategory = categoryName.includes('animation') || categoryName.includes('animated');
+            if (film.genre === 'animation' && !isScoreCategory && !isAnimatedCategory) {
+              score = -1000; // Exclude animated films from all other categories
+            }
+            
             // Drama genre boost for most categories (except animation/VFX specific)
-            if (film.genre === 'drama' && !categoryName.includes('animation') && !categoryName.includes('vfx') && !categoryName.includes('visual effects')) {
+            if (film.genre === 'drama' && !isAnimatedCategory && !categoryName.includes('vfx') && !categoryName.includes('visual effects')) {
               score += 15;
             }
             
             // Category-specific scoring
             if (categoryName.includes('picture') || categoryName.includes('film')) {
-              // Best Picture/Film - exclude animation, favor dramas
-              if (film.genre === 'animation' && !categoryName.includes('animation')) {
-                score = -1000; // Exclude animated films from Best Picture
-              }
+              // Best Picture/Film - exclude animation (already handled above), favor dramas
               // Golden Globes drama category - only drama films
               if (categoryType === 'film_drama') {
                 if (film.genre !== 'drama') score = -1000;
