@@ -27,6 +27,20 @@ interface FilmDetailProps {
   filmId: string;
 }
 
+// Convert week number and year to a readable date
+function formatReleaseDate(week: number, year: number): string {
+  // Week 1 = first week of January
+  const startOfYear = new Date(year, 0, 1);
+  const daysToAdd = (week - 1) * 7;
+  const releaseDate = new Date(startOfYear.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
+  
+  return releaseDate.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric'
+  });
+}
+
 function formatCompactMoney(amount: number): string {
   if (amount >= 1000000000) {
     return `$${(amount / 1000000000).toFixed(2)}B`;
@@ -247,10 +261,15 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
             <Badge variant="secondary" className="text-sm">
               {genreLabels[film.genre as keyof typeof genreLabels] || film.genre}
             </Badge>
-            {film.releaseYear && (
+            {film.releaseYear && film.releaseWeek && (
               <Badge variant="outline" className="text-sm">
                 <Calendar className="w-3 h-3 mr-1" />
-                {film.releaseYear}
+                {formatReleaseDate(film.releaseWeek, film.releaseYear)}
+              </Badge>
+            )}
+            {film.releaseYear && film.releaseWeek && (
+              <Badge variant="outline" className="text-sm opacity-75">
+                Week {film.releaseWeek}, {film.releaseYear}
               </Badge>
             )}
           </div>
