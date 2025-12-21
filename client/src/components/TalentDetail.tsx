@@ -73,22 +73,19 @@ export function TalentDetail({ talentId }: TalentDetailProps) {
       if (talent.type === 'director') return f.directorId === talent.id;
       if (talent.type === 'writer') return f.writerId === talent.id;
       if (talent.type === 'composer') return f.composerId === talent.id;
-      // For actors, check cast
-      const cast = f.cast as Array<{ actorId?: string; roleName?: string }> | null;
-      return cast?.some(c => c.actorId === talent.id);
+      // For actors, check castIds array
+      return f.castIds?.includes(talent.id);
     })
     .map(film => {
       let role = talent.type;
-      if (talent.type === 'actor') {
-        const cast = film.cast as Array<{ actorId?: string; roleName?: string }> | null;
-        const actorRole = cast?.find(c => c.actorId === talent.id);
-        role = actorRole?.roleName || 'Actor';
-      } else if (talent.type === 'director') {
+      if (talent.type === 'director') {
         role = 'Director';
       } else if (talent.type === 'writer') {
         role = 'Writer';
       } else if (talent.type === 'composer') {
         role = 'Composer';
+      } else if (talent.type === 'actor') {
+        role = 'Actor';
       }
       return { film, role, boxOffice: film.totalBoxOffice };
     })
