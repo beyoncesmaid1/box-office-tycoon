@@ -371,8 +371,11 @@ function HeroBanner({ film, studioName, isYours, onExpand }: { film: FilmType; s
 }
 
 function ExpandedFilmDetail({ film, studioName, onClose }: { film: FilmType; studioName: string; onClose: () => void }) {
-  // Use totalBudget which includes all production costs
-  const investmentBudget = film.totalBudget || 0;
+  // Calculate investment budget directly from components (production + departments + talent)
+  const investmentBudget = (film.productionBudget || 0) + 
+    (film.setsBudget || 0) + (film.costumesBudget || 0) + (film.stuntsBudget || 0) + 
+    (film.makeupBudget || 0) + (film.practicalEffectsBudget || 0) + (film.soundCrewBudget || 0) +
+    (film.talentBudget || 0);
   const profit = film.totalBoxOffice * 0.7 - investmentBudget;
   const isProfitable = profit > 0;
   
