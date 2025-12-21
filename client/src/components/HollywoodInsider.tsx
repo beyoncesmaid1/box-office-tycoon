@@ -849,18 +849,24 @@ export function HollywoodInsider() {
             </CardHeader>
             <CardContent>
               {(() => {
-                // Get all films with a scheduled release in the next 4 weeks
+                // Get films that are close to release - either scheduled in next 4 weeks OR in late production phases
                 const upcomingFilms = allFilms.filter(f => {
                   // Skip already released films
                   if (f.phase === 'released') {
                     return false;
                   }
-                  // Include any film with a release date in the next 4 weeks
+                  
+                  // Include films in late production phases (close to release)
+                  const latePhases = ['post-production', 'production-complete', 'awaiting-release'];
+                  if (latePhases.includes(f.phase)) {
+                    return true;
+                  }
+                  
+                  // Also include any film with a release date in the next 4 weeks
                   if (f.releaseWeek && f.releaseYear) {
                     const filmWeekNum = f.releaseYear * 52 + f.releaseWeek;
                     const currentWeekNum = state.currentYear * 52 + state.currentWeek;
                     const weeksUntilRelease = filmWeekNum - currentWeekNum;
-                    // Include films releasing in the next 4 weeks (weeksUntilRelease >= 0 to include this week)
                     return weeksUntilRelease >= 0 && weeksUntilRelease <= 4;
                   }
                   return false;
