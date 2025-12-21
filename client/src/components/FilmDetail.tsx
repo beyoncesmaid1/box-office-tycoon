@@ -262,12 +262,12 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
               {genreLabels[film.genre as keyof typeof genreLabels] || film.genre}
             </Badge>
             {film.releaseYear && film.releaseWeek && (
-              <Badge variant="outline" className="text-sm">
+              <Badge variant="outline" className="text-xs">
                 <div className="flex items-start gap-1">
                   <Calendar className="w-3 h-3 mt-0.5" />
-                  <div className="flex flex-col">
-                    <span>{formatReleaseDate(film.releaseWeek, film.releaseYear)}</span>
-                    <span className="text-xs opacity-75">Week {film.releaseWeek}</span>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-xs">{formatReleaseDate(film.releaseWeek, film.releaseYear)}</span>
+                    <span className="text-xs opacity-75 text-right">Week {film.releaseWeek}</span>
                   </div>
                 </div>
               </Badge>
