@@ -105,14 +105,14 @@ export function HollywoodInsider() {
   const studioMap = useMemo(() => new Map(allStudios.map(s => [s.id, s])), [allStudios]);
   const talentMap = useMemo(() => new Map(allTalent.map(t => [t.id, t])), [allTalent]);
 
-  // Get available years for filtering
+  // Get available years for filtering (only up to current game year)
   const availableYears = useMemo(() => {
     const years = new Set<number>();
     allFilms.forEach(f => {
-      if (f.releaseYear) years.add(f.releaseYear);
+      if (f.releaseYear && f.releaseYear <= state.currentYear) years.add(f.releaseYear);
     });
     return Array.from(years).sort((a, b) => b - a);
-  }, [allFilms]);
+  }, [allFilms, state.currentYear]);
 
   // Process films with stats
   const filmsWithStats: FilmWithStats[] = useMemo(() => {
