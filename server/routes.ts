@@ -3418,11 +3418,8 @@ export async function registerRoutes(
           const releaseWithMarketing = filmReleases.find(r => r.marketingBudget && r.marketingBudget > 0);
           const marketingBudgetAtRelease = releaseWithMarketing?.marketingBudget || film.marketingBudget || 0;
           
-          // Investment budget = production + departments + talent (everything except marketing)
-          const investmentBudgetAtRelease = (film.productionBudget || 0) + 
-            (film.setsBudget || 0) + (film.costumesBudget || 0) + (film.stuntsBudget || 0) + 
-            (film.makeupBudget || 0) + (film.practicalEffectsBudget || 0) + (film.soundCrewBudget || 0) +
-            (film.talentBudget || 0);
+          // Use totalBudget for box office calculations (includes all production costs)
+          const investmentBudgetAtRelease = film.totalBudget || (film.productionBudget || 0);
           
           // Calculate marketing multiplier as ratio of marketing to investment (capped at 1.0)
           const marketingRatio = Math.min(1.0, marketingBudgetAtRelease / (investmentBudgetAtRelease || 1));
@@ -3620,27 +3617,13 @@ export async function registerRoutes(
           if (!film.weeklyBoxOffice || film.weeklyBoxOffice.length === 0) {
             const qualityFactor = (film.scriptQuality || 70) / 100;
             const genreMultiplier = getGenreMultiplier(film.genre);
-            // Calculate total investment budget including all crew costs (sets, costumes, stunts, makeup, effects, sound)
-            let totalInvestmentBudget = (film.productionBudget || 0) + 
-              (film.talentBudget || 0) + 
-              (film.setsBudget || 0) + 
-              (film.costumesBudget || 0) + 
-              (film.stuntsBudget || 0) + 
-              (film.makeupBudget || 0) + 
-              (film.practicalEffectsBudget || 0) + 
-              (film.soundCrewBudget || 0);
+            // Use totalBudget for box office calculations
+            let totalInvestmentBudget = film.totalBudget || (film.productionBudget || 0);
             const marketingMultiplier = film.marketingBudget ? (film.marketingBudget / (totalInvestmentBudget || 1)) : 0.15;
             const audienceBoost = getAudienceMultiplier(film.audienceScore || 7);
             
-            // Investment budget = production + talent + all crew + composer + VFX
-            let investmentBudget = film.productionBudget + 
-              (film.talentBudget || 0) + 
-              (film.setsBudget || 0) + 
-              (film.costumesBudget || 0) + 
-              (film.stuntsBudget || 0) + 
-              (film.makeupBudget || 0) + 
-              (film.practicalEffectsBudget || 0) + 
-              (film.soundCrewBudget || 0);
+            // Use totalBudget for investment budget
+            let investmentBudget = film.totalBudget || (film.productionBudget || 0);
             
             // Add VFX studio cost if hired (MUST be before composer check for correct order)
             if (film.vfxStudioId) {
@@ -4796,33 +4779,9 @@ export async function registerRoutes(
       // Audience score boost using tier-based multiplier: exceptional films get disproportionate rewards
       const audienceBoost = getAudienceMultiplier(audienceScore);
       
-      // Use PRODUCTION INVESTMENT BUDGET (production + talent + crew: sets, costumes, stunts, makeup, effects, sound + composer + VFX)
+      // Use totalBudget for box office calculations
       // NOTE: Marketing is separate and has its own multiplier
-      let investmentBudget = film.productionBudget + 
-        (film.talentBudget || 0) + 
-        (film.setsBudget || 0) + 
-        (film.costumesBudget || 0) + 
-        (film.stuntsBudget || 0) + 
-        (film.makeupBudget || 0) + 
-        (film.practicalEffectsBudget || 0) + 
-        (film.soundCrewBudget || 0);
-      
-      // Add composer cost if hired
-      if (film.composerId) {
-        const allTalent = await storage.getAllTalent();
-        const composer = allTalent.find(t => t.id === film.composerId);
-        if (composer) {
-          investmentBudget += composer.askingPrice || 0;
-        }
-      }
-      
-      // Add VFX studio cost if hired
-      if (film.vfxStudioId) {
-        const vfxStudio = vfxStudios.find(s => s.id === film.vfxStudioId);
-        if (vfxStudio) {
-          investmentBudget += vfxStudio.cost || 0;
-        }
-      }
+      let investmentBudget = film.totalBudget || (film.productionBudget || 0);
       
       const clampedInvestmentBudget3 = clampInvestmentBudgetByGenre(investmentBudget, film.genre);
       const randomLuck = 0.5 + Math.random() * 0.8;
