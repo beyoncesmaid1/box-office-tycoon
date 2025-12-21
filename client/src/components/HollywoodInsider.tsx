@@ -994,31 +994,25 @@ export function HollywoodInsider() {
               const randomFactor = (seededRandom(film.id) - 0.5) * 30;
               const oscarScore = criticScore + genreBoost + boxOfficeBonus + randomFactor;
               
-              // Get lead actor/actress from cast
-              const castIds = film.castIds as string[] | null;
-              let leadActorName = 'Unknown Actor';
-              let leadActressName = 'Unknown Actress';
+              // Get lead/supporting actor/actress from enriched film data (based on role importance)
+              const leadActorId = (film as any).leadActorId as string | null;
+              const leadActressId = (film as any).leadActressId as string | null;
+              const supportingActorId = (film as any).supportingActorId as string | null;
+              const supportingActressId = (film as any).supportingActressId as string | null;
               
-              // Try to find lead actors by gender
-              if (castIds && castIds.length > 0) {
-                for (const castId of castIds) {
-                  const talent = talentMap.get(castId);
-                  if (talent && talent.type === 'actor') {
-                    if (talent.gender === 'male' && leadActorName === 'Unknown Actor') {
-                      leadActorName = talent.name;
-                    } else if (talent.gender === 'female' && leadActressName === 'Unknown Actress') {
-                      leadActressName = talent.name;
-                    }
-                  }
-                }
-              }
+              const leadActor = leadActorId ? talentMap.get(leadActorId) : null;
+              const leadActress = leadActressId ? talentMap.get(leadActressId) : null;
+              const supportingActor = supportingActorId ? talentMap.get(supportingActorId) : null;
+              const supportingActress = supportingActressId ? talentMap.get(supportingActressId) : null;
               
               return {
                 film,
                 studioName: studio?.name || 'Unknown Studio',
                 directorName: director?.name || 'Unknown Director',
-                leadActorName,
-                leadActressName,
+                leadActorName: leadActor?.name || 'Unknown Actor',
+                leadActressName: leadActress?.name || 'Unknown Actress',
+                supportingActorName: supportingActor?.name || 'Unknown Actor',
+                supportingActressName: supportingActress?.name || 'Unknown Actress',
                 oscarScore,
                 criticScore
               };
@@ -1061,14 +1055,14 @@ export function HollywoodInsider() {
             const bestScore = getTopNominees(scoredFilms, 5, 15); // Animation IS eligible for Score
             
             // Render a category section - different display for different category types
-            type CategoryType = 'film' | 'director' | 'actor' | 'actress' | 'screenplay' | 'score' | 'technical';
+            type CategoryType = 'film' | 'director' | 'actor' | 'actress' | 'supporting_actor' | 'supporting_actress' | 'screenplay' | 'score' | 'technical';
             const renderCategory = (title: string, data: { nominees: typeof scoredFilms, winner: typeof scoredFilms[0] | undefined }, categoryType: CategoryType = 'film') => {
               if (data.nominees.length === 0) return null;
               return (
                 <div className="space-y-2">
                   <h3 className="font-bold text-lg border-b pb-2">{title}</h3>
                   <div className="space-y-1">
-                    {data.nominees.map(({ film, studioName, directorName, leadActorName, leadActressName }) => {
+                    {data.nominees.map(({ film, studioName, directorName, leadActorName, leadActressName, supportingActorName, supportingActressName }) => {
                       // Determine what name to show based on category type
                       let displayName = `"${film.title}"`;
                       let subText = studioName;
@@ -1077,12 +1071,20 @@ export function HollywoodInsider() {
                         displayName = directorName;
                         subText = `"${film.title}"`;
                       } else if (categoryType === 'actor') {
-                        // For actor categories, show actor name with film title
+                        // Best Actor - lead male role
                         displayName = leadActorName;
                         subText = `"${film.title}"`;
                       } else if (categoryType === 'actress') {
-                        // For actress categories, show actress name with film title
+                        // Best Actress - lead female role
                         displayName = leadActressName;
+                        subText = `"${film.title}"`;
+                      } else if (categoryType === 'supporting_actor') {
+                        // Best Supporting Actor - supporting male role
+                        displayName = supportingActorName;
+                        subText = `"${film.title}"`;
+                      } else if (categoryType === 'supporting_actress') {
+                        // Best Supporting Actress - supporting female role
+                        displayName = supportingActressName;
                         subText = `"${film.title}"`;
                       } else if (categoryType === 'screenplay') {
                         displayName = `"${film.title}"`;
@@ -1128,8 +1130,8 @@ export function HollywoodInsider() {
                       {renderCategory('Best Director', bestDirector, 'director')}
                       {renderCategory('Best Actor', bestActor, 'actor')}
                       {renderCategory('Best Actress', bestActress, 'actress')}
-                      {renderCategory('Best Supporting Actor', bestSuppActor, 'actor')}
-                      {renderCategory('Best Supporting Actress', bestSuppActress, 'actress')}
+                      {renderCategory('Best Supporting Actor', bestSuppActor, 'supporting_actor')}
+                      {renderCategory('Best Supporting Actress', bestSuppActress, 'supporting_actress')}
                       {renderCategory('Best Original Screenplay', bestOrigScreenplay, 'screenplay')}
                       {bestAnimated.nominees.length > 0 && renderCategory('Best Animated Feature', bestAnimated, 'film')}
                       {renderCategory('Best Cinematography', bestCinematography, 'technical')}

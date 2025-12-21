@@ -4314,10 +4314,47 @@ export async function registerRoutes(
         return filmStudio && (filmStudio.id === playerId || filmStudio.playerGameId === playerId);
       });
       
+      // Enrich films with lead/supporting actor info for Oscar predictions
+      const enrichedFilms = await Promise.all(filtered.map(async (film) => {
+        const roles = await storage.getFilmRolesByFilm(film.id);
+        let leadActorId: string | null = null;
+        let leadActressId: string | null = null;
+        let supportingActorId: string | null = null;
+        let supportingActressId: string | null = null;
+        
+        for (const role of roles) {
+          if (!role.actorId || !role.isCast) continue;
+          const talent = await storage.getTalent(role.actorId);
+          if (!talent || talent.type !== 'actor') continue;
+          
+          if (role.importance === 'lead') {
+            if (talent.gender === 'male' && !leadActorId) {
+              leadActorId = talent.id;
+            } else if (talent.gender === 'female' && !leadActressId) {
+              leadActressId = talent.id;
+            }
+          } else if (role.importance === 'supporting') {
+            if (talent.gender === 'male' && !supportingActorId) {
+              supportingActorId = talent.id;
+            } else if (talent.gender === 'female' && !supportingActressId) {
+              supportingActressId = talent.id;
+            }
+          }
+        }
+        
+        return {
+          ...film,
+          leadActorId,
+          leadActressId,
+          supportingActorId,
+          supportingActressId,
+        };
+      }));
+      
       // Ensure all films have release weeks AND years assigned
       const currentWeek = playerStudio.currentWeek;
       const currentYear = playerStudio.currentYear;
-      for (const film of filtered) {
+      for (const film of enrichedFilms) {
         if ((!film.releaseWeek || !film.releaseYear) && film.phase !== 'released') {
           // Calculate remaining weeks based on current phase and durations
           // Phases: development → awaiting-greenlight(1) → pre-production → production → filmed(1) → post-production → production-complete(1) → awaiting-release(1) → released
@@ -4353,7 +4390,7 @@ export async function registerRoutes(
         }
       }
       
-      res.json(filtered);
+      res.json(enrichedFilms);
     } catch (error) {
       console.error("Error fetching all films:", error);
       res.status(500).json({ error: "Failed to fetch films" });
