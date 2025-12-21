@@ -598,25 +598,31 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
         </CardContent>
       </Card>
 
-      {/* Awards Section */}
-      {(filmAwards.wins.length > 0 || filmAwards.nominations.length > 0) && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Trophy className="w-5 h-5" />
-              Awards
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+      {/* Awards Section - Always visible */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Trophy className="w-5 h-5" />
+            Awards
+            {(filmAwards.wins.length > 0 || filmAwards.nominations.length > 0) && (
+              <span className="text-sm font-normal text-muted-foreground ml-2">
+                {filmAwards.wins.length} Win{filmAwards.wins.length !== 1 ? 's' : ''} • {filmAwards.nominations.length} Nomination{filmAwards.nominations.length !== 1 ? 's' : ''}
+              </span>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {(filmAwards.wins.length > 0 || filmAwards.nominations.length > 0) ? (
             <div className="space-y-4">
               {filmAwards.wins.length > 0 && (
                 <div>
-                  <h4 className="font-semibold text-green-600 dark:text-green-400 mb-2">
+                  <h4 className="font-semibold text-yellow-500 mb-3 flex items-center gap-2">
+                    <Trophy className="w-4 h-4" />
                     Wins ({filmAwards.wins.length})
                   </h4>
                   <div className="space-y-2">
                     {filmAwards.wins.map((award, index) => (
-                      <div key={index} className="flex items-center gap-3 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                      <div key={index} className="flex items-center gap-3 p-3 rounded-lg border border-yellow-500/50 bg-yellow-500/10">
                         <Trophy className="w-5 h-5 text-yellow-500" />
                         <div>
                           <p className="font-medium">
@@ -631,12 +637,13 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
               )}
               {filmAwards.nominations.length > 0 && (
                 <div>
-                  <h4 className="font-semibold text-muted-foreground mb-2">
+                  <h4 className="font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+                    <Trophy className="w-4 h-4" />
                     Nominations ({filmAwards.nominations.length})
                   </h4>
                   <div className="space-y-2">
                     {filmAwards.nominations.map((award, index) => (
-                      <div key={index} className="flex items-center gap-3 p-2 bg-muted/50 rounded-lg">
+                      <div key={index} className="flex items-center gap-3 p-3 rounded-lg border border-border">
                         <Trophy className="w-5 h-5 text-muted-foreground" />
                         <div>
                           <p className="font-medium">
@@ -650,9 +657,13 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
                 </div>
               )}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          ) : (
+            <div className="py-8 text-center text-muted-foreground">
+              No awards or nominations yet
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
