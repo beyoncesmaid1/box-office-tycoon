@@ -3,7 +3,7 @@ import { useGame } from '@/lib/gameState';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, Trophy } from 'lucide-react';
 import { useState } from 'react';
 import type { Studio, Film } from '@shared/schema';
 import { HOLIDAYS, HOLIDAY_GENRE_MODIFIERS, MONTH_NAMES, getSeasonIcon, getMonthFromWeek } from '@shared/holidays';
@@ -17,6 +17,26 @@ import {
 interface FilmWithStudio extends Film {
   studioName: string;
   isPlayerStudio: boolean;
+}
+
+interface AwardShow {
+  id: string;
+  name: string;
+  shortName: string;
+  prestigeLevel: number;
+  nominationsWeek: number;
+  ceremonyWeek: number;
+  description: string;
+}
+
+interface AwardCeremony {
+  id: string;
+  playerGameId: string;
+  awardShowId: string;
+  ceremonyYear: number;
+  nominationsAnnounced: boolean;
+  ceremonyComplete: boolean;
+  winnersAnnounced: boolean;
 }
 
 export default function ReleaseCalendar() {
@@ -35,7 +55,16 @@ export default function ReleaseCalendar() {
     enabled: !!state.studioId,
   });
 
-  if (studiosLoading || filmsLoading) {
+  const { data: awardShows = [], isLoading: awardShowsLoading } = useQuery<AwardShow[]>({
+    queryKey: ['/api/award-shows'],
+  });
+
+  const { data: ceremonies = [], isLoading: ceremoniesLoading } = useQuery<AwardCeremony[]>({
+    queryKey: ['/api/ceremonies', state.studioId],
+    enabled: !!state.studioId,
+  });
+
+  if (studiosLoading || filmsLoading || awardShowsLoading || ceremoniesLoading) {
     return (
       <div className="p-6">
         <Card>
@@ -91,6 +120,28 @@ export default function ReleaseCalendar() {
 
   const getHolidayForWeek = (week: number): typeof HOLIDAYS[0] | undefined => {
     return HOLIDAYS.find(h => h.week === week);
+  };
+
+  const getAwardEventsForWeek = (week: number, year: number) => {
+    const events: Array<{type: 'ceremony', show: AwardShow}> = [];
+    
+    awardShows.forEach(show => {
+      // Check if there's a ceremony for this show in this year
+      const ceremony = ceremonies.find(c => 
+        c.awardShowId === show.id && 
+        c.ceremonyYear === year
+      );
+      
+      // Only show ceremony dates (not nominations)
+      if (show.ceremonyWeek === week && (!ceremony || !ceremony.ceremonyComplete)) {
+        events.push({
+          type: 'ceremony',
+          show
+        });
+      }
+    });
+    
+    return events;
   };
 
   const navigateMonth = (direction: 'prev' | 'next') => {
@@ -199,10 +250,14 @@ export default function ReleaseCalendar() {
 
               <CardContent className="flex-1 p-3 flex flex-col overflow-hidden">
                 <div className="flex-1 space-y-2">
+                  {/* Film releases */}
                   {films.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-4 italic">
-                      No releases
-                    </p>
+                    films.length === 0 && 
+                    getAwardEventsForWeek(week, viewYear).length === 0 && (
+                      <p className="text-sm text-muted-foreground text-center py-4 italic">
+                        No events
+                      </p>
+                    )
                   ) : (
                     films.map(film => (
                       <div 
@@ -225,6 +280,22 @@ export default function ReleaseCalendar() {
                       </div>
                     ))
                   )}
+                  
+                  {/* Award Show Ceremonies */}
+                  {getAwardEventsForWeek(week, viewYear).map((event, idx) => (
+                    <div 
+                      key={`${event.show.id}-${event.type}-${idx}`} 
+                      className="p-2 rounded-lg text-sm bg-amber-500/20 border border-amber-500/30"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Trophy className="w-4 h-4 text-amber-500" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{event.show.shortName}</p>
+                          <p className="text-xs text-muted-foreground">Awards Ceremony</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
                 {holiday && (
@@ -309,10 +380,14 @@ export default function ReleaseCalendar() {
 
                 <CardContent className="flex-1 p-3 flex flex-col overflow-hidden">
                   <div className="flex-1 space-y-2">
+                    {/* Film releases */}
                     {films.length === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center py-4 italic">
-                        No releases
-                      </p>
+                      films.length === 0 && 
+                      getAwardEventsForWeek(week, viewYear).length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-4 italic">
+                          No events
+                        </p>
+                      )
                     ) : (
                       films.map(film => (
                         <div 
@@ -335,6 +410,22 @@ export default function ReleaseCalendar() {
                         </div>
                       ))
                     )}
+                    
+                    {/* Award Show Ceremonies */}
+                    {getAwardEventsForWeek(week, viewYear).map((event, idx) => (
+                      <div 
+                        key={`${event.show.id}-${event.type}-${idx}`} 
+                        className="p-2 rounded-lg text-sm bg-amber-500/20 border border-amber-500/30"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Trophy className="w-4 h-4 text-amber-500" />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate">{event.show.shortName}</p>
+                            <p className="text-xs text-muted-foreground">Awards Ceremony</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
 
                   {holiday && (
