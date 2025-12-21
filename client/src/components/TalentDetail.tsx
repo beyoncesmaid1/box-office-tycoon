@@ -185,7 +185,7 @@ export function TalentDetail({ talentId }: TalentDetailProps) {
       </Card>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Power Ranking */}
         <Card>
           <CardHeader className="pb-2">
@@ -239,38 +239,6 @@ export function TalentDetail({ talentId }: TalentDetailProps) {
             </div>
           </CardContent>
         </Card>
-
-        {/* Awards Summary */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Trophy className="w-4 h-4" />
-              Awards
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-yellow-500/20 flex items-center justify-center">
-                  <Trophy className="w-6 h-6 text-yellow-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{wins.length}</p>
-                  <p className="text-xs text-muted-foreground">Wins</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-                  <Award className="w-6 h-6 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{noms.length}</p>
-                  <p className="text-xs text-muted-foreground">Nominations</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Filmography */}
@@ -319,52 +287,95 @@ export function TalentDetail({ talentId }: TalentDetailProps) {
         </CardContent>
       </Card>
 
-      {/* Awards History */}
-      {talentNominations.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Trophy className="w-5 h-5" />
-              Awards History
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[300px]">
-              <div className="space-y-2">
-                {talentNominations.map((nom) => {
-                  const film = allFilms.find(f => f.id === nom.filmId);
-                  return (
-                    <div 
-                      key={nom.id} 
-                      className={`flex items-center justify-between p-3 rounded-lg border ${
-                        nom.isWinner ? 'border-yellow-500/50 bg-yellow-500/10' : 'border-border'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        {nom.isWinner ? (
-                          <Trophy className="w-5 h-5 text-yellow-500" />
-                        ) : (
-                          <Award className="w-5 h-5 text-muted-foreground" />
-                        )}
-                        <div>
-                          <p className="font-semibold">{nom.categoryName}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {nom.awardShowName} {nom.year}
-                            {film && ` • ${film.title}`}
-                          </p>
+      {/* Awards */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Trophy className="w-5 h-5" />
+            Awards
+            {(wins.length > 0 || noms.length > 0) && (
+              <span className="text-sm font-normal text-muted-foreground ml-2">
+                {wins.length} Win{wins.length !== 1 ? 's' : ''} • {noms.length} Nomination{noms.length !== 1 ? 's' : ''}
+              </span>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {talentNominations.length > 0 ? (
+            <div className="space-y-4">
+              {/* Wins Section */}
+              {wins.length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-yellow-500 mb-3 flex items-center gap-2">
+                    <Trophy className="w-4 h-4" />
+                    Wins ({wins.length})
+                  </h4>
+                  <div className="space-y-2">
+                    {wins.map((nom) => {
+                      const film = allFilms.find(f => f.id === nom.filmId);
+                      return (
+                        <div 
+                          key={nom.id} 
+                          className="flex items-center justify-between p-3 rounded-lg border border-yellow-500/50 bg-yellow-500/10"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Trophy className="w-5 h-5 text-yellow-500" />
+                            <div>
+                              <p className="font-semibold">{nom.categoryName}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {nom.awardShowName} {nom.year}
+                                {film && ` • ${film.title}`}
+                              </p>
+                            </div>
+                          </div>
+                          <Badge variant="default">Winner</Badge>
                         </div>
-                      </div>
-                      <Badge variant={nom.isWinner ? 'default' : 'outline'}>
-                        {nom.isWinner ? 'Winner' : 'Nominated'}
-                      </Badge>
-                    </div>
-                  );
-                })}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
-      )}
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              
+              {/* Nominations Section */}
+              {noms.length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+                    <Award className="w-4 h-4" />
+                    Nominations ({noms.length})
+                  </h4>
+                  <div className="space-y-2">
+                    {noms.map((nom) => {
+                      const film = allFilms.find(f => f.id === nom.filmId);
+                      return (
+                        <div 
+                          key={nom.id} 
+                          className="flex items-center justify-between p-3 rounded-lg border border-border"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Award className="w-5 h-5 text-muted-foreground" />
+                            <div>
+                              <p className="font-semibold">{nom.categoryName}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {nom.awardShowName} {nom.year}
+                                {film && ` • ${film.title}`}
+                              </p>
+                            </div>
+                          </div>
+                          <Badge variant="outline">Nominated</Badge>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="py-8 text-center text-muted-foreground">
+              No awards or nominations yet
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
