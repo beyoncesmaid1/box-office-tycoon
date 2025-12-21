@@ -4205,12 +4205,24 @@ export async function registerRoutes(
       const finalFilms = await storage.getAllFilms();
       const playerFilmsForEmails = finalFilms.filter(f => f.studioId === id);
       
+      // Filter films to only this game session for awards processing
+      const allStudiosForAwards = await storage.getAllStudios();
+      const isMultiplayer = !!studio.gameSessionId;
+      const gameStudioIds = new Set(
+        allStudiosForAwards.filter(s => 
+          s.id === id || 
+          s.playerGameId === id ||
+          (isMultiplayer && s.gameSessionId === studio.gameSessionId)
+        ).map(s => s.id)
+      );
+      const gameFilmsForAwards = finalFilms.filter(f => gameStudioIds.has(f.studioId));
+      
       // OPTIMIZATION: Run independent end-of-week processes in parallel
       await Promise.all([
         // Generate weekly emails
         generateWeeklyEmails(id, studio, playerFilmsForEmails, newWeek, newYear).catch(() => {}),
-        // Process awards
-        processAwardCeremonies(id, finalFilms, newWeek, newYear).catch(() => {}),
+        // Process awards - only pass films from this game session
+        processAwardCeremonies(id, gameFilmsForAwards, newWeek, newYear).catch(() => {}),
         // Process AI streaming acquisitions
         processAIStreamingAcquisitions(id, newWeek, newYear).catch(() => {}),
         // Process streaming views
@@ -4337,6 +4349,8 @@ export async function registerRoutes(
       const gameStudioIds = new Set(gameStudios.map(s => s.id));
       
       const filtered = allFilms.filter(f => gameStudioIds.has(f.studioId));
+      
+      console.log(`[ALL-FILMS] Player: ${playerId}, gameSessionId: ${playerStudio.gameSessionId}, gameStudios: ${gameStudios.length}, totalFilms: ${allFilms.length}, filteredFilms: ${filtered.length}`);
       
       // Enrich films with lead/supporting actor info for Oscar predictions
       const enrichedFilms = await Promise.all(filtered.map(async (film) => {
