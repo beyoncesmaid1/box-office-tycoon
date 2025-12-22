@@ -2209,6 +2209,28 @@ const awardTiers = {
   majorAwards: ['Best Screenplay', 'Best Acting', 'Best Visual Effects', 'Best Score'],
 };
 
+// Calculate the total weeks from creation to release for AI films
+// This is the single source of truth for AI film release date calculation
+function calculateAIFilmTotalProductionWeeks(phaseDurations: { devWeeks: number; preWeeks: number; prodWeeks: number; postWeeks: number }): number {
+  const { devWeeks, preWeeks, prodWeeks, postWeeks } = phaseDurations;
+  // AI films go through: development → pre-production → production → post-production → released
+  // No intermediate phases like awaiting-greenlight or filmed
+  return devWeeks + preWeeks + prodWeeks + postWeeks;
+}
+
+// Calculate release week and year from a starting point
+function calculateReleaseDate(startWeek: number, startYear: number, totalWeeks: number): { releaseWeek: number; releaseYear: number } {
+  let releaseWeek = startWeek + totalWeeks;
+  let releaseYear = startYear;
+  
+  while (releaseWeek > 52) {
+    releaseWeek -= 52;
+    releaseYear += 1;
+  }
+  
+  return { releaseWeek, releaseYear };
+}
+
 // Calculate production phase durations based on genre and VFX needs
 function calculatePhaseDurations(genre: string, productionBudget: number, hasVFX: boolean = false) {
   const devWeeks = 4; // Always 4 weeks for development
@@ -2687,17 +2709,10 @@ export async function registerRoutes(
               // Generate phase durations based on genre and production needs
               const phaseDurations = calculatePhaseDurations(genre, Math.floor(prodBudget), false);
               const { devWeeks, preWeeks, prodWeeks, postWeeks } = phaseDurations;
-              // Calculate total production time (AI films skip some phases and go directly to released)
-              // Phases: development → pre-production → production → post-production → released
-              const totalWeeks = devWeeks + preWeeks + prodWeeks + postWeeks;
               
-              // Calculate release date based on creation + total weeks
-              let releaseWeek = currentWeek + totalWeeks;
-              let releaseYear = currentYear;
-              if (releaseWeek > 52) {
-                releaseYear += Math.floor(releaseWeek / 52);
-                releaseWeek = ((releaseWeek - 1) % 52) + 1;
-              }
+              // Use centralized function for release date calculation
+              const totalWeeks = calculateAIFilmTotalProductionWeeks(phaseDurations);
+              const { releaseWeek, releaseYear } = calculateReleaseDate(currentWeek, currentYear, totalWeeks);
 
               const newFilm = await storage.createFilm({
                 studioId: aiStudio.id,
@@ -4137,17 +4152,10 @@ export async function registerRoutes(
             // Generate phase durations based on genre and production needs
             const phaseDurations = calculatePhaseDurations(genre, Math.floor(prodBudget), false);
             const { devWeeks, preWeeks, prodWeeks, postWeeks } = phaseDurations;
-            // Calculate total production time (AI films skip some phases and go directly to released)
-            // Phases: development → pre-production → production → post-production → released
-            const totalWeeks = devWeeks + preWeeks + prodWeeks + postWeeks;
             
-            // Calculate release date based on creation + total weeks
-            let releaseWeek = aiNewWeek + totalWeeks;
-            let releaseYear = aiNewYear;
-            if (releaseWeek > 52) {
-              releaseYear += Math.floor(releaseWeek / 52);
-              releaseWeek = ((releaseWeek - 1) % 52) + 1;
-            }
+            // Use centralized function for release date calculation
+            const totalWeeks = calculateAIFilmTotalProductionWeeks(phaseDurations);
+            const { releaseWeek, releaseYear } = calculateReleaseDate(aiNewWeek, aiNewYear, totalWeeks);
 
             try {
               const newFilm = await storage.createFilm({
