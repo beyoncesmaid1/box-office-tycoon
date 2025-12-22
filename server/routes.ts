@@ -4615,37 +4615,29 @@ export async function registerRoutes(
             continue;
           }
           
-          // AI films - only calculate release date if not already set
-          // Once set at creation time, the release date should NOT change
-          // This prevents films from randomly moving to current week
-          if (!film.releaseWeek || !film.releaseYear) {
-            // Phases: development → awaiting-greenlight(1) → pre-production → production → filmed(1) → post-production → production-complete(1) → awaiting-release(1) → released
-            let totalRemainingWeeks = 0;
-            
-            if (film.phase === 'development') {
-              totalRemainingWeeks = (film.developmentDurationWeeks - film.weeksInCurrentPhase) + 1 + film.preProductionDurationWeeks + film.productionDurationWeeks + 1 + film.postProductionDurationWeeks + 1 + 1;
-            } else if (film.phase === 'awaiting-greenlight') {
-              totalRemainingWeeks = (1 - film.weeksInCurrentPhase) + film.preProductionDurationWeeks + film.productionDurationWeeks + 1 + film.postProductionDurationWeeks + 1 + 1;
-            } else if (film.phase === 'pre-production') {
-              totalRemainingWeeks = (film.preProductionDurationWeeks - film.weeksInCurrentPhase) + film.productionDurationWeeks + 1 + film.postProductionDurationWeeks + 1 + 1;
-            } else if (film.phase === 'production') {
-              totalRemainingWeeks = (film.productionDurationWeeks - film.weeksInCurrentPhase) + 1 + film.postProductionDurationWeeks + 1 + 1;
-            } else if (film.phase === 'filmed') {
-              totalRemainingWeeks = (1 - film.weeksInCurrentPhase) + film.postProductionDurationWeeks + 1 + 1;
-            } else if (film.phase === 'post-production') {
-              totalRemainingWeeks = (film.postProductionDurationWeeks - film.weeksInCurrentPhase) + 1 + 1;
-            } else if (film.phase === 'production-complete') {
-              totalRemainingWeeks = (1 - film.weeksInCurrentPhase) + 1;
-            } else if (film.phase === 'awaiting-release') {
-              totalRemainingWeeks = 1 - film.weeksInCurrentPhase;
-            }
-            
-            let releaseWeek = currentWeek + Math.max(totalRemainingWeeks, 1);
-            let releaseYear = currentYear;
-            if (releaseWeek > 52) {
-              releaseYear += Math.floor(releaseWeek / 52);
-              releaseWeek = ((releaseWeek - 1) % 52) + 1;
-            }
+          // AI films - ALWAYS recalculate release date based on current phase and remaining weeks
+          // This ensures the calendar shows accurate release dates as films progress through production
+          // AI films go through: development → pre-production → production → post-production → released
+          let totalRemainingWeeks = 0;
+          
+          if (film.phase === 'development') {
+            totalRemainingWeeks = (film.developmentDurationWeeks - film.weeksInCurrentPhase) + 
+              film.preProductionDurationWeeks + film.productionDurationWeeks + film.postProductionDurationWeeks;
+          } else if (film.phase === 'pre-production') {
+            totalRemainingWeeks = (film.preProductionDurationWeeks - film.weeksInCurrentPhase) + 
+              film.productionDurationWeeks + film.postProductionDurationWeeks;
+          } else if (film.phase === 'production') {
+            totalRemainingWeeks = (film.productionDurationWeeks - film.weeksInCurrentPhase) + 
+              film.postProductionDurationWeeks;
+          } else if (film.phase === 'post-production') {
+            totalRemainingWeeks = film.postProductionDurationWeeks - film.weeksInCurrentPhase;
+          }
+          
+          // Calculate release date from current week + remaining weeks
+          const { releaseWeek, releaseYear } = calculateReleaseDate(currentWeek, currentYear, Math.max(totalRemainingWeeks, 1));
+          
+          // Update film if release date changed
+          if (film.releaseWeek !== releaseWeek || film.releaseYear !== releaseYear) {
             await storage.updateFilm(film.id, { releaseWeek, releaseYear });
             film.releaseWeek = releaseWeek;
             film.releaseYear = releaseYear;
