@@ -4515,6 +4515,20 @@ export async function registerRoutes(
       
       console.log(`[ALL-FILMS] Player: ${playerId}, gameSessionId: ${playerStudio.gameSessionId}, gameStudios: ${gameStudios.length}, totalFilms: ${allFilms.length}, filteredFilms: ${filtered.length}`);
       
+      // Fix totalBudget for AI films - should be production + departments, not including marketing
+      // This corrects existing films that had inflated totalBudget values
+      for (const film of filtered) {
+        const filmStudio = allStudios.find(s => s.id === film.studioId);
+        if (filmStudio?.isAI) {
+          // Recalculate totalBudget as production + departments (no marketing)
+          const correctTotalBudget = (film.productionBudget || 0) + 
+            (film.setsBudget || 0) + (film.costumesBudget || 0) + 
+            (film.stuntsBudget || 0) + (film.makeupBudget || 0) + 
+            (film.practicalEffectsBudget || 0) + (film.soundCrewBudget || 0);
+          film.totalBudget = correctTotalBudget;
+        }
+      }
+      
       // Enrich films with lead/supporting actor info for Oscar predictions
       const enrichedFilms = await Promise.all(filtered.map(async (film) => {
         const roles = await storage.getFilmRolesByFilm(film.id);
