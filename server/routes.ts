@@ -1404,19 +1404,26 @@ async function processAwardCeremonies(
 ): Promise<{ nominations: string[], winners: string[] }> {
   const result = { nominations: [] as string[], winners: [] as string[] };
   
+  console.log(`[Awards] Processing for playerGameId=${playerGameId}, week=${currentWeek}, year=${currentYear}, totalFilms=${allFilms.length}`);
+  
   // Ensure award shows are seeded
   await storage.seedAwardShows();
   const awardShows = await storage.getAllAwardShows();
   
+  console.log(`[Awards] Found ${awardShows.length} award shows`);
+  
   // Get films released in the past year that are eligible for awards
   // Awards season typically honors films released the previous year
+  // FIXED: Include films from current year AND previous year for award eligibility
   const eligibleFilms = allFilms.filter(f => {
     if (f.phase !== 'released') return false;
     if (!f.releaseYear) return false;
-    // Films released in the previous calendar year are eligible
+    // Films released in the previous calendar year OR current year are eligible
     const releaseYear = f.releaseYear;
-    return releaseYear === currentYear - 1 || (releaseYear === currentYear && f.releaseWeek && f.releaseWeek <= 52);
+    return releaseYear === currentYear - 1 || releaseYear === currentYear;
   });
+  
+  console.log(`[Awards] Eligible films: ${eligibleFilms.length} (released films from ${currentYear-1} or ${currentYear})`);
   
   for (const show of awardShows) {
     // Check if it's nominations week for this show (or if we've passed it and need to catch up)
@@ -1425,6 +1432,8 @@ async function processAwardCeremonies(
     
     if (nominationsWeekPassed) {
       const ceremonyYear = show.ceremonyWeek < show.nominationsWeek ? currentYear + 1 : currentYear;
+      
+      console.log(`[Awards] ${show.name}: nominationsWeek=${show.nominationsWeek}, currentWeek=${currentWeek}, ceremonyYear=${ceremonyYear}`);
       
       // Check if ceremony already exists
       let ceremony = await storage.getCeremonyByShowAndYear(playerGameId, show.id, ceremonyYear);
@@ -1441,7 +1450,9 @@ async function processAwardCeremonies(
       
       // Generate nominations if not already announced
       if (!ceremony.nominationsAnnounced) {
+        console.log(`[Awards] ${show.name}: Generating nominations (ceremony not yet announced)`);
         const categories = await storage.getCategoriesByShow(show.id);
+        console.log(`[Awards] ${show.name}: Found ${categories.length} categories`);
         
         for (const category of categories) {
           // Filter eligible films for this category
@@ -1574,45 +1585,24 @@ async function processAwardCeremonies(
               score += Math.random() * 20; // Small random factor
             }
             
-            // MAJOR CAST PERFORMANCE IMPACT ON AWARDS
-            if (categoryType === 'acting' || categoryType === 'acting_drama' || categoryType === 'acting_comedy' || 
-                categoryName.includes('actor') || categoryName.includes('actress')) {
-              // For acting categories, individual performance is CRITICAL
-              // This will be handled later when we find the specific eligible actor
-              // But we boost the film's base score based on overall cast quality
-              if (film.castIds && film.castIds.length > 0) {
-                let totalCastPerformance = 0;
-                let castCount = 0;
-                for (const castId of film.castIds) {
-                  const actor = await storage.getTalent(castId);
-                  if (actor && actor.type === 'actor') {
-                    totalCastPerformance += actor.performance || 50;
-                    castCount++;
-                  }
-                }
-                if (castCount > 0) {
-                  const avgCastPerformance = totalCastPerformance / castCount;
-                  // Major boost for high-performing cast (up to +50 points)
-                  score += (avgCastPerformance - 50) * 1.0;
+            // For non-acting categories, cast performance still matters for film quality
+            // (Acting categories now use individual actor scoring handled separately below)
+            const isActingCat = categoryType === 'acting' || categoryType === 'acting_drama' || categoryType === 'acting_comedy' || 
+                categoryName.includes('actor') || categoryName.includes('actress');
+            if (!isActingCat && film.castIds && film.castIds.length > 0) {
+              let totalCastPerformance = 0;
+              let castCount = 0;
+              for (const castId of film.castIds) {
+                const actor = await storage.getTalent(castId);
+                if (actor && actor.type === 'actor') {
+                  totalCastPerformance += actor.performance || 50;
+                  castCount++;
                 }
               }
-            } else {
-              // For non-acting categories, cast performance still matters but less
-              if (film.castIds && film.castIds.length > 0) {
-                let totalCastPerformance = 0;
-                let castCount = 0;
-                for (const castId of film.castIds) {
-                  const actor = await storage.getTalent(castId);
-                  if (actor && actor.type === 'actor') {
-                    totalCastPerformance += actor.performance || 50;
-                    castCount++;
-                  }
-                }
-                if (castCount > 0) {
-                  const avgCastPerformance = totalCastPerformance / castCount;
-                  // Moderate boost for high-performing cast in non-acting categories (up to +25 points)
-                  score += (avgCastPerformance - 50) * 0.5;
-                }
+              if (castCount > 0) {
+                const avgCastPerformance = totalCastPerformance / castCount;
+                // Moderate boost for high-performing cast in non-acting categories (up to +25 points)
+                score += (avgCastPerformance - 50) * 0.5;
               }
             }
             
@@ -1635,104 +1625,152 @@ async function processAwardCeremonies(
           // For acting categories, we need to check eligibility before nominating
           const categoryName = category.name.toLowerCase();
           const isActingCategory = category.isPerformance && (category.categoryType === 'acting' || category.categoryType === 'acting_drama' || category.categoryType === 'acting_comedy');
+          const isEnsembleCategory = categoryName.includes('ensemble') || categoryName.includes('cast');
           
-          // Helper function to find eligible actor for a film in acting categories
-          const findEligibleActor = async (film: Film): Promise<string | null> => {
+          // For acting categories (except ensemble/cast awards), score INDIVIDUAL ACTORS across all films
+          // This ensures the best performers get nominated, not just actors from the best films
+          if (isActingCategory && !isEnsembleCategory) {
             const requiresMale = categoryName.includes('actor') && !categoryName.includes('actress');
             const requiresFemale = categoryName.includes('actress');
             const isSupportingCategory = categoryName.includes('supporting') || categoryName.includes('supp.');
-            const isLeadCategory = !isSupportingCategory && !categoryName.includes('ensemble');
+            const isLeadCategory = !isSupportingCategory;
             
-            // Get film roles to find actors with proper role importance
-            const filmRoles = await storage.getFilmRolesByFilm(film.id);
-            const eligibleCast: Array<{ actorId: string; performance: number }> = [];
+            // Collect ALL eligible actors from ALL eligible films with their individual scores
+            const allEligibleActors: Array<{
+              actorId: string;
+              filmId: string;
+              performance: number;
+              filmCriticScore: number;
+              filmAudienceScore: number;
+              totalScore: number;
+            }> = [];
             
-            for (const role of filmRoles) {
-              if (!role.actorId || !role.isCast) continue;
+            for (const { film } of scoredFilms) {
+              if (film.genre === 'animation') continue; // Skip animation for acting categories
               
-              // Check role importance matches category type
-              const roleImportance = role.importance || 'supporting';
-              if (isLeadCategory && roleImportance !== 'lead') continue;
-              if (isSupportingCategory && roleImportance !== 'supporting') continue;
+              const filmRoles = await storage.getFilmRolesByFilm(film.id);
               
-              const talent = await storage.getTalent(role.actorId);
-              if (!talent || talent.type !== 'actor') continue;
+              for (const role of filmRoles) {
+                if (!role.actorId || !role.isCast) continue;
+                
+                // Check role importance matches category type
+                const roleImportance = role.importance || 'supporting';
+                if (isLeadCategory && roleImportance !== 'lead') continue;
+                if (isSupportingCategory && roleImportance !== 'supporting') continue;
+                
+                const talent = await storage.getTalent(role.actorId);
+                if (!talent || talent.type !== 'actor') continue;
+                
+                // Check gender matches category
+                if (requiresMale && talent.gender !== 'male') continue;
+                if (requiresFemale && talent.gender !== 'female') continue;
+                
+                const performance = talent.performance || 50;
+                const filmCriticScore = film.criticScore || 0;
+                const filmAudienceScore = film.audienceScore || 0;
+                
+                // INDIVIDUAL ACTOR SCORING:
+                // - Performance is the PRIMARY factor (50% weight)
+                // - Film critic score matters (30% weight) - great performances in great films
+                // - Film audience score matters slightly (10% weight)
+                // - Small random factor (10% weight)
+                const totalScore = 
+                  (performance * 2.0) +           // Performance: 0-200 points (50% of max)
+                  (filmCriticScore * 1.2) +       // Film critics: 0-120 points (30% of max)
+                  (filmAudienceScore * 4) +       // Film audience: 0-40 points (10% of max)
+                  (Math.random() * 40);           // Random: 0-40 points (10% of max)
+                
+                allEligibleActors.push({
+                  actorId: role.actorId,
+                  filmId: film.id,
+                  performance,
+                  filmCriticScore,
+                  filmAudienceScore,
+                  totalScore
+                });
+              }
               
-              // Check gender matches category
-              if (requiresMale && talent.gender !== 'male') continue;
-              if (requiresFemale && talent.gender !== 'female') continue;
+              // Fallback to castIds if no roles found
+              if (filmRoles.length === 0 && film.castIds && film.castIds.length > 0) {
+                for (const castId of film.castIds) {
+                  const talent = await storage.getTalent(castId);
+                  if (!talent || talent.type !== 'actor') continue;
+                  
+                  if (requiresMale && talent.gender !== 'male') continue;
+                  if (requiresFemale && talent.gender !== 'female') continue;
+                  
+                  const performance = talent.performance || 50;
+                  const totalScore = 
+                    (performance * 2.0) +
+                    ((film.criticScore || 0) * 1.2) +
+                    ((film.audienceScore || 0) * 4) +
+                    (Math.random() * 40);
+                  
+                  allEligibleActors.push({
+                    actorId: castId,
+                    filmId: film.id,
+                    performance,
+                    filmCriticScore: film.criticScore || 0,
+                    filmAudienceScore: film.audienceScore || 0,
+                    totalScore
+                  });
+                }
+              }
+            }
+            
+            // Sort by total score (best performers first)
+            allEligibleActors.sort((a, b) => b.totalScore - a.totalScore);
+            
+            // Nominate top 5 unique actors (no duplicates)
+            const nominatedActorIds = new Set<string>();
+            let nominationCount = 0;
+            const maxNominations = 5;
+            
+            for (const actor of allEligibleActors) {
+              if (nominationCount >= maxNominations) break;
+              if (nominatedActorIds.has(actor.actorId)) continue; // Skip if already nominated
               
-              eligibleCast.push({
-                actorId: role.actorId,
-                performance: talent.performance || 50
+              await storage.createAwardNomination({
+                playerGameId,
+                awardShowId: show.id,
+                categoryId: category.id,
+                filmId: actor.filmId,
+                talentId: actor.actorId,
+                ceremonyYear,
+                isWinner: false,
+                announcedWeek: currentWeek,
+                announcedYear: currentYear,
               });
+              
+              nominatedActorIds.add(actor.actorId);
+              nominationCount++;
+              console.log(`[Awards] ${show.shortName} ${category.name}: Nominated ${actor.actorId} (perf=${actor.performance}, filmCritic=${actor.filmCriticScore}, score=${Math.round(actor.totalScore)})`);
             }
+          } else {
+            // Non-acting categories (or ensemble/cast awards): use film-based scoring
+            let nominationCount = 0;
+            const maxNominations = 5;
             
-            if (eligibleCast.length > 0) {
-              // MAJOR PERFORMANCE WEIGHTING: Pick the best performer with heavily weighted performance scores
-              // Performance is now the dominant factor in award nominations
-              let bestCast = eligibleCast[0];
-              let bestPerf = bestCast.performance * 3 + Math.random() * 10; // 3x performance weight, reduced randomness
-              for (const cast of eligibleCast) {
-                const perf = cast.performance * 3 + Math.random() * 10; // Performance is 3x more important than random chance
-                if (perf > bestPerf) {
-                  bestPerf = perf;
-                  bestCast = cast;
-                }
-              }
-              return bestCast.actorId;
+            for (const nominee of scoredFilms) {
+              if (nominationCount >= maxNominations) break;
+              
+              // Skip films with negative scores (excluded from category)
+              if (nominee.score < 0) continue;
+              
+              await storage.createAwardNomination({
+                playerGameId,
+                awardShowId: show.id,
+                categoryId: category.id,
+                filmId: nominee.film.id,
+                talentId: undefined,
+                ceremonyYear,
+                isWinner: false,
+                announcedWeek: currentWeek,
+                announcedYear: currentYear,
+              });
+              
+              nominationCount++;
             }
-            
-            // Fallback to castIds if no roles found (for older films without roles)
-            if (film.castIds && film.castIds.length > 0) {
-              for (const castId of film.castIds) {
-                const talent = await storage.getTalent(castId);
-                if (talent && talent.type === 'actor') {
-                  if (requiresMale && talent.gender === 'male') {
-                    return castId;
-                  } else if (requiresFemale && talent.gender === 'female') {
-                    return castId;
-                  } else if (!requiresMale && !requiresFemale) {
-                    return castId;
-                  }
-                }
-              }
-            }
-            
-            return null; // No eligible actor found
-          };
-          
-          // Create nominations - for acting categories, skip films without eligible actors
-          let nominationCount = 0;
-          const maxNominations = 5;
-          
-          for (const nominee of scoredFilms) {
-            if (nominationCount >= maxNominations) break;
-            
-            // Skip films with negative scores (excluded from category)
-            if (nominee.score < 0) continue;
-            
-            let talentId: string | null = null;
-            
-            if (isActingCategory) {
-              talentId = await findEligibleActor(nominee.film);
-              // If no eligible actor found, skip this film and try the next one
-              if (!talentId) continue;
-            }
-            
-            await storage.createAwardNomination({
-              playerGameId,
-              awardShowId: show.id,
-              categoryId: category.id,
-              filmId: nominee.film.id,
-              talentId: talentId || undefined,
-              ceremonyYear,
-              isWinner: false,
-              announcedWeek: currentWeek,
-              announcedYear: currentYear,
-            });
-            
-            nominationCount++;
           }
         }
         
@@ -1771,6 +1809,13 @@ async function processAwardCeremonies(
         for (const [categoryId, categoryNoms] of Array.from(byCategory.entries())) {
           if (categoryNoms.length === 0) continue;
           
+          // Get category info to check if it's an acting category
+          const category = await storage.getAwardCategory(categoryId);
+          const categoryName = category?.name.toLowerCase() || '';
+          const isActingCategory = category?.isPerformance && 
+            (category.categoryType === 'acting' || category.categoryType === 'acting_drama' || category.categoryType === 'acting_comedy');
+          const isEnsembleCategory = categoryName.includes('ensemble') || categoryName.includes('cast');
+          
           // Score nominees and pick winner
           let bestNom = categoryNoms[0];
           let bestScore = 0;
@@ -1784,7 +1829,17 @@ async function processAwardCeremonies(
             if (film.awards?.includes('Awards Campaign')) {
               score += 30; // Campaign matters more for winning
             }
-            score += Math.random() * 30; // Random factor
+            
+            // For acting categories (except ensemble), factor in individual actor performance
+            if (isActingCategory && !isEnsembleCategory && nom.talentId) {
+              const talent = await storage.getTalent(nom.talentId);
+              if (talent) {
+                // Actor performance is a MAJOR factor in winning
+                score += (talent.performance || 50) * 1.5; // Up to 150 points for 100 performance
+              }
+            }
+            
+            score += Math.random() * 25; // Slightly reduced random factor
             
             if (score > bestScore) {
               bestScore = score;
