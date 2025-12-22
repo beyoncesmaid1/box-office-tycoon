@@ -4599,19 +4599,18 @@ export async function registerRoutes(
           const investmentBudget = film.totalBudget || (film.productionBudget || 0);
           const clampedBudget = clampInvestmentBudgetByGenre(investmentBudget, film.genre);
           
-          // Estimate audience score from script quality (good scripts -> good audience scores)
-          // Scripts 70+ typically get audience scores 7.0+ which gives 1.0-2.0x boost
-          // Scripts <70 typically get audience scores <7.0 which gives 0.7-1.0x penalty
-          const estimatedAudienceBoostLow = scriptQuality >= 70 ? 1.0 : 0.7;
-          const estimatedAudienceBoostHigh = scriptQuality >= 70 ? 2.0 : 1.0;
+          // Use average values for random components, then apply ±30% range
+          // Average luck = 0.9 (midpoint of 0.5-1.3)
+          // Average audience boost = 1.5 for good scripts (7.0+), 0.85 for bad scripts
+          const avgLuck = 0.9;
+          const avgAudienceBoost = scriptQuality >= 70 ? 1.5 : 0.85;
           
-          // Random luck ranges from 0.5 to 1.3
-          const luckLow = 0.5;
-          const luckHigh = 1.3;
+          // Calculate base projection with average values
+          const baseProjection = clampedBudget * avgLuck * marketingMultiplier * qualityMultiplier * genreBoxOfficeMultiplier * avgAudienceBoost;
           
-          // Calculate low and high projections
-          projectedOpeningLow = Math.floor(clampedBudget * luckLow * marketingMultiplier * qualityMultiplier * genreBoxOfficeMultiplier * estimatedAudienceBoostLow);
-          projectedOpeningHigh = Math.floor(clampedBudget * luckHigh * marketingMultiplier * qualityMultiplier * genreBoxOfficeMultiplier * estimatedAudienceBoostHigh);
+          // Apply ±30% range for reasonable variance
+          projectedOpeningLow = Math.floor(baseProjection * 0.7);
+          projectedOpeningHigh = Math.floor(baseProjection * 1.3);
         }
         
         return {
