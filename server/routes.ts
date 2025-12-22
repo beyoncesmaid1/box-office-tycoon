@@ -4589,38 +4589,41 @@ export async function registerRoutes(
             continue;
           }
           
-          // AI films - recalculate based on production phases
-          // This ensures release dates stay current as films progress through production
-          // Phases: development → awaiting-greenlight(1) → pre-production → production → filmed(1) → post-production → production-complete(1) → awaiting-release(1) → released
-          let totalRemainingWeeks = 0;
-          
-          if (film.phase === 'development') {
-            totalRemainingWeeks = (film.developmentDurationWeeks - film.weeksInCurrentPhase) + 1 + film.preProductionDurationWeeks + film.productionDurationWeeks + 1 + film.postProductionDurationWeeks + 1 + 1;
-          } else if (film.phase === 'awaiting-greenlight') {
-            totalRemainingWeeks = (1 - film.weeksInCurrentPhase) + film.preProductionDurationWeeks + film.productionDurationWeeks + 1 + film.postProductionDurationWeeks + 1 + 1;
-          } else if (film.phase === 'pre-production') {
-            totalRemainingWeeks = (film.preProductionDurationWeeks - film.weeksInCurrentPhase) + film.productionDurationWeeks + 1 + film.postProductionDurationWeeks + 1 + 1;
-          } else if (film.phase === 'production') {
-            totalRemainingWeeks = (film.productionDurationWeeks - film.weeksInCurrentPhase) + 1 + film.postProductionDurationWeeks + 1 + 1;
-          } else if (film.phase === 'filmed') {
-            totalRemainingWeeks = (1 - film.weeksInCurrentPhase) + film.postProductionDurationWeeks + 1 + 1;
-          } else if (film.phase === 'post-production') {
-            totalRemainingWeeks = (film.postProductionDurationWeeks - film.weeksInCurrentPhase) + 1 + 1;
-          } else if (film.phase === 'production-complete') {
-            totalRemainingWeeks = (1 - film.weeksInCurrentPhase) + 1;
-          } else if (film.phase === 'awaiting-release') {
-            totalRemainingWeeks = 1 - film.weeksInCurrentPhase;
+          // AI films - only calculate release date if not already set
+          // Once set at creation time, the release date should NOT change
+          // This prevents films from randomly moving to current week
+          if (!film.releaseWeek || !film.releaseYear) {
+            // Phases: development → awaiting-greenlight(1) → pre-production → production → filmed(1) → post-production → production-complete(1) → awaiting-release(1) → released
+            let totalRemainingWeeks = 0;
+            
+            if (film.phase === 'development') {
+              totalRemainingWeeks = (film.developmentDurationWeeks - film.weeksInCurrentPhase) + 1 + film.preProductionDurationWeeks + film.productionDurationWeeks + 1 + film.postProductionDurationWeeks + 1 + 1;
+            } else if (film.phase === 'awaiting-greenlight') {
+              totalRemainingWeeks = (1 - film.weeksInCurrentPhase) + film.preProductionDurationWeeks + film.productionDurationWeeks + 1 + film.postProductionDurationWeeks + 1 + 1;
+            } else if (film.phase === 'pre-production') {
+              totalRemainingWeeks = (film.preProductionDurationWeeks - film.weeksInCurrentPhase) + film.productionDurationWeeks + 1 + film.postProductionDurationWeeks + 1 + 1;
+            } else if (film.phase === 'production') {
+              totalRemainingWeeks = (film.productionDurationWeeks - film.weeksInCurrentPhase) + 1 + film.postProductionDurationWeeks + 1 + 1;
+            } else if (film.phase === 'filmed') {
+              totalRemainingWeeks = (1 - film.weeksInCurrentPhase) + film.postProductionDurationWeeks + 1 + 1;
+            } else if (film.phase === 'post-production') {
+              totalRemainingWeeks = (film.postProductionDurationWeeks - film.weeksInCurrentPhase) + 1 + 1;
+            } else if (film.phase === 'production-complete') {
+              totalRemainingWeeks = (1 - film.weeksInCurrentPhase) + 1;
+            } else if (film.phase === 'awaiting-release') {
+              totalRemainingWeeks = 1 - film.weeksInCurrentPhase;
+            }
+            
+            let releaseWeek = currentWeek + Math.max(totalRemainingWeeks, 1);
+            let releaseYear = currentYear;
+            if (releaseWeek > 52) {
+              releaseYear += Math.floor(releaseWeek / 52);
+              releaseWeek = ((releaseWeek - 1) % 52) + 1;
+            }
+            await storage.updateFilm(film.id, { releaseWeek, releaseYear });
+            film.releaseWeek = releaseWeek;
+            film.releaseYear = releaseYear;
           }
-          
-          let releaseWeek = currentWeek + Math.max(totalRemainingWeeks, 1);
-          let releaseYear = currentYear;
-          if (releaseWeek > 52) {
-            releaseYear += Math.floor(releaseWeek / 52);
-            releaseWeek = ((releaseWeek - 1) % 52) + 1;
-          }
-          await storage.updateFilm(film.id, { releaseWeek, releaseYear });
-          film.releaseWeek = releaseWeek;
-          film.releaseYear = releaseYear;
         }
       }
       
