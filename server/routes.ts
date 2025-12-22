@@ -4566,12 +4566,62 @@ export async function registerRoutes(
           }
         }
         
+        // Calculate opening weekend projection using exact same formula as release
+        // but with average values for random components
+        let projectedOpeningLow = 0;
+        let projectedOpeningHigh = 0;
+        
+        if (film.phase !== 'released') {
+          const scriptQuality = film.scriptQuality || 70;
+          const qualityFactor = scriptQuality / 100;
+          const qualityMultiplier = 0.5 + qualityFactor * 0.8;
+          
+          // Total investment for marketing calculation
+          const totalInvestmentForMarketing = (film.productionBudget || 0) + 
+            (film.talentBudget || 0) + 
+            (film.setsBudget || 0) + 
+            (film.costumesBudget || 0) + 
+            (film.stuntsBudget || 0) + 
+            (film.makeupBudget || 0) + 
+            (film.practicalEffectsBudget || 0) + 
+            (film.soundCrewBudget || 0);
+          const marketingMultiplier = Math.min(2.0, (film.marketingBudget || 0) / (totalInvestmentForMarketing || 1));
+          
+          // Genre box office multiplier
+          let genreBoxOfficeMultiplier = 1.0;
+          if (film.genre === 'action') genreBoxOfficeMultiplier = 1.3;
+          else if (film.genre === 'scifi') genreBoxOfficeMultiplier = 1.2;
+          else if (film.genre === 'comedy') genreBoxOfficeMultiplier = 0.9;
+          else if (film.genre === 'drama') genreBoxOfficeMultiplier = 0.8;
+          else if (film.genre === 'animation') genreBoxOfficeMultiplier = 1.1;
+          
+          // Clamp budget by genre
+          const investmentBudget = film.totalBudget || (film.productionBudget || 0);
+          const clampedBudget = clampInvestmentBudgetByGenre(investmentBudget, film.genre);
+          
+          // Estimate audience score from script quality (good scripts -> good audience scores)
+          // Scripts 70+ typically get audience scores 7.0+ which gives 1.0-2.0x boost
+          // Scripts <70 typically get audience scores <7.0 which gives 0.7-1.0x penalty
+          const estimatedAudienceBoostLow = scriptQuality >= 70 ? 1.0 : 0.7;
+          const estimatedAudienceBoostHigh = scriptQuality >= 70 ? 2.0 : 1.0;
+          
+          // Random luck ranges from 0.5 to 1.3
+          const luckLow = 0.5;
+          const luckHigh = 1.3;
+          
+          // Calculate low and high projections
+          projectedOpeningLow = Math.floor(clampedBudget * luckLow * marketingMultiplier * qualityMultiplier * genreBoxOfficeMultiplier * estimatedAudienceBoostLow);
+          projectedOpeningHigh = Math.floor(clampedBudget * luckHigh * marketingMultiplier * qualityMultiplier * genreBoxOfficeMultiplier * estimatedAudienceBoostHigh);
+        }
+        
         return {
           ...film,
           leadActorId,
           leadActressId,
           supportingActorId,
           supportingActressId,
+          projectedOpeningLow,
+          projectedOpeningHigh,
         };
       }));
       

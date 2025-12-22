@@ -887,58 +887,16 @@ export function HollywoodInsider() {
                   );
                 }
                 
-                // Calculate projected openings - simplified formula based on actual game results
-                // The actual box office formula: budget × luck(0.5-1.3) × marketing × quality × genre × audience(0.7-2.0)
+                // Use server-calculated projections (exact same formula as actual box office)
                 const projections = upcomingFilms.map(film => {
                   const studio = studioMap.get(film.studioId);
-                  
-                  // Get budget - use totalBudget which is production + departments
-                  const totalBudget = film.totalBudget || film.productionBudget || 50000000;
-                  const marketingBudget = film.marketingBudget || 0;
-                  const scriptQuality = film.scriptQuality || 70;
                   
                   // Sequel detection
                   const isSequel = film.title.match(/\s[2-9]$|\sII|III|IV|Part\s/i) !== null;
                   
-                  // Calculate expected opening as a multiplier of budget
-                  // Base multiplier starts at 2.0x budget for average films
-                  let budgetMultiplier = 2.0;
-                  
-                  // Marketing impact: high marketing can add up to 1.5x more
-                  // Marketing ratio of 100%+ of budget is considered strong
-                  const marketingRatio = marketingBudget / (totalBudget || 1);
-                  budgetMultiplier += Math.min(1.5, marketingRatio * 1.0);
-                  
-                  // Quality impact: good scripts (70+) add up to 0.8x, bad scripts reduce
-                  if (scriptQuality >= 80) {
-                    budgetMultiplier += 0.8;
-                  } else if (scriptQuality >= 70) {
-                    budgetMultiplier += 0.4;
-                  } else if (scriptQuality >= 60) {
-                    budgetMultiplier += 0.0;
-                  } else {
-                    budgetMultiplier -= 0.5;
-                  }
-                  
-                  // Genre impact (matches server multipliers)
-                  const genreBonus: Record<string, number> = {
-                    'action': 0.6, 'scifi': 0.4, 'animation': 0.3, 'horror': 0.3,
-                    'fantasy': 0.2, 'thriller': 0.1, 'comedy': 0.0, 'musicals': 0.0,
-                    'romance': -0.1, 'drama': -0.3
-                  };
-                  budgetMultiplier += genreBonus[film.genre] || 0;
-                  
-                  // Sequel boost
-                  if (isSequel) {
-                    budgetMultiplier += 0.5;
-                  }
-                  
-                  // Calculate base projection
-                  const baseProjection = totalBudget * budgetMultiplier;
-                  
-                  // Range of ±15% for the estimate
-                  const lowEstimate = Math.floor(baseProjection * 0.85);
-                  const highEstimate = Math.floor(baseProjection * 1.15);
+                  // Use server-provided projections (calculated with exact box office formula)
+                  const lowEstimate = (film as any).projectedOpeningLow || 0;
+                  const highEstimate = (film as any).projectedOpeningHigh || 0;
                   
                   // Calculate weeks until release
                   const filmWeekNum = (film.releaseYear || state.currentYear) * 52 + (film.releaseWeek || state.currentWeek);
