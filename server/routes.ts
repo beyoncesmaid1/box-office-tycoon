@@ -2687,9 +2687,9 @@ export async function registerRoutes(
               // Generate phase durations based on genre and production needs
               const phaseDurations = calculatePhaseDurations(genre, Math.floor(prodBudget), false);
               const { devWeeks, preWeeks, prodWeeks, postWeeks } = phaseDurations;
-              // CRITICAL: Include awaiting-greenlight (1 week) and filmed (1 week) phases!
-              // Add 2 weeks to account for the additional release week
-              const totalWeeks = devWeeks + 1 + preWeeks + prodWeeks + 1 + postWeeks + 2;
+              // Calculate total production time (AI films skip some phases and go directly to released)
+              // Phases: development → pre-production → production → post-production → released
+              const totalWeeks = devWeeks + preWeeks + prodWeeks + postWeeks;
               
               // Calculate release date based on creation + total weeks
               let releaseWeek = currentWeek + totalWeeks;
@@ -4137,8 +4137,9 @@ export async function registerRoutes(
             // Generate phase durations based on genre and production needs
             const phaseDurations = calculatePhaseDurations(genre, Math.floor(prodBudget), false);
             const { devWeeks, preWeeks, prodWeeks, postWeeks } = phaseDurations;
-            // CRITICAL: Include awaiting-greenlight (1 week) and filmed (1 week) phases!
-            const totalWeeks = devWeeks + 1 + preWeeks + prodWeeks + 1 + postWeeks;
+            // Calculate total production time (AI films skip some phases and go directly to released)
+            // Phases: development → pre-production → production → post-production → released
+            const totalWeeks = devWeeks + preWeeks + prodWeeks + postWeeks;
             
             // Calculate release date based on creation + total weeks
             let releaseWeek = aiNewWeek + totalWeeks;
