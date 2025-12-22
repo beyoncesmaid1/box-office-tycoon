@@ -887,62 +887,56 @@ export function HollywoodInsider() {
                   );
                 }
                 
-                // Calculate projected openings using same formula as actual box office calculation
+                // Calculate projected openings - simplified formula based on actual game results
+                // The actual box office formula: budget × luck(0.5-1.3) × marketing × quality × genre × audience(0.7-2.0)
                 const projections = upcomingFilms.map(film => {
                   const studio = studioMap.get(film.studioId);
                   
-                  // Match server-side budget calculation
+                  // Get budget - use totalBudget which is production + departments
                   const totalBudget = film.totalBudget || film.productionBudget || 50000000;
                   const marketingBudget = film.marketingBudget || 0;
+                  const scriptQuality = film.scriptQuality || 70;
                   
-                  // Calculate total investment for marketing ratio (same as server)
-                  const totalInvestmentForMarketing = (film.productionBudget || 0) + 
-                    (film.talentBudget || 0) + 
-                    (film.setsBudget || 0) + 
-                    (film.costumesBudget || 0) + 
-                    (film.stuntsBudget || 0) + 
-                    (film.makeupBudget || 0) + 
-                    (film.practicalEffectsBudget || 0) + 
-                    (film.soundCrewBudget || 0);
+                  // Sequel detection
+                  const isSequel = film.title.match(/\s[2-9]$|\sII|III|IV|Part\s/i) !== null;
                   
-                  // Marketing multiplier (same as server: capped at 2.0)
-                  const marketingMultiplier = Math.min(2.0, marketingBudget / (totalInvestmentForMarketing || 1));
+                  // Calculate expected opening as a multiplier of budget
+                  // Base multiplier starts at 2.0x budget for average films
+                  let budgetMultiplier = 2.0;
                   
-                  // Genre box office multipliers (same as server)
-                  const genreBoxOfficeMultipliers: Record<string, number> = {
-                    'action': 1.3, 'scifi': 1.2, 'animation': 1.1, 'fantasy': 1.0,
-                    'horror': 1.0, 'comedy': 0.9, 'thriller': 1.0, 'drama': 0.8,
-                    'romance': 1.0, 'musicals': 1.0
+                  // Marketing impact: high marketing can add up to 1.5x more
+                  // Marketing ratio of 100%+ of budget is considered strong
+                  const marketingRatio = marketingBudget / (totalBudget || 1);
+                  budgetMultiplier += Math.min(1.5, marketingRatio * 1.0);
+                  
+                  // Quality impact: good scripts (70+) add up to 0.8x, bad scripts reduce
+                  if (scriptQuality >= 80) {
+                    budgetMultiplier += 0.8;
+                  } else if (scriptQuality >= 70) {
+                    budgetMultiplier += 0.4;
+                  } else if (scriptQuality >= 60) {
+                    budgetMultiplier += 0.0;
+                  } else {
+                    budgetMultiplier -= 0.5;
+                  }
+                  
+                  // Genre impact (matches server multipliers)
+                  const genreBonus: Record<string, number> = {
+                    'action': 0.6, 'scifi': 0.4, 'animation': 0.3, 'horror': 0.3,
+                    'fantasy': 0.2, 'thriller': 0.1, 'comedy': 0.0, 'musicals': 0.0,
+                    'romance': -0.1, 'drama': -0.3
                   };
-                  const genreMultiplier = genreBoxOfficeMultipliers[film.genre] || 1.0;
-                  
-                  // Budget caps by genre (same as server)
-                  const genreMaxBudgets: Record<string, number> = {
-                    'drama': 30000000, 'comedy': 125000000, 'romance': 50000000,
-                    'thriller': 60000000, 'horror': 150000000, 'action': 200000000,
-                    'scifi': 200000000, 'animation': 200000000, 'fantasy': 200000000,
-                    'musicals': 100000000
-                  };
-                  const clampedBudget = Math.min(totalBudget, genreMaxBudgets[film.genre] || 50000000);
+                  budgetMultiplier += genreBonus[film.genre] || 0;
                   
                   // Sequel boost
-                  const isSequel = film.title.match(/\s[2-9]$|\sII|III|IV|Part\s/i) !== null;
-                  const sequelBoost = isSequel ? 1.25 : 1;
+                  if (isSequel) {
+                    budgetMultiplier += 0.5;
+                  }
                   
-                  // Quality estimate based on script quality if available
-                  const scriptQuality = film.scriptQuality || 70;
-                  const qualityFactor = scriptQuality / 100;
-                  const qualityMultiplier = 0.5 + qualityFactor * 0.8; // Same as server: 0.5 + quality * 0.8
+                  // Calculate base projection
+                  const baseProjection = totalBudget * budgetMultiplier;
                   
-                  // Calculate base projection (matches server formula without random factors)
-                  // Server: clampedBudget × randomLuck(0.5-1.3) × marketingMult × qualityMult × genreMult × audienceBoost
-                  // Use higher estimates since most released films tend toward the upper range
-                  const avgLuck = 1.0; // Slightly above average luck
-                  const avgAudienceBoost = scriptQuality >= 70 ? 1.8 : 1.0; // Higher boost for quality films
-                  
-                  const baseProjection = clampedBudget * avgLuck * marketingMultiplier * qualityMultiplier * genreMultiplier * avgAudienceBoost * sequelBoost;
-                  
-                  // Tight range for precise projections (±15%)
+                  // Range of ±15% for the estimate
                   const lowEstimate = Math.floor(baseProjection * 0.85);
                   const highEstimate = Math.floor(baseProjection * 1.15);
                   
