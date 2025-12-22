@@ -2679,8 +2679,9 @@ export async function registerRoutes(
             const marketBudget = investmentBudget * marketingRatio;
             
             const totalCost = prodBudget + marketBudget + departmentBudgetTotal;
-            const marketingRatioAtCreation = marketBudget / investmentBudget;
-            console.log(`[PRELOAD-AI-FILM] ${title} (${genre}): prod=$${Math.round(prodBudget/1000000)}M, depts=$${Math.round(departmentBudgetTotal/1000000)}M, investment=$${Math.round(investmentBudget/1000000)}M, marketing=$${Math.round(marketBudget/1000000)}M, ratio=${(marketingRatioAtCreation*100).toFixed(1)}%`);
+            // totalBudget should match player films: production + departments (no marketing)
+            const totalBudgetForDisplay = prodBudget + departmentBudgetTotal;
+            console.log(`[PRELOAD-AI-FILM] ${title} (${genre}): prod=$${Math.round(prodBudget/1000000)}M, depts=$${Math.round(departmentBudgetTotal/1000000)}M, marketing=$${Math.round(marketBudget/1000000)}M, totalBudget=$${Math.round(totalBudgetForDisplay/1000000)}M`);
 
             if (aiStudio.budget >= totalCost) {
               // Generate phase durations based on genre and production needs
@@ -2712,7 +2713,7 @@ export async function registerRoutes(
                 makeupBudget: Math.floor(makeupBudget),
                 practicalEffectsBudget: Math.floor(practicalEffectsBudget),
                 soundCrewBudget: Math.floor(soundCrewBudget),
-                totalBudget: Math.floor(totalCost),
+                totalBudget: Math.floor(totalBudgetForDisplay),
                 scriptQuality: Math.floor(60 + Math.random() * 30),
                 createdAtWeek: currentWeek,
                 createdAtYear: currentYear,
@@ -4127,8 +4128,10 @@ export async function registerRoutes(
           const marketBudget = investmentBudget * marketingRatio;
           
           const totalCost = prodBudget + marketBudget + departmentBudgetTotal;
-          const marketingRatioAtCreation = marketBudget / investmentBudget;
-          console.log(`[AI-FILM-CREATE] ${title} (${genre}): prod=$${Math.round(prodBudget/1000000)}M, depts=$${Math.round(departmentBudgetTotal/1000000)}M, investment=$${Math.round(investmentBudget/1000000)}M, marketing=$${Math.round(marketBudget/1000000)}M, ratio=${(marketingRatioAtCreation*100).toFixed(1)}%`);
+          // totalBudget should match player films: production + marketing + talent (no departments separately)
+          // For AI films, we include departments in production conceptually
+          const totalBudgetForDisplay = prodBudget + departmentBudgetTotal; // This is what we show as "budget"
+          console.log(`[AI-FILM-CREATE] ${title} (${genre}): prod=$${Math.round(prodBudget/1000000)}M, depts=$${Math.round(departmentBudgetTotal/1000000)}M, marketing=$${Math.round(marketBudget/1000000)}M, totalBudget=$${Math.round(totalBudgetForDisplay/1000000)}M`);
 
           if (aiStudio.budget >= totalCost) {
             // Generate phase durations based on genre and production needs
@@ -4160,7 +4163,7 @@ export async function registerRoutes(
                 makeupBudget: Math.floor(makeupBudget),
                 practicalEffectsBudget: Math.floor(practicalEffectsBudget),
                 soundCrewBudget: Math.floor(soundCrewBudget),
-                totalBudget: Math.floor(totalCost),
+                totalBudget: Math.floor(totalBudgetForDisplay),
                 scriptQuality: Math.floor(60 + Math.random() * 30),
                 createdAtWeek: aiNewWeek,
                 createdAtYear: aiNewYear,
