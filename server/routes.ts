@@ -4572,45 +4572,44 @@ export async function registerRoutes(
         let projectedOpeningHigh = 0;
         
         if (film.phase !== 'released') {
+          // Simplified projection: budget × base multiplier × adjustments
+          const budget = film.totalBudget || film.productionBudget || 50000000;
           const scriptQuality = film.scriptQuality || 70;
-          const qualityFactor = scriptQuality / 100;
-          const qualityMultiplier = 0.5 + qualityFactor * 0.8;
           
-          // Total investment for marketing calculation
-          const totalInvestmentForMarketing = (film.productionBudget || 0) + 
-            (film.talentBudget || 0) + 
-            (film.setsBudget || 0) + 
-            (film.costumesBudget || 0) + 
-            (film.stuntsBudget || 0) + 
-            (film.makeupBudget || 0) + 
-            (film.practicalEffectsBudget || 0) + 
-            (film.soundCrewBudget || 0);
-          const marketingMultiplier = Math.min(2.0, (film.marketingBudget || 0) / (totalInvestmentForMarketing || 1));
+          // Base multiplier: films typically open at 2-3x their budget
+          let multiplier = 2.5;
           
-          // Genre box office multiplier
-          let genreBoxOfficeMultiplier = 1.0;
-          if (film.genre === 'action') genreBoxOfficeMultiplier = 1.3;
-          else if (film.genre === 'scifi') genreBoxOfficeMultiplier = 1.2;
-          else if (film.genre === 'comedy') genreBoxOfficeMultiplier = 0.9;
-          else if (film.genre === 'drama') genreBoxOfficeMultiplier = 0.8;
-          else if (film.genre === 'animation') genreBoxOfficeMultiplier = 1.1;
+          // Marketing adjustment: if marketing is set and substantial, boost projection
+          const marketingBudget = film.marketingBudget || 0;
+          if (marketingBudget > budget * 0.5) {
+            multiplier += 0.5; // Good marketing adds 0.5x
+          }
+          if (marketingBudget > budget) {
+            multiplier += 0.3; // Excellent marketing adds another 0.3x
+          }
           
-          // Clamp budget by genre
-          const investmentBudget = film.totalBudget || (film.productionBudget || 0);
-          const clampedBudget = clampInvestmentBudgetByGenre(investmentBudget, film.genre);
+          // Quality adjustment
+          if (scriptQuality >= 80) {
+            multiplier += 0.5; // Great script
+          } else if (scriptQuality >= 70) {
+            multiplier += 0.2; // Good script
+          } else if (scriptQuality < 60) {
+            multiplier -= 0.5; // Poor script
+          }
           
-          // Use average values for random components, then apply ±30% range
-          // Average luck = 0.9 (midpoint of 0.5-1.3)
-          // Average audience boost = 1.5 for good scripts (7.0+), 0.85 for bad scripts
-          const avgLuck = 0.9;
-          const avgAudienceBoost = scriptQuality >= 70 ? 1.5 : 0.85;
+          // Genre adjustment
+          if (film.genre === 'action') multiplier += 0.4;
+          else if (film.genre === 'scifi') multiplier += 0.3;
+          else if (film.genre === 'animation') multiplier += 0.2;
+          else if (film.genre === 'horror') multiplier += 0.3;
+          else if (film.genre === 'drama') multiplier -= 0.3;
           
-          // Calculate base projection with average values
-          const baseProjection = clampedBudget * avgLuck * marketingMultiplier * qualityMultiplier * genreBoxOfficeMultiplier * avgAudienceBoost;
+          // Calculate base projection
+          const baseProjection = budget * multiplier;
           
-          // Apply ±30% range for reasonable variance
-          projectedOpeningLow = Math.floor(baseProjection * 0.7);
-          projectedOpeningHigh = Math.floor(baseProjection * 1.3);
+          // Apply ±25% range
+          projectedOpeningLow = Math.floor(baseProjection * 0.75);
+          projectedOpeningHigh = Math.floor(baseProjection * 1.25);
         }
         
         return {
