@@ -1427,13 +1427,31 @@ async function processAwardCeremonies(
   
   for (const show of awardShows) {
     // Check if it's nominations week for this show (or if we've passed it and need to catch up)
+    // For shows with nominations in late year (week > 40) and ceremony in early year (week < 10):
+    // - If we're in late year (week >= nominationsWeek), nominations are for NEXT year's ceremony
+    // - If we're in early year (week < 10), nominations were already announced last year for THIS year's ceremony
     const nominationsWeekPassed = currentWeek >= show.nominationsWeek || 
       (show.nominationsWeek > 40 && currentWeek < 10); // Handle year wrap (e.g., nominations week 50, current week 3)
     
     if (nominationsWeekPassed) {
-      const ceremonyYear = show.ceremonyWeek < show.nominationsWeek ? currentYear + 1 : currentYear;
+      // Calculate ceremony year correctly:
+      // - If ceremony is in early year and nominations in late year (cross-year show like Golden Globes)
+      //   - If we're in late year (past nominations week), ceremony is NEXT year
+      //   - If we're in early year (before ceremony week), ceremony is THIS year
+      // - Otherwise, ceremony is same year as nominations
+      let ceremonyYear = currentYear;
+      if (show.ceremonyWeek < show.nominationsWeek) {
+        // Cross-year show (nominations in Dec, ceremony in Jan)
+        if (currentWeek >= show.nominationsWeek) {
+          // We're in late year, past nominations week - ceremony is next year
+          ceremonyYear = currentYear + 1;
+        } else {
+          // We're in early year - ceremony is this year (nominations were last year)
+          ceremonyYear = currentYear;
+        }
+      }
       
-      console.log(`[Awards] ${show.name}: nominationsWeek=${show.nominationsWeek}, currentWeek=${currentWeek}, ceremonyYear=${ceremonyYear}`);
+      console.log(`[Awards] ${show.name}: nominationsWeek=${show.nominationsWeek}, ceremonyWeek=${show.ceremonyWeek}, currentWeek=${currentWeek}, ceremonyYear=${ceremonyYear}`);
       
       // Check if ceremony already exists
       let ceremony = await storage.getCeremonyByShowAndYear(playerGameId, show.id, ceremonyYear);
