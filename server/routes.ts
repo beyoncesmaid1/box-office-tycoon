@@ -1426,12 +1426,14 @@ async function processAwardCeremonies(
   console.log(`[Awards] Eligible films: ${eligibleFilms.length} (released films from ${currentYear-1} or ${currentYear})`);
   
   for (const show of awardShows) {
+    console.log(`[Awards] Processing ${show.name}: nominationsWeek=${show.nominationsWeek}, ceremonyWeek=${show.ceremonyWeek}`);
+    
     // Check if it's nominations week for this show (or if we've passed it and need to catch up)
-    // For shows with nominations in late year (week > 40) and ceremony in early year (week < 10):
+    // For shows with nominations in late year (week > 40) and ceremony in early year (week < 20):
     // - If we're in late year (week >= nominationsWeek), nominations are for NEXT year's ceremony
-    // - If we're in early year (week < 10), nominations were already announced last year for THIS year's ceremony
+    // - If we're in early year (week < 20), nominations were already announced last year for THIS year's ceremony
     const nominationsWeekPassed = currentWeek >= show.nominationsWeek || 
-      (show.nominationsWeek > 40 && currentWeek < 10); // Handle year wrap (e.g., nominations week 50, current week 3)
+      (show.nominationsWeek > 40 && currentWeek < 20); // Handle year wrap (e.g., nominations week 50, current week 11)
     
     if (nominationsWeekPassed) {
       // Calculate ceremony year correctly:
@@ -1445,9 +1447,13 @@ async function processAwardCeremonies(
         if (currentWeek >= show.nominationsWeek) {
           // We're in late year, past nominations week - ceremony is next year
           ceremonyYear = currentYear + 1;
-        } else {
-          // We're in early year - ceremony is this year (nominations were last year)
+        } else if (currentWeek < 20) {
+          // We're in early year (before week 20) - ceremony is this year (nominations were last year)
           ceremonyYear = currentYear;
+        } else {
+          // We're in mid-year - no ceremony processing needed for cross-year shows
+          // Skip this show for now
+          continue;
         }
       }
       
@@ -1456,6 +1462,7 @@ async function processAwardCeremonies(
       // Check if ceremony already exists
       let ceremony = await storage.getCeremonyByShowAndYear(playerGameId, show.id, ceremonyYear);
       if (!ceremony) {
+        console.log(`[Awards] ${show.name}: Creating new ceremony for year ${ceremonyYear}`);
         ceremony = await storage.createAwardCeremony({
           playerGameId,
           awardShowId: show.id,
@@ -1464,6 +1471,8 @@ async function processAwardCeremonies(
           ceremonyComplete: false,
           winnersAnnounced: false,
         });
+      } else {
+        console.log(`[Awards] ${show.name}: Ceremony exists - nominationsAnnounced=${ceremony.nominationsAnnounced}, ceremonyComplete=${ceremony.ceremonyComplete}`);
       }
       
       // Generate nominations if not already announced
@@ -1473,7 +1482,8 @@ async function processAwardCeremonies(
         console.log(`[Awards] ${show.name}: Found ${categories.length} categories`);
         
         for (const category of categories) {
-          // Filter eligible films for this category
+          try {
+            // Filter eligible films for this category
           let categoryFilms = [...eligibleFilms];
           
           // Filter by genre if required
@@ -1789,6 +1799,9 @@ async function processAwardCeremonies(
               
               nominationCount++;
             }
+          }
+          } catch (categoryError) {
+            console.error(`[Awards] Error processing category ${category.name}:`, categoryError);
           }
         }
         
@@ -4369,7 +4382,7 @@ export async function registerRoutes(
         // Generate weekly emails
         generateWeeklyEmails(id, studio, playerFilmsForEmails, newWeek, newYear).catch(() => {}),
         // Process awards - only pass films from this game session
-        processAwardCeremonies(id, gameFilmsForAwards, newWeek, newYear).catch(() => {}),
+        processAwardCeremonies(id, gameFilmsForAwards, newWeek, newYear).catch((err) => console.error('[Awards] Error:', err)),
         // Process AI streaming acquisitions
         processAIStreamingAcquisitions(id, newWeek, newYear).catch(() => {}),
         // Process streaming views

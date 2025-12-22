@@ -124,6 +124,9 @@ export function GameProvider({ children, studioId, multiplayerSessionId, userId,
           queryClient.invalidateQueries({ queryKey: ['/api/streaming-deals/service'] });
           queryClient.invalidateQueries({ queryKey: [`/api/emails?playerGameId=${studioId}`] });
           queryClient.invalidateQueries({ queryKey: [`/api/emails/unread-count?playerGameId=${studioId}`] });
+          // Invalidate awards data when week advances (nominations may have been created)
+          queryClient.invalidateQueries({ queryKey: ['/api/nominations', studioId] });
+          queryClient.invalidateQueries({ queryKey: ['/api/ceremonies', studioId] });
         }
       } catch (error) {
         console.error("[GameState WS] Failed to parse message:", error);
