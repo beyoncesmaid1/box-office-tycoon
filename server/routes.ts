@@ -1574,13 +1574,55 @@ async function processAwardCeremonies(
               score += Math.random() * 20; // Small random factor
             }
             
+            // MAJOR CAST PERFORMANCE IMPACT ON AWARDS
+            if (categoryType === 'acting' || categoryType === 'acting_drama' || categoryType === 'acting_comedy' || 
+                categoryName.includes('actor') || categoryName.includes('actress')) {
+              // For acting categories, individual performance is CRITICAL
+              // This will be handled later when we find the specific eligible actor
+              // But we boost the film's base score based on overall cast quality
+              if (film.castIds && film.castIds.length > 0) {
+                let totalCastPerformance = 0;
+                let castCount = 0;
+                for (const castId of film.castIds) {
+                  const actor = await storage.getTalent(castId);
+                  if (actor && actor.type === 'actor') {
+                    totalCastPerformance += actor.performance || 50;
+                    castCount++;
+                  }
+                }
+                if (castCount > 0) {
+                  const avgCastPerformance = totalCastPerformance / castCount;
+                  // Major boost for high-performing cast (up to +50 points)
+                  score += (avgCastPerformance - 50) * 1.0;
+                }
+              }
+            } else {
+              // For non-acting categories, cast performance still matters but less
+              if (film.castIds && film.castIds.length > 0) {
+                let totalCastPerformance = 0;
+                let castCount = 0;
+                for (const castId of film.castIds) {
+                  const actor = await storage.getTalent(castId);
+                  if (actor && actor.type === 'actor') {
+                    totalCastPerformance += actor.performance || 50;
+                    castCount++;
+                  }
+                }
+                if (castCount > 0) {
+                  const avgCastPerformance = totalCastPerformance / castCount;
+                  // Moderate boost for high-performing cast in non-acting categories (up to +25 points)
+                  score += (avgCastPerformance - 50) * 0.5;
+                }
+              }
+            }
+            
             // Check if film has awards campaign
             if (film.awards?.includes('Awards Campaign')) {
               score += 20;
             }
             
-            // Random factor to add variety
-            score += Math.random() * 20;
+            // Random factor to add variety (reduced to make performance more important)
+            score += Math.random() * 15;
             
             return { film, score };
           });
@@ -1627,11 +1669,12 @@ async function processAwardCeremonies(
             }
             
             if (eligibleCast.length > 0) {
-              // Pick the best performer (highest performance score) with some randomness
+              // MAJOR PERFORMANCE WEIGHTING: Pick the best performer with heavily weighted performance scores
+              // Performance is now the dominant factor in award nominations
               let bestCast = eligibleCast[0];
-              let bestPerf = bestCast.performance + Math.random() * 20;
+              let bestPerf = bestCast.performance * 3 + Math.random() * 10; // 3x performance weight, reduced randomness
               for (const cast of eligibleCast) {
-                const perf = cast.performance + Math.random() * 20;
+                const perf = cast.performance * 3 + Math.random() * 10; // Performance is 3x more important than random chance
                 if (perf > bestPerf) {
                   bestPerf = perf;
                   bestCast = cast;
