@@ -887,35 +887,66 @@ export function HollywoodInsider() {
                   );
                 }
                 
-                // Calculate projected openings based on genre, budget, marketing, sequel status
+                // Calculate projected openings using same formula as actual box office calculation
                 const projections = upcomingFilms.map(film => {
                   const studio = studioMap.get(film.studioId);
                   
-                  // Base projection from budget
+                  // Match server-side budget calculation
                   const totalBudget = film.totalBudget || film.productionBudget || 50000000;
                   const marketingBudget = film.marketingBudget || 0;
                   
-                  // Genre multipliers for expected opening
-                  const genreMultipliers: Record<string, number> = {
-                    'action': 0.45, 'scifi': 0.40, 'animation': 0.35, 'fantasy': 0.38,
-                    'horror': 0.55, 'comedy': 0.30, 'thriller': 0.28, 'drama': 0.15,
-                    'romance': 0.20, 'musicals': 0.25
+                  // Calculate total investment for marketing ratio (same as server)
+                  const totalInvestmentForMarketing = (film.productionBudget || 0) + 
+                    (film.talentBudget || 0) + 
+                    (film.setsBudget || 0) + 
+                    (film.costumesBudget || 0) + 
+                    (film.stuntsBudget || 0) + 
+                    (film.makeupBudget || 0) + 
+                    (film.practicalEffectsBudget || 0) + 
+                    (film.soundCrewBudget || 0);
+                  
+                  // Marketing multiplier (same as server: capped at 2.0)
+                  const marketingMultiplier = Math.min(2.0, marketingBudget / (totalInvestmentForMarketing || 1));
+                  
+                  // Genre box office multipliers (same as server)
+                  const genreBoxOfficeMultipliers: Record<string, number> = {
+                    'action': 1.3, 'scifi': 1.2, 'animation': 1.1, 'fantasy': 1.0,
+                    'horror': 1.0, 'comedy': 0.9, 'thriller': 1.0, 'drama': 0.8,
+                    'romance': 1.0, 'musicals': 1.0
                   };
-                  const genreMultiplier = genreMultipliers[film.genre] || 0.25;
+                  const genreMultiplier = genreBoxOfficeMultipliers[film.genre] || 1.0;
                   
-                  // Marketing boost (up to 50% more)
-                  const marketingBoost = marketingBudget > 0 ? 1 + (marketingBudget / totalBudget) * 0.5 : 1;
+                  // Budget caps by genre (same as server)
+                  const genreMaxBudgets: Record<string, number> = {
+                    'drama': 30000000, 'comedy': 125000000, 'romance': 50000000,
+                    'thriller': 60000000, 'horror': 150000000, 'action': 200000000,
+                    'scifi': 200000000, 'animation': 200000000, 'fantasy': 200000000,
+                    'musicals': 100000000
+                  };
+                  const clampedBudget = Math.min(totalBudget, genreMaxBudgets[film.genre] || 50000000);
                   
-                  // Sequel boost (25-40%)
+                  // Sequel boost
                   const isSequel = film.title.match(/\s[2-9]$|\sII|III|IV|Part\s/i) !== null;
-                  const sequelBoost = isSequel ? 1.3 : 1;
+                  const sequelBoost = isSequel ? 1.25 : 1;
                   
-                  // Calculate base projection
-                  let baseProjection = totalBudget * genreMultiplier * marketingBoost * sequelBoost;
+                  // Quality estimate based on script quality if available
+                  const scriptQuality = film.scriptQuality || 70;
+                  const qualityFactor = scriptQuality / 100;
+                  const qualityMultiplier = 0.5 + qualityFactor * 0.8; // Same as server: 0.5 + quality * 0.8
                   
-                  // Add ±20% variance for display range
-                  const lowEstimate = Math.floor(baseProjection * 0.75);
-                  const highEstimate = Math.floor(baseProjection * 1.25);
+                  // Calculate base projection (matches server formula without random factors)
+                  // Server: clampedBudget × randomLuck(0.5-1.3) × marketingMult × qualityMult × genreMult × audienceBoost
+                  // We use average luck (0.9) and average audience boost (1.0-1.5 for good films)
+                  const avgLuck = 0.9; // Average of 0.5-1.3 range
+                  const avgAudienceBoost = scriptQuality >= 70 ? 1.5 : 0.85; // Estimate based on quality
+                  
+                  const baseProjection = clampedBudget * avgLuck * marketingMultiplier * qualityMultiplier * genreMultiplier * avgAudienceBoost * sequelBoost;
+                  
+                  // Range accounts for random luck (0.5-1.3) and audience boost variance
+                  // Low: worst luck (0.5) + low audience (0.7) = ~0.35x of average
+                  // High: best luck (1.3) + high audience (2.0) = ~2.6x of average
+                  const lowEstimate = Math.floor(baseProjection * 0.5);
+                  const highEstimate = Math.floor(baseProjection * 2.0);
                   
                   // Calculate weeks until release
                   const filmWeekNum = (film.releaseYear || state.currentYear) * 52 + (film.releaseWeek || state.currentWeek);
