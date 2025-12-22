@@ -942,11 +942,9 @@ export function HollywoodInsider() {
                   
                   const baseProjection = clampedBudget * avgLuck * marketingMultiplier * qualityMultiplier * genreMultiplier * avgAudienceBoost * sequelBoost;
                   
-                  // Range accounts for random luck (0.5-1.3) and audience boost variance
-                  // Low: worst luck (0.5) + low audience (0.7) = ~0.35x of average
-                  // High: best luck (1.3) + high audience (2.0) = ~2.6x of average
-                  const lowEstimate = Math.floor(baseProjection * 0.5);
-                  const highEstimate = Math.floor(baseProjection * 2.0);
+                  // Tighter range for more useful projections (±25%)
+                  const lowEstimate = Math.floor(baseProjection * 0.75);
+                  const highEstimate = Math.floor(baseProjection * 1.25);
                   
                   // Calculate weeks until release
                   const filmWeekNum = (film.releaseYear || state.currentYear) * 52 + (film.releaseWeek || state.currentWeek);
