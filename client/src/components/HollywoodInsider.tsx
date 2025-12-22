@@ -942,9 +942,9 @@ export function HollywoodInsider() {
                   
                   const baseProjection = clampedBudget * avgLuck * marketingMultiplier * qualityMultiplier * genreMultiplier * avgAudienceBoost * sequelBoost;
                   
-                  // Tighter range for more useful projections (±25%)
-                  const lowEstimate = Math.floor(baseProjection * 0.75);
-                  const highEstimate = Math.floor(baseProjection * 1.25);
+                  // Tight range for precise projections (±15%)
+                  const lowEstimate = Math.floor(baseProjection * 0.85);
+                  const highEstimate = Math.floor(baseProjection * 1.15);
                   
                   // Calculate weeks until release
                   const filmWeekNum = (film.releaseYear || state.currentYear) * 52 + (film.releaseWeek || state.currentWeek);
