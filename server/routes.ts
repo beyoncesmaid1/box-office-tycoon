@@ -2396,18 +2396,22 @@ export async function registerRoutes(
 
   app.post("/api/studio/new", async (req, res) => {
     try {
-      const { name, deviceId } = req.body;
+      const { name, deviceId, startingYear } = req.body;
       if (!name || typeof name !== 'string') {
         return res.status(400).json({ error: "Invalid studio name" });
       }
       const actualDeviceId = deviceId || "default-device";
+      // Use the starting year provided, default to 2024
+      // Studios start at week 1 of the PREVIOUS year, then preload advances them to week 1 of startingYear
+      const actualStartingYear = startingYear || 2024;
+      const preloadStartYear = actualStartingYear - 1;
 
       const newStudio = await storage.createStudio({
         deviceId: actualDeviceId,
         name: name.trim(),
         budget: 150000000,
         currentWeek: 1,
-        currentYear: 2025,
+        currentYear: preloadStartYear,
         prestigeLevel: 1,
         totalEarnings: 0,
         totalAwards: 0,
@@ -2422,7 +2426,7 @@ export async function registerRoutes(
           name: aiStudioNames[i],
           budget: budgets[i],
           currentWeek: 1,
-          currentYear: 2025,
+          currentYear: preloadStartYear,
           prestigeLevel: 1,
           totalEarnings: 0,
           totalAwards: 0,

@@ -24,6 +24,7 @@ export function MainMenu({ onSelectStudio, onOpenEditor, onOpenMultiplayer }: Ma
   const [loading, setLoading] = useState(true);
   const [showNewGame, setShowNewGame] = useState(false);
   const [newStudioName, setNewStudioName] = useState('');
+  const [startingYear, setStartingYear] = useState(2024);
   const [isCreating, setIsCreating] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -61,7 +62,7 @@ export function MainMenu({ onSelectStudio, onOpenEditor, onOpenMultiplayer }: Ma
       const response = await fetch('/api/studio/new', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newStudioName.trim(), deviceId }),
+        body: JSON.stringify({ name: newStudioName.trim(), deviceId, startingYear }),
       });
 
       if (!response.ok) throw new Error('Failed to create studio');
@@ -69,11 +70,12 @@ export function MainMenu({ onSelectStudio, onOpenEditor, onOpenMultiplayer }: Ma
 
       setShowNewGame(false);
       setNewStudioName('');
+      setStartingYear(2024);
 
       // Start preloading
       setIsPreloading(true);
       setPreloadProgress(0);
-      setPreloadMessage('Simulating box office...');
+      setPreloadMessage(`Simulating ${startingYear - 1} box office...`);
 
       // Simulate progress increment while preload is running
       let currentProgress = 0;
@@ -87,7 +89,7 @@ export function MainMenu({ onSelectStudio, onOpenEditor, onOpenMultiplayer }: Ma
         const preloadResponse = await fetch(`/api/studio/${studio.id}/preload`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ weeks: 24 }),
+          body: JSON.stringify({ weeks: 52 }),
         });
 
         if (!preloadResponse.ok) throw new Error('Preload failed');
@@ -280,11 +282,23 @@ export function MainMenu({ onSelectStudio, onOpenEditor, onOpenMultiplayer }: Ma
                 placeholder="Enter your studio name..."
                 value={newStudioName}
                 onChange={(e) => setNewStudioName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleNewGame();
-                }}
                 data-testid="input-studio-name"
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="starting-year">Starting Year</Label>
+              <select
+                id="starting-year"
+                value={startingYear}
+                onChange={(e) => setStartingYear(parseInt(e.target.value))}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                data-testid="select-starting-year"
+              >
+                {Array.from({ length: 31 }, (_, i) => 2000 + i).map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">The game will simulate the previous year's releases before you start.</p>
             </div>
           </div>
           <DialogFooter>
