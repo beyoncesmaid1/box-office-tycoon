@@ -2554,10 +2554,45 @@ export async function registerRoutes(
             
             // Check if production-complete films have territory releases scheduled
             if (film.phase === 'production-complete' || newPhase === 'production-complete') {
-              const releases = await storage.getFilmReleasesByFilm(film.id);
-              if (releases && releases.length > 0) {
+              const filmStudio = allStudios.find(s => s.id === film.studioId);
+              const isAIFilm = filmStudio?.isAI === true;
+              
+              // For AI films in production-complete during preload, schedule releases and release immediately
+              if (isAIFilm) {
+                const existingReleases = await storage.getFilmReleasesByFilm(film.id);
+                if (existingReleases.length === 0) {
+                  // Schedule releases for next week
+                  const releaseWeek = currentWeek + 1 > 52 ? 1 : currentWeek + 1;
+                  const releaseYear = currentWeek + 1 > 52 ? currentYear + 1 : currentYear;
+                  
+                  const allTerritories = await storage.getAllTerritories();
+                  await Promise.all(allTerritories.map(territory =>
+                    storage.createFilmRelease({
+                      filmId: film.id,
+                      territoryId: territory.id,
+                      releaseWeek,
+                      releaseYear,
+                      isReleased: false,
+                      weeklyBoxOffice: [],
+                      totalBoxOffice: 0,
+                    })
+                  ));
+                  
+                  await storage.updateFilm(film.id, {
+                    releaseWeek,
+                    releaseYear,
+                  });
+                }
+                // AI films go directly to awaiting-release
                 newPhase = 'awaiting-release';
                 newWeeksInPhase = 0;
+              } else {
+                // Player films check for existing releases
+                const releases = await storage.getFilmReleasesByFilm(film.id);
+                if (releases && releases.length > 0) {
+                  newPhase = 'awaiting-release';
+                  newWeeksInPhase = 0;
+                }
               }
             }
             
@@ -2568,8 +2603,102 @@ export async function registerRoutes(
           }
         }
 
+        // Handle awaiting-release films - release them when their release date arrives (preload)
+        const awaitingReleaseFilms = saveFilms.filter(f => f.phase === 'awaiting-release');
+        for (const film of awaitingReleaseFilms) {
+          const releases = await storage.getFilmReleasesByFilm(film.id);
+          if (releases && releases.length > 0) {
+            // Find earliest release date
+            let earliestWeek = releases[0].releaseWeek;
+            let earliestYear = releases[0].releaseYear;
+            for (const release of releases) {
+              const releaseNum = release.releaseYear * 52 + release.releaseWeek;
+              const earliestNum = earliestYear * 52 + earliestWeek;
+              if (releaseNum < earliestNum) {
+                earliestWeek = release.releaseWeek;
+                earliestYear = release.releaseYear;
+              }
+            }
+            
+            // Check if release date has arrived
+            const currentWeekNum = currentYear * 52 + currentWeek;
+            const releaseWeekNum = earliestYear * 52 + earliestWeek;
+            
+            if (currentWeekNum >= releaseWeekNum) {
+              const filmStudio = allStudios.find(s => s.id === film.studioId);
+              const isAIFilm = filmStudio?.isAI === true;
+              
+              if (isAIFilm) {
+                // Calculate opening weekend for AI film
+                const qualityFactor = (film.scriptQuality || 70) / 100;
+                const budgetFactor = Math.min(1, (film.productionBudget || 50000000) / 100000000);
+                const qualityBoost = ((film.scriptQuality || 70) - 80) * 0.35;
+                const randomBase = 55 + Math.random() * 15;
+                const audienceSwing = (Math.random() - 0.5) * 15;
+                
+                let genreBonus = 0;
+                let audienceGenreBonus = 0;
+                if (film.genre === 'drama') { genreBonus = 10; audienceGenreBonus = -5; }
+                else if (film.genre === 'action') { genreBonus = -5; audienceGenreBonus = 7; }
+                else if (film.genre === 'comedy') { genreBonus = -3; audienceGenreBonus = 0; }
+                else if (film.genre === 'horror') { genreBonus = -5; audienceGenreBonus = 3; }
+                else if (film.genre === 'scifi') { genreBonus = 0; audienceGenreBonus = 4; }
+                else if (film.genre === 'animation') { genreBonus = 0; audienceGenreBonus = 5; }
+                else if (film.genre === 'fantasy') { genreBonus = -3; audienceGenreBonus = 5; }
+                else if (film.genre === 'musicals') { genreBonus = 5; audienceGenreBonus = 2; }
+                else if (film.genre === 'romance') { genreBonus = 5; audienceGenreBonus = 2; }
+                else if (film.genre === 'thriller') { genreBonus = 3; audienceGenreBonus = 5; }
+                
+                const rawCriticScore = randomBase + qualityBoost + genreBonus;
+                const rawAudienceScore = randomBase + audienceSwing + qualityBoost + audienceGenreBonus;
+                const criticScore = Math.min(100, Math.max(20, Math.floor(rawCriticScore)));
+                const audienceScore = Math.min(10, Math.max(2, Math.round((rawAudienceScore / 10) * 10) / 10));
+                
+                const investmentBudget = film.totalBudget || film.productionBudget || 50000000;
+                const marketingMultiplier = Math.min(2.0, (film.marketingBudget || 0) / (investmentBudget || 1));
+                
+                let genreBoxOfficeMultiplier = 1.0;
+                if (film.genre === 'action') genreBoxOfficeMultiplier = 1.3;
+                else if (film.genre === 'scifi') genreBoxOfficeMultiplier = 1.2;
+                else if (film.genre === 'comedy') genreBoxOfficeMultiplier = 0.9;
+                else if (film.genre === 'drama') genreBoxOfficeMultiplier = 0.8;
+                else if (film.genre === 'animation') genreBoxOfficeMultiplier = 1.1;
+                
+                const audienceBoost = audienceScore >= 7.0 ? (1.0 + Math.random() * 1.0) : (0.7 + Math.random() * 0.3);
+                const clampedBudget = clampInvestmentBudgetByGenre(investmentBudget, film.genre);
+                const randomLuck = 0.5 + Math.random() * 0.8;
+                const qualityMultiplier = 0.5 + qualityFactor * 0.8;
+                const baseOpening = clampedBudget * randomLuck * marketingMultiplier * qualityMultiplier * genreBoxOfficeMultiplier * audienceBoost;
+                const openingWeekend = Math.floor(baseOpening);
+                
+                // Update film to released
+                await storage.updateFilm(film.id, {
+                  phase: 'released',
+                  weeksInCurrentPhase: 0,
+                  criticScore,
+                  audienceScore,
+                  weeklyBoxOffice: [openingWeekend],
+                  totalBoxOffice: openingWeekend,
+                  releaseWeek: earliestWeek,
+                  releaseYear: earliestYear,
+                } as any);
+                
+                // Mark territory releases as released
+                await Promise.all(releases.map(release => 
+                  storage.updateFilmRelease(release.id, { isReleased: true })
+                ));
+              }
+            }
+          }
+        }
+
         // Handle box office for all released films (only for this save)
-        const saveReleasedFilms = saveFilms.filter(f => f.phase === 'released' && f.weeklyBoxOffice.length > 0 && f.weeklyBoxOffice.length < 24);
+        // Re-fetch films to get updated phases
+        const updatedSaveFilms = (await storage.getAllFilms()).filter(f => {
+          const filmStudio = allStudios.find(s => s.id === f.studioId);
+          return filmStudio && (filmStudio.id === id || filmStudio.playerGameId === id);
+        });
+        const saveReleasedFilms = updatedSaveFilms.filter(f => f.phase === 'released' && f.weeklyBoxOffice.length > 0 && f.weeklyBoxOffice.length < 24);
         for (const film of saveReleasedFilms) {
           const lastWeek = film.weeklyBoxOffice[film.weeklyBoxOffice.length - 1];
           
