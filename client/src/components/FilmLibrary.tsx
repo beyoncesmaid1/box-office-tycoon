@@ -11,6 +11,7 @@ import { useGame, formatMoney, genreColors, genreLabels, type FilmWithTalent } f
 import { useToast } from '@/hooks/use-toast';
 import { RatingDisplay } from './RatingDisplay';
 import { useQueryClient } from '@tanstack/react-query';
+import { getGenrePoster } from '@/lib/genrePosters';
 
 type ViewMode = 'grid' | 'list';
 type SortField = 'title' | 'boxOffice' | 'rating' | 'releaseDate';
@@ -24,29 +25,15 @@ function FilmCard({ film, onClick }: FilmCardProps) {
   const profit = film.totalBoxOffice * 0.7 - film.totalBudget;
   const isProfitable = profit > 0;
   
-  // Genre-based fallback posters
-  const genreBackgrounds: Record<string, string> = {
-    action: 'linear-gradient(135deg, rgba(153, 0, 0, 0.9), rgba(80, 0, 0, 0.9))',
-    comedy: 'linear-gradient(135deg, rgba(184, 134, 11, 0.9), rgba(139, 90, 0, 0.9))',
-    drama: 'linear-gradient(135deg, rgba(75, 0, 130, 0.9), rgba(25, 0, 51, 0.9))',
-    horror: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95), rgba(75, 0, 130, 0.9))',
-    scifi: 'linear-gradient(135deg, rgba(0, 128, 128, 0.9), rgba(0, 51, 102, 0.9))',
-    romance: 'linear-gradient(135deg, rgba(199, 21, 133, 0.9), rgba(128, 0, 32, 0.9))',
-    thriller: 'linear-gradient(135deg, rgba(40, 40, 40, 0.95), rgba(0, 0, 0, 0.95))',
-    animation: 'linear-gradient(135deg, rgba(65, 105, 225, 0.9), rgba(25, 25, 112, 0.9))',
-    fantasy: 'linear-gradient(135deg, rgba(75, 0, 130, 0.9), rgba(75, 0, 130, 0.9))',
-    musicals: 'linear-gradient(135deg, rgba(199, 21, 133, 0.9), rgba(138, 43, 226, 0.9))',
-  };
-
-  const fallbackBg = genreBackgrounds[film.genre] || 'linear-gradient(135deg, rgba(64, 64, 64, 0.9), rgba(40, 40, 40, 0.9))';
-  const posterUrl = film.posterUrl || '';
+  // Use film's poster or get a genre-appropriate poster
+  const posterUrl = film.posterUrl || getGenrePoster(film.genre);
 
   return (
     <Card className="hover-elevate cursor-pointer overflow-hidden" onClick={onClick} data-testid={`card-library-film-${film.id}`}>
       <div 
         className="aspect-[2/3] relative flex items-end justify-start p-3"
         style={{
-          backgroundImage: posterUrl ? `url(${posterUrl})` : fallbackBg,
+          backgroundImage: `url(${posterUrl})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundColor: 'rgb(40, 40, 40)',
@@ -86,22 +73,8 @@ function FilmListRow({ film, onClick }: FilmCardProps) {
   const profit = film.totalBoxOffice * 0.7 - film.totalBudget;
   const isProfitable = profit > 0;
   
-  // Genre-based fallback posters
-  const genreBackgrounds: Record<string, string> = {
-    action: 'linear-gradient(135deg, rgba(153, 0, 0, 0.9), rgba(80, 0, 0, 0.9))',
-    comedy: 'linear-gradient(135deg, rgba(184, 134, 11, 0.9), rgba(139, 90, 0, 0.9))',
-    drama: 'linear-gradient(135deg, rgba(75, 0, 130, 0.9), rgba(25, 0, 51, 0.9))',
-    horror: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95), rgba(75, 0, 130, 0.9))',
-    scifi: 'linear-gradient(135deg, rgba(0, 128, 128, 0.9), rgba(0, 51, 102, 0.9))',
-    romance: 'linear-gradient(135deg, rgba(199, 21, 133, 0.9), rgba(128, 0, 32, 0.9))',
-    thriller: 'linear-gradient(135deg, rgba(40, 40, 40, 0.95), rgba(0, 0, 0, 0.95))',
-    animation: 'linear-gradient(135deg, rgba(65, 105, 225, 0.9), rgba(25, 25, 112, 0.9))',
-    fantasy: 'linear-gradient(135deg, rgba(75, 0, 130, 0.9), rgba(75, 0, 130, 0.9))',
-    musicals: 'linear-gradient(135deg, rgba(199, 21, 133, 0.9), rgba(138, 43, 226, 0.9))',
-  };
-  
-  const fallbackBg = genreBackgrounds[film.genre] || 'linear-gradient(135deg, rgba(64, 64, 64, 0.9), rgba(40, 40, 40, 0.9))';
-  const posterUrl = film.posterUrl || '';
+  // Use film's poster or get a genre-appropriate poster
+  const posterUrl = film.posterUrl || getGenrePoster(film.genre);
 
   return (
     <div 
@@ -112,7 +85,7 @@ function FilmListRow({ film, onClick }: FilmCardProps) {
       <div 
         className="w-16 h-24 rounded flex-shrink-0 relative overflow-hidden"
         style={{
-          backgroundImage: posterUrl ? `url(${posterUrl})` : fallbackBg,
+          backgroundImage: `url(${posterUrl})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundColor: 'rgb(40, 40, 40)',
@@ -459,27 +432,14 @@ export function FilmLibrary() {
               
               <div className="grid md:grid-cols-3 gap-6">
                 {(() => {
-                  const genreBackgrounds: Record<string, string> = {
-                    action: 'linear-gradient(135deg, rgba(153, 0, 0, 0.9), rgba(80, 0, 0, 0.9))',
-                    comedy: 'linear-gradient(135deg, rgba(184, 134, 11, 0.9), rgba(139, 90, 0, 0.9))',
-                    drama: 'linear-gradient(135deg, rgba(75, 0, 130, 0.9), rgba(25, 0, 51, 0.9))',
-                    horror: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95), rgba(75, 0, 130, 0.9))',
-                    scifi: 'linear-gradient(135deg, rgba(0, 128, 128, 0.9), rgba(0, 51, 102, 0.9))',
-                    romance: 'linear-gradient(135deg, rgba(199, 21, 133, 0.9), rgba(128, 0, 32, 0.9))',
-                    thriller: 'linear-gradient(135deg, rgba(40, 40, 40, 0.95), rgba(0, 0, 0, 0.95))',
-                    animation: 'linear-gradient(135deg, rgba(65, 105, 225, 0.9), rgba(25, 25, 112, 0.9))',
-                    fantasy: 'linear-gradient(135deg, rgba(75, 0, 130, 0.9), rgba(75, 0, 130, 0.9))',
-                    musicals: 'linear-gradient(135deg, rgba(199, 21, 133, 0.9), rgba(138, 43, 226, 0.9))',
-                  };
-                  const fallbackBg = genreBackgrounds[selectedFilm.genre] || 'linear-gradient(135deg, rgba(64, 64, 64, 0.9), rgba(40, 40, 40, 0.9))';
-                  const posterUrl = selectedFilm.posterUrl || '';
+                  const posterUrl = selectedFilm.posterUrl || getGenrePoster(selectedFilm.genre);
                   
                   return (
                     <div className="space-y-2">
                       <div 
                         className="aspect-[2/3] rounded-lg overflow-hidden"
                         style={{
-                          backgroundImage: posterUrl ? `url(${posterUrl})` : fallbackBg,
+                          backgroundImage: `url(${posterUrl})`,
                           backgroundSize: 'cover',
                           backgroundPosition: 'center',
                           backgroundColor: 'rgb(40, 40, 40)',

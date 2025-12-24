@@ -1,48 +1,78 @@
-import actionPoster from '@assets/generated_images/action_movie_poster_explosion.png';
-import actionPoster2 from '@assets/generated_images/action_poster_-_car_chase_neon.png';
-import actionPoster3 from '@assets/generated_images/action_poster_-_military_tactical.png';
+// All available poster icons from /posters folder
+const allPosters = [
+  'Abduction', 'Acorn', 'Agent', 'Alarmclock', 'Alchemy', 'Alien', 'Alien2', 'Anonymous',
+  'Ant', 'Archery', 'Armchair', 'Art', 'Astronaut', 'Atom', 'Autism', 'Axe', 'Ballett',
+  'Baloons', 'Baloons2', 'Baseball', 'Basketball', 'Beetle', 'Bible', 'Bike', 'Billiard',
+  'Biohazard', 'Birdcage', 'Blackboard', 'Bodyshape', 'Bomb', 'Books', 'Bottle', 'Boxingglove',
+  'British', 'BrokenHeart', 'Butterfly', 'Cactus', 'Camera', 'Candy', 'Candymachine', 'Capitol',
+  'Car', 'Castle', 'Cat', 'Chefhat', 'Chesspiece', 'CivilRights', 'Clock', 'Cloudy', 'Clover',
+  'Coffee', 'CoffeeCup', 'Compass', 'Constellation', 'Corpse', 'Cosmo', 'Crayons', 'Crown',
+  'CrystalBall', 'Crystals', 'DNA', 'Daisy', 'Data', 'Dice', 'Dino', 'DinoEgg', 'Doctor',
+  'Dog', 'Dolphin', 'Donut', 'Dramadey', 'Dynamite', 'Dyslexia', 'Ear', 'Egg', 'ElectricGuitar',
+  'Elephant', 'Enemy', 'Eskimo', 'Excursion', 'Facemask', 'Fairytale', 'Fall', 'Familycar',
+  'Fingerprint', 'Flashlight', 'Flask', 'Flask2', 'Flower', 'Football', 'Fox', 'Fuji',
+  'Gamepad', 'GasMask', 'Geisha', 'Ghost', 'Glasses', 'Graduation', 'Gravestone', 'GreekHelmet',
+  'Group', 'Guitar', 'Gun', 'Hamburger', 'Handcuffs', 'Heart', 'Heart2', 'Heart3', 'HeartGlasses',
+  'HeartUmbrella', 'Helicopter', 'Hero_Shield', 'Higheels', 'Horse', 'Hospital', 'HotAirBaloon',
+  'Icecream', 'Idea', 'Justice', 'Key', 'Keys', 'Knife', 'Knight', 'Lamp', 'Law', 'Letter',
+  'Lighthouse', 'Lion', 'MagicWand', 'Makeup', 'Mask', 'Medal', 'Microphone', 'Milkshake',
+  'Molecul', 'Money', 'Moneybag', 'Moon', 'Motocycle', 'Mountain', 'Muffin', 'Mugshot',
+  'Music', 'MusicNotes', 'Native', 'Native_Girl', 'Newspaper', 'Ninja', 'OrangeHat', 'Owl',
+  'Oyster', 'Pacifier', 'Padlock', 'Painting', 'Panda', 'Paperplane', 'Partyhat', 'Paw',
+  'Peace', 'Penguin', 'Pills', 'Pipe', 'Pistol', 'Pizza', 'Placeholder', 'Poison', 'Poker',
+  'Policebadge', 'Policehat', 'Potion', 'Pram', 'Protest', 'Pumpkin', 'Puzzle', 'Raincloud',
+  'ReporterHat', 'Robot', 'Safe', 'Sandals', 'Santa', 'Saturn', 'Schoolbus', 'Scissors',
+  'Scooter', 'ShipBottle', 'Shoe', 'Signpost', 'Skate', 'Skull', 'Snail', 'Snowflake',
+  'Snowglobe', 'Snowman', 'Soccer', 'Solution', 'Spaceship', 'Spaceshuttle', 'Spider',
+  'Stopwatch', 'Strawberry', 'Suitcase', 'Swear', 'Swimsuit', 'Swords', 'TVNews', 'Tank',
+  'Tape', 'Taxi', 'Teddy', 'Telephone', 'Tennis', 'Thunder', 'Tobacco', 'Toys', 'Tractor',
+  'Trafficlight', 'Typewriter', 'USA', 'Unicorn', 'Viking', 'Viking2', 'VikingShip', 'Virus',
+  'Vodoo', 'Wand', 'Warship', 'Wedding', 'Wheel', 'World', 'WoundedHeart', 'Xwing'
+];
 
-import comedyPoster from '@assets/generated_images/comedy_movie_poster_bright.png';
-import comedyPoster2 from '@assets/generated_images/comedy_poster_-_pastel_vibrant.png';
-import comedyPoster3 from '@assets/generated_images/comedy_poster_-_slapstick_humor.png';
-
-import dramaPoster from '@assets/generated_images/drama_movie_poster_emotional.png';
-import dramaPoster2 from '@assets/generated_images/drama_poster_-_intimate_melancholic.png';
-import dramaPoster3 from '@assets/generated_images/drama_poster_-_solitary_landscape.png';
-
-import horrorPoster from '@assets/generated_images/horror_movie_poster_creepy.png';
-import horrorPoster2 from '@assets/generated_images/horror_poster_-_creature_monster.png';
-import horrorPoster3 from '@assets/generated_images/horror_poster_-_haunted_house.png';
-
-import scifiPoster from '@assets/generated_images/sci-fi_movie_poster_futuristic.png';
-import scifiPoster2 from '@assets/generated_images/sci-fi_poster_-_alien_spacecraft.png';
-import scifiPoster3 from '@assets/generated_images/sci-fi_poster_-_cyborg_cyberpunk.png';
-
-import romancePoster from '@assets/generated_images/romance_movie_poster_sunset.png';
-import romancePoster2 from '@assets/generated_images/romance_poster_-_elegant_ballroom.png';
-import romancePoster3 from '@assets/generated_images/romance_poster_-_beach_sunset.png';
-
-import thrillerPoster from '@assets/generated_images/thriller_movie_poster_noir.png';
-import thrillerPoster2 from '@assets/generated_images/thriller_poster_-_shadowy_tension.png';
-import thrillerPoster3 from '@assets/generated_images/thriller_poster_-_chase_adrenaline.png';
-
-import animationPoster from '@assets/generated_images/animation_movie_poster_colorful.png';
-import animationPoster2 from '@assets/generated_images/animation_poster_-_colorful_whimsical.png';
-import animationPoster3 from '@assets/generated_images/animation_poster_-_enchanted_forest.png';
-
-
+// Genre-specific poster mappings
 export const genrePosters: Record<string, string[]> = {
-  action: [actionPoster, actionPoster2, actionPoster3],
-  comedy: [comedyPoster, comedyPoster2, comedyPoster3],
-  drama: [dramaPoster, dramaPoster2, dramaPoster3],
-  horror: [horrorPoster, horrorPoster2, horrorPoster3],
-  scifi: [scifiPoster, scifiPoster2, scifiPoster3],
-  romance: [romancePoster, romancePoster2, romancePoster3],
-  thriller: [thrillerPoster, thrillerPoster2, thrillerPoster3],
-  animation: [animationPoster, animationPoster2, animationPoster3],
+  action: ['Bomb', 'Gun', 'Pistol', 'Tank', 'Helicopter', 'Car', 'Motocycle', 'Swords', 'Axe', 'Dynamite', 'Hero_Shield', 'Ninja', 'GreekHelmet', 'Knight', 'Warship', 'Boxingglove', 'Enemy'],
+  comedy: ['Partyhat', 'Baloons', 'Baloons2', 'Candy', 'Icecream', 'Pizza', 'Hamburger', 'Donut', 'Muffin', 'Coffee', 'Milkshake', 'Dice', 'Poker', 'Billiard', 'Gamepad', 'Dramadey', 'Swear'],
+  drama: ['BrokenHeart', 'WoundedHeart', 'Dramadey', 'Raincloud', 'Corpse', 'Gravestone', 'Books', 'Typewriter', 'Newspaper', 'Letter', 'Painting', 'Art', 'Glasses', 'Pipe', 'Clock', 'Armchair', 'Lamp'],
+  horror: ['Skull', 'Ghost', 'Spider', 'Pumpkin', 'Gravestone', 'Corpse', 'Poison', 'Biohazard', 'Virus', 'GasMask', 'Knife', 'Vodoo', 'Mask', 'Facemask', 'Owl', 'Moon', 'Thunder'],
+  scifi: ['Alien', 'Alien2', 'Astronaut', 'Spaceship', 'Spaceshuttle', 'Robot', 'Atom', 'DNA', 'Molecul', 'Saturn', 'Constellation', 'Cosmo', 'Data', 'Xwing', 'Flask', 'Flask2', 'Biohazard'],
+  romance: ['Heart', 'Heart2', 'Heart3', 'HeartGlasses', 'HeartUmbrella', 'Wedding', 'Flower', 'Daisy', 'Butterfly', 'Ballett', 'Higheels', 'Letter', 'Oyster', 'Strawberry', 'Milkshake', 'Sandals', 'Swimsuit'],
+  thriller: ['Fingerprint', 'Handcuffs', 'Mugshot', 'Policebadge', 'Policehat', 'Agent', 'Anonymous', 'Padlock', 'Safe', 'Key', 'Keys', 'Flashlight', 'Gun', 'Pistol', 'Knife', 'Tape', 'ReporterHat'],
+  animation: ['Unicorn', 'Fairytale', 'Castle', 'MagicWand', 'Wand', 'CrystalBall', 'Potion', 'Teddy', 'Toys', 'Panda', 'Penguin', 'Cat', 'Dog', 'Fox', 'Elephant', 'Lion', 'Dino', 'DinoEgg', 'Butterfly', 'Snail'],
+  fantasy: ['Castle', 'Crown', 'Knight', 'Swords', 'MagicWand', 'Wand', 'CrystalBall', 'Potion', 'Crystals', 'Unicorn', 'Fairytale', 'Viking', 'Viking2', 'VikingShip', 'GreekHelmet', 'Lion', 'Owl'],
+  musicals: ['Music', 'MusicNotes', 'Microphone', 'Guitar', 'ElectricGuitar', 'Ballett', 'Mask', 'Crown', 'Higheels', 'Partyhat', 'Dramadey', 'Geisha', 'Native_Girl', 'Graduation'],
+  western: ['Horse', 'Cactus', 'Gun', 'Pistol', 'Axe', 'Native', 'Native_Girl', 'Compass', 'Mountain', 'Signpost', 'Tobacco', 'Wheel', 'Tractor', 'USA'],
+  documentary: ['Camera', 'TVNews', 'Newspaper', 'Microphone', 'World', 'Protest', 'CivilRights', 'Capitol', 'Justice', 'Law', 'Books', 'Graduation', 'Doctor', 'Hospital'],
+  sports: ['Football', 'Soccer', 'Baseball', 'Basketball', 'Tennis', 'Boxingglove', 'Medal', 'Archery', 'Bike', 'Skate', 'Scooter', 'Stopwatch', 'Bodyshape'],
+  war: ['Tank', 'Helicopter', 'Warship', 'Bomb', 'Gun', 'Pistol', 'GreekHelmet', 'Medal', 'Dog', 'Biohazard', 'GasMask', 'Swords', 'Knight', 'Viking', 'VikingShip'],
+  crime: ['Handcuffs', 'Mugshot', 'Policebadge', 'Policehat', 'Gun', 'Pistol', 'Knife', 'Money', 'Moneybag', 'Safe', 'Padlock', 'Fingerprint', 'Agent', 'Anonymous', 'Taxi'],
+  family: ['Teddy', 'Toys', 'Pacifier', 'Pram', 'Familycar', 'Schoolbus', 'Graduation', 'Blackboard', 'Crayons', 'Baloons', 'Partyhat', 'Icecream', 'Pizza', 'Panda', 'Cat', 'Dog'],
 };
 
+// Get poster URL from poster name
+function getPosterUrl(posterName: string): string {
+  return `/posters/${posterName}.png`;
+}
+
 export function getGenrePoster(genre: string): string {
-  const posters = genrePosters[genre] || genrePosters['drama'];
-  return posters[Math.floor(Math.random() * posters.length)];
+  const posterNames = genrePosters[genre] || genrePosters['drama'];
+  const posterName = posterNames[Math.floor(Math.random() * posterNames.length)];
+  return getPosterUrl(posterName);
+}
+
+// Get a specific poster by name
+export function getPosterByName(name: string): string {
+  return getPosterUrl(name);
+}
+
+// Get all available posters
+export function getAllPosters(): string[] {
+  return allPosters.map(getPosterUrl);
+}
+
+// Get random poster from all available
+export function getRandomPoster(): string {
+  const posterName = allPosters[Math.floor(Math.random() * allPosters.length)];
+  return getPosterUrl(posterName);
 }
