@@ -2526,12 +2526,87 @@ export async function registerRoutes(
               }
             }
             
-            // Check if production-complete films have territory releases scheduled
+            // For AI films in production-complete, schedule releases and release immediately (like regular advance week)
             if (film.phase === 'production-complete' || newPhase === 'production-complete') {
-              const releases = await storage.getFilmReleasesByFilm(film.id);
-              if (releases && releases.length > 0) {
-                newPhase = 'awaiting-release';
+              const filmStudio = allStudios.find(s => s.id === film.studioId);
+              const isAIFilm = filmStudio?.isAI === true;
+              
+              if (isAIFilm) {
+                // Check if releases exist, if not create them
+                let releases = await storage.getFilmReleasesByFilm(film.id);
+                if (releases.length === 0) {
+                  // Schedule releases for THIS week (immediate release during preload)
+                  const allTerritories = await storage.getAllTerritories();
+                  const safeMarketingBudget = film.marketingBudget || Math.floor((film.productionBudget || 50000000) * 0.8);
+                  
+                  await Promise.all(allTerritories.map((territory, idx) =>
+                    storage.createFilmRelease({
+                      filmId: film.id,
+                      territoryId: territory.id,
+                      releaseWeek: currentWeek,
+                      releaseYear: currentYear,
+                      isReleased: false,
+                      weeklyBoxOffice: [],
+                      totalBoxOffice: 0,
+                    })
+                  ));
+                  
+                  // Re-fetch releases
+                  releases = await storage.getFilmReleasesByFilm(film.id);
+                }
+                
+                // Release the AI film immediately (skip awaiting-release)
+                const qualityBoost = ((film.scriptQuality || 70) - 70) * 0.35;
+                const randomBase = 52 + Math.random() * 13;
+                const hugeCriticSwing = (Math.random() - 0.5) * 20;
+                const hugeAudienceSwing = (Math.random() - 0.5) * 16;
+                
+                let genreBonus = 0;
+                let audienceGenreBonus = 0;
+                if (film.genre === 'drama') { genreBonus = 3; audienceGenreBonus = -2; }
+                else if (film.genre === 'action') { genreBonus = -3; audienceGenreBonus = 3; }
+                else if (film.genre === 'comedy') { genreBonus = -1; audienceGenreBonus = 3; }
+                else if (film.genre === 'horror') { genreBonus = -5; audienceGenreBonus = 2; }
+                else if (film.genre === 'scifi') { genreBonus = 1; audienceGenreBonus = 2; }
+                else if (film.genre === 'animation') { genreBonus = 2; audienceGenreBonus = 2; }
+                
+                const rawCriticScore = randomBase + hugeCriticSwing + qualityBoost + genreBonus;
+                const rawAudienceScore = randomBase + hugeAudienceSwing + qualityBoost + audienceGenreBonus;
+                const criticScore = Math.min(100, Math.max(20, Math.floor(rawCriticScore)));
+                const audienceScore = Math.min(10, Math.max(2, Math.round((rawAudienceScore / 10) * 10) / 10));
+                
+                const theaterCount = Math.floor(3500 + ((film.productionBudget || 50000000) / 40000000) * 3000);
+                
+                // Set film to released
+                newPhase = 'released';
                 newWeeksInPhase = 0;
+                
+                await storage.updateFilm(film.id, {
+                  phase: 'released',
+                  weeksInCurrentPhase: 0,
+                  criticScore,
+                  audienceScore: Math.round(audienceScore * 10) / 10,
+                  theaterCount,
+                  weeklyBoxOffice: [],
+                  totalBoxOffice: 0,
+                  releaseWeek: currentWeek,
+                  releaseYear: currentYear,
+                } as any);
+                
+                // Mark territory releases as released
+                await Promise.all(releases.map(release => 
+                  storage.updateFilmRelease(release.id, { isReleased: true })
+                ));
+                
+                console.log(`[PRELOAD-RELEASE] Released AI film "${film.title}" week ${currentWeek}/${currentYear}`);
+                continue; // Skip the normal update below
+              } else {
+                // Player films check for existing releases to move to awaiting-release
+                const releases = await storage.getFilmReleasesByFilm(film.id);
+                if (releases && releases.length > 0) {
+                  newPhase = 'awaiting-release';
+                  newWeeksInPhase = 0;
+                }
               }
             }
             
