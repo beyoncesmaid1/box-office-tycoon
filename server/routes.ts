@@ -2551,9 +2551,9 @@ export async function registerRoutes(
               if (isAIFilm) {
                 const existingReleases = await storage.getFilmReleasesByFilm(film.id);
                 if (existingReleases.length === 0) {
-                  // Schedule releases for next week
-                  const releaseWeek = currentWeek + 1 > 52 ? 1 : currentWeek + 1;
-                  const releaseYear = currentWeek + 1 > 52 ? currentYear + 1 : currentYear;
+                  // Schedule releases for THIS week so they can be released in the same iteration
+                  const releaseWeek = currentWeek;
+                  const releaseYear = currentYear;
                   
                   // Use cached allTerritories from preload start
                   await Promise.all(allTerritories.map(territory =>
