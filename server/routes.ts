@@ -2456,6 +2456,10 @@ export async function registerRoutes(
 
       let currentWeek = studio.currentWeek;
       let currentYear = studio.currentYear;
+      
+      // Cache static data once at the start (they don't change during preload)
+      const allTerritories = await storage.getAllTerritories();
+      const allStreamingServices = await storage.getAllStreamingServices();
 
       // Simulate multiple weeks to generate box office data
       for (let i = 0; i < weeks; i++) {
@@ -2465,7 +2469,7 @@ export async function registerRoutes(
           currentYear += 1;
         }
 
-        // Get AI studios associated with this save
+        // Get AI studios associated with this save (refresh each iteration as budgets change)
         const allStudios = await storage.getAllStudios();
         const aiStudios = allStudios.filter(s => s.isAI && s.playerGameId === id);
         const allFilms = await storage.getAllFilms();
@@ -2551,7 +2555,7 @@ export async function registerRoutes(
                   const releaseWeek = currentWeek + 1 > 52 ? 1 : currentWeek + 1;
                   const releaseYear = currentWeek + 1 > 52 ? currentYear + 1 : currentYear;
                   
-                  const allTerritories = await storage.getAllTerritories();
+                  // Use cached allTerritories from preload start
                   await Promise.all(allTerritories.map(territory =>
                     storage.createFilmRelease({
                       filmId: film.id,
@@ -2936,9 +2940,8 @@ export async function registerRoutes(
               
               const episodesPerSeason = tvGenre === 'animation' ? 10 : (8 + Math.floor(Math.random() * 5));
               
-              // Pick a streaming service for this AI show
-              const services = await storage.getAllStreamingServices();
-              const targetService = services[Math.floor(Math.random() * services.length)];
+              // Pick a streaming service for this AI show (use cached services)
+              const targetService = allStreamingServices[Math.floor(Math.random() * allStreamingServices.length)];
               
               const newTVShow = await storage.createTVShow({
                 studioId: aiStudio.id,
