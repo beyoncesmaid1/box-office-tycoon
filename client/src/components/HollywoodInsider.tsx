@@ -32,6 +32,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useGame, formatMoney, genreLabels } from '@/lib/gameState';
+import { getGenrePoster } from '@/lib/genrePosters';
 import type { Film, Studio, Talent, AwardNomination } from '@shared/schema';
 
 type SortField = 'worldwide' | 'domestic' | 'international';
@@ -530,13 +531,11 @@ export function HollywoodInsider() {
                         <td className="py-3 px-2 font-bold text-muted-foreground">{index + 1}</td>
                         <td className="py-3 px-2">
                           <Link href={`/film/${film.id}`} className="flex items-center gap-3 hover:text-primary">
-                            {film.posterUrl && (
-                              <img 
-                                src={film.posterUrl} 
-                                alt={film.title}
-                                className="w-8 h-12 object-cover rounded"
-                              />
-                            )}
+                            <img 
+                              src={film.posterUrl || getGenrePoster(film.genre)} 
+                              alt={film.title}
+                              className="w-8 h-12 object-cover rounded"
+                            />
                             <div>
                               <p className="font-medium hover:underline">{film.title}</p>
                               <p className="text-xs text-muted-foreground">{film.releaseYear}</p>
@@ -939,9 +938,7 @@ export function HollywoodInsider() {
                     {projections.slice(0, 10).map(({ film, studioName, lowEstimate, highEstimate, isSequel, weeksUntilRelease, releaseWeek }) => (
                       <div key={film.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
                         <div className="flex items-center gap-3">
-                          {film.posterUrl && (
-                            <img src={film.posterUrl} alt={film.title} className="w-10 h-14 object-cover rounded" />
-                          )}
+                          <img src={film.posterUrl || getGenrePoster(film.genre)} alt={film.title} className="w-10 h-14 object-cover rounded" />
                           <div>
                             <div className="flex items-center gap-2">
                               <span className="font-medium">{film.title}</span>

@@ -81,6 +81,27 @@ const streamingExecs = [
 
 const GENRES = ['action', 'comedy', 'drama', 'horror', 'scifi', 'romance', 'thriller', 'animation', 'fantasy', 'musicals'];
 
+// Genre-specific poster mappings (server-side version)
+const genrePosterNames: Record<string, string[]> = {
+  action: ['Bomb', 'Gun', 'Pistol', 'Tank', 'Helicopter', 'Car', 'Motocycle', 'Swords', 'Axe', 'Dynamite', 'Hero_Shield', 'Ninja', 'GreekHelmet', 'Knight', 'Warship', 'Boxingglove', 'Enemy'],
+  comedy: ['Partyhat', 'Baloons', 'Baloons2', 'Candy', 'Icecream', 'Pizza', 'Hamburger', 'Donut', 'Muffin', 'Coffee', 'Milkshake', 'Dice', 'Poker', 'Billiard', 'Gamepad', 'Dramadey', 'Swear'],
+  drama: ['BrokenHeart', 'WoundedHeart', 'Dramadey', 'Raincloud', 'Corpse', 'Gravestone', 'Books', 'Typewriter', 'Newspaper', 'Letter', 'Painting', 'Art', 'Glasses', 'Pipe', 'Clock', 'Armchair', 'Lamp'],
+  horror: ['Skull', 'Ghost', 'Spider', 'Pumpkin', 'Gravestone', 'Corpse', 'Poison', 'Biohazard', 'Virus', 'GasMask', 'Knife', 'Vodoo', 'Mask', 'Facemask', 'Owl', 'Moon', 'Thunder'],
+  scifi: ['Alien', 'Alien2', 'Astronaut', 'Spaceship', 'Spaceshuttle', 'Robot', 'Atom', 'DNA', 'Molecul', 'Saturn', 'Constellation', 'Cosmo', 'Data', 'Xwing', 'Flask', 'Flask2', 'Biohazard'],
+  romance: ['Heart', 'Heart2', 'Heart3', 'HeartGlasses', 'HeartUmbrella', 'Wedding', 'Flower', 'Daisy', 'Butterfly', 'Ballett', 'Higheels', 'Letter', 'Oyster', 'Strawberry', 'Milkshake', 'Sandals', 'Swimsuit'],
+  thriller: ['Fingerprint', 'Handcuffs', 'Mugshot', 'Policebadge', 'Policehat', 'Agent', 'Anonymous', 'Padlock', 'Safe', 'Key', 'Keys', 'Flashlight', 'Gun', 'Pistol', 'Knife', 'Tape', 'ReporterHat'],
+  animation: ['Unicorn', 'Fairytale', 'Castle', 'MagicWand', 'Wand', 'CrystalBall', 'Potion', 'Teddy', 'Toys', 'Panda', 'Penguin', 'Cat', 'Dog', 'Fox', 'Elephant', 'Lion', 'Dino', 'DinoEgg', 'Butterfly', 'Snail'],
+  fantasy: ['Castle', 'Crown', 'Knight', 'Swords', 'MagicWand', 'Wand', 'CrystalBall', 'Potion', 'Crystals', 'Unicorn', 'Fairytale', 'Viking', 'Viking2', 'VikingShip', 'GreekHelmet', 'Lion', 'Owl'],
+  musicals: ['Music', 'MusicNotes', 'Microphone', 'Guitar', 'ElectricGuitar', 'Ballett', 'Mask', 'Crown', 'Higheels', 'Partyhat', 'Dramadey', 'Geisha', 'Native_Girl', 'Graduation'],
+};
+
+// Generate a poster URL for a genre (server-side)
+function generatePosterUrl(genre: string): string {
+  const posterNames = genrePosterNames[genre] || genrePosterNames['drama'];
+  const posterName = posterNames[Math.floor(Math.random() * posterNames.length)];
+  return `/posters/${posterName}.png`;
+}
+
 const productionExecs = [
   { name: 'Robert Sterling', title: 'President of Production' },
   { name: 'Lisa Park', title: 'Chief Creative Officer' },
@@ -2918,6 +2939,7 @@ export async function registerRoutes(
                 releaseYear,
                 hasHiredTalent: true,
                 hasEditedPostProduction: true,
+                posterUrl: generatePosterUrl(genre),
                 ...(prequelId ? { prequelId } : {}),
               });
               
@@ -4368,6 +4390,7 @@ export async function registerRoutes(
                 releaseYear,
                 hasHiredTalent: true,
                 hasEditedPostProduction: true,
+                posterUrl: generatePosterUrl(genre),
               });
 
               // Generate roles and hire talent for the AI film
