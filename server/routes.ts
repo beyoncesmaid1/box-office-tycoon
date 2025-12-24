@@ -2601,8 +2601,10 @@ export async function registerRoutes(
           return filmStudio && (filmStudio.id === id || filmStudio.playerGameId === id);
         });
         const awaitingReleaseFilms = refreshedSaveFilms.filter(f => f.phase === 'awaiting-release');
+        console.log(`[PRELOAD-DEBUG] Week ${currentWeek}/${currentYear}: Found ${awaitingReleaseFilms.length} awaiting-release films`);
         for (const film of awaitingReleaseFilms) {
           const releases = await storage.getFilmReleasesByFilm(film.id);
+          console.log(`[PRELOAD-DEBUG] Film "${film.title}" has ${releases?.length || 0} territory releases`);
           if (releases && releases.length > 0) {
             // Find earliest release date
             let earliestWeek = releases[0].releaseWeek;
@@ -2619,6 +2621,7 @@ export async function registerRoutes(
             // Check if release date has arrived
             const currentWeekNum = currentYear * 52 + currentWeek;
             const releaseWeekNum = earliestYear * 52 + earliestWeek;
+            console.log(`[PRELOAD-DEBUG] Film "${film.title}" release check: current=${currentWeekNum}, release=${releaseWeekNum}, shouldRelease=${currentWeekNum >= releaseWeekNum}`);
             
             if (currentWeekNum >= releaseWeekNum) {
               const filmStudio = allStudios.find(s => s.id === film.studioId);
