@@ -887,16 +887,35 @@ export function HollywoodInsider() {
                   );
                 }
                 
-                // Use server-calculated projections (exact same formula as actual box office)
+                // Calculate projected openings based on genre, budget, marketing, sequel status
                 const projections = upcomingFilms.map(film => {
                   const studio = studioMap.get(film.studioId);
                   
-                  // Sequel detection
-                  const isSequel = film.title.match(/\s[2-9]$|\sII|III|IV|Part\s/i) !== null;
+                  // Base projection from budget
+                  const totalBudget = film.totalBudget || film.productionBudget || 50000000;
+                  const marketingBudget = film.marketingBudget || 0;
                   
-                  // Use server-provided projections (calculated with exact box office formula)
-                  const lowEstimate = (film as any).projectedOpeningLow || 0;
-                  const highEstimate = (film as any).projectedOpeningHigh || 0;
+                  // Genre multipliers for expected opening
+                  const genreMultipliers: Record<string, number> = {
+                    'action': 0.45, 'scifi': 0.40, 'animation': 0.35, 'fantasy': 0.38,
+                    'horror': 0.55, 'comedy': 0.30, 'thriller': 0.28, 'drama': 0.15,
+                    'romance': 0.20, 'musicals': 0.25
+                  };
+                  const genreMultiplier = genreMultipliers[film.genre] || 0.25;
+                  
+                  // Marketing boost (up to 50% more)
+                  const marketingBoost = marketingBudget > 0 ? 1 + (marketingBudget / totalBudget) * 0.5 : 1;
+                  
+                  // Sequel boost (25-40%)
+                  const isSequel = film.title.match(/\s[2-9]$|\sII|III|IV|Part\s/i) !== null;
+                  const sequelBoost = isSequel ? 1.3 : 1;
+                  
+                  // Calculate base projection
+                  let baseProjection = totalBudget * genreMultiplier * marketingBoost * sequelBoost;
+                  
+                  // Add ±20% variance for display range
+                  const lowEstimate = Math.floor(baseProjection * 0.75);
+                  const highEstimate = Math.floor(baseProjection * 1.25);
                   
                   // Calculate weeks until release
                   const filmWeekNum = (film.releaseYear || state.currentYear) * 52 + (film.releaseWeek || state.currentWeek);

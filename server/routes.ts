@@ -2209,28 +2209,6 @@ const awardTiers = {
   majorAwards: ['Best Screenplay', 'Best Acting', 'Best Visual Effects', 'Best Score'],
 };
 
-// Calculate the total weeks from creation to release for AI films
-// This is the single source of truth for AI film release date calculation
-function calculateAIFilmTotalProductionWeeks(phaseDurations: { devWeeks: number; preWeeks: number; prodWeeks: number; postWeeks: number }): number {
-  const { devWeeks, preWeeks, prodWeeks, postWeeks } = phaseDurations;
-  // AI films go through: development → pre-production → production → post-production → released
-  // No intermediate phases like awaiting-greenlight or filmed
-  return devWeeks + preWeeks + prodWeeks + postWeeks;
-}
-
-// Calculate release week and year from a starting point
-function calculateReleaseDate(startWeek: number, startYear: number, totalWeeks: number): { releaseWeek: number; releaseYear: number } {
-  let releaseWeek = startWeek + totalWeeks;
-  let releaseYear = startYear;
-  
-  while (releaseWeek > 52) {
-    releaseWeek -= 52;
-    releaseYear += 1;
-  }
-  
-  return { releaseWeek, releaseYear };
-}
-
 // Calculate production phase durations based on genre and VFX needs
 function calculatePhaseDurations(genre: string, productionBudget: number, hasVFX: boolean = false) {
   const devWeeks = 4; // Always 4 weeks for development
@@ -2396,22 +2374,18 @@ export async function registerRoutes(
 
   app.post("/api/studio/new", async (req, res) => {
     try {
-      const { name, deviceId, startingYear } = req.body;
+      const { name, deviceId } = req.body;
       if (!name || typeof name !== 'string') {
         return res.status(400).json({ error: "Invalid studio name" });
       }
       const actualDeviceId = deviceId || "default-device";
-      // Use the starting year provided, default to 2024
-      // Studios start at week 1 of the PREVIOUS year, then preload advances them to week 1 of startingYear
-      const actualStartingYear = startingYear || 2024;
-      const preloadStartYear = actualStartingYear - 1;
 
       const newStudio = await storage.createStudio({
         deviceId: actualDeviceId,
         name: name.trim(),
         budget: 150000000,
         currentWeek: 1,
-        currentYear: preloadStartYear,
+        currentYear: 2025,
         prestigeLevel: 1,
         totalEarnings: 0,
         totalAwards: 0,
@@ -2426,7 +2400,7 @@ export async function registerRoutes(
           name: aiStudioNames[i],
           budget: budgets[i],
           currentWeek: 1,
-          currentYear: preloadStartYear,
+          currentYear: 2025,
           prestigeLevel: 1,
           totalEarnings: 0,
           totalAwards: 0,
@@ -2456,10 +2430,6 @@ export async function registerRoutes(
 
       let currentWeek = studio.currentWeek;
       let currentYear = studio.currentYear;
-      
-      // Cache static data once at the start (they don't change during preload)
-      const allTerritories = await storage.getAllTerritories();
-      const allStreamingServices = await storage.getAllStreamingServices();
 
       // Simulate multiple weeks to generate box office data
       for (let i = 0; i < weeks; i++) {
@@ -2469,7 +2439,7 @@ export async function registerRoutes(
           currentYear += 1;
         }
 
-        // Get AI studios associated with this save (refresh each iteration as budgets change)
+        // Get AI studios associated with this save
         const allStudios = await storage.getAllStudios();
         const aiStudios = allStudios.filter(s => s.isAI && s.playerGameId === id);
         const allFilms = await storage.getAllFilms();
@@ -2484,105 +2454,84 @@ export async function registerRoutes(
             let newWeeksInPhase = (film.weeksInCurrentPhase || 0) + 1;
             let newPhase = film.phase;
             
-            // Phase durations for time-based transitions
-            const phaseDurations: Record<string, number> = {
-              'development': film.developmentDurationWeeks || 2,
-              'awaiting-greenlight': 999999, // Waits for talent hire
-              'pre-production': film.preProductionDurationWeeks || 2,
-              'production': film.productionDurationWeeks || 4,
-              'filmed': 999999, // Waits for post-production edit
-              'post-production': film.postProductionDurationWeeks || 2,
-            };
+            // DEBUG: Log Jack Hammer in detail
+            if (film.title === 'Jack Hammer') {
+              console.log(`[JACK-DEBUG] Current phase: ${film.phase}, weeks in phase: ${film.weeksInCurrentPhase}, new weeks: ${newWeeksInPhase}`);
+            }
             
-            // Loop to allow multiple phase transitions in a single iteration (for AI films)
-            let transitioned = true;
-            while (transitioned) {
-              transitioned = false;
+            // Special check: Awaiting greenlight transitions when talent is hired (regardless of time)
+            if (film.phase === 'awaiting-greenlight' && film.hasHiredTalent) {
+              console.log(`[PHASE-TRANSITION] ${film.title} transitioning from awaiting-greenlight to pre-production (hasHiredTalent=${film.hasHiredTalent})`);
+              newPhase = 'pre-production';
+              newWeeksInPhase = 0;
+            }
+            else if (film.phase === 'awaiting-greenlight') {
+              console.log(`[PHASE-CHECK] ${film.title} stuck in awaiting-greenlight (hasHiredTalent=${film.hasHiredTalent})`);
+            }
+            // Special check: Production transitions to filmed when production weeks are complete
+            else if (film.phase === 'production' && newWeeksInPhase >= (film.productionDurationWeeks || 4)) {
+              console.log(`[PHASE-TRANSITION] ${film.title} transitioning from production to filmed (weeks: ${newWeeksInPhase} >= ${film.productionDurationWeeks || 4})`);
+              newPhase = 'filmed';
+              newWeeksInPhase = 0;
+            }
+            // Special check: Filmed transitions when edit is complete (regardless of time)
+            else if (film.phase === 'filmed' && film.hasEditedPostProduction) {
+              console.log(`[PHASE-TRANSITION] ${film.title} transitioning from filmed to post-production (hasEditedPostProduction=${film.hasEditedPostProduction})`);
+              newPhase = 'post-production';
+              newWeeksInPhase = 0;
+            }
+            else if (film.phase === 'filmed') {
+              console.log(`[PHASE-CHECK] ${film.title} stuck in filmed (hasEditedPostProduction=${film.hasEditedPostProduction})`);
+            }
+            // Time-based phase transitions
+            else {
+              // Check if should advance to next phase
+              const phaseDurations: Record<string, number> = {
+                'development': film.developmentDurationWeeks || 2,
+                'awaiting-greenlight': 999999, // Awaiting greenlight has no time duration - waits for talent hire
+                'pre-production': film.preProductionDurationWeeks || 2,
+                'production': film.productionDurationWeeks || 4,
+                'filmed': 999999, // Filmed phase waits for post-production edit
+                'post-production': film.postProductionDurationWeeks || 2,
+              };
               
-              // Time-based: Development → Awaiting-greenlight
-              if (newPhase === 'development' && newWeeksInPhase > phaseDurations['development']) {
-                newPhase = 'awaiting-greenlight';
-                newWeeksInPhase = 0;
-                transitioned = true;
+              if (film.title === 'Jack Hammer') {
+                console.log(`[JACK-DEBUG] Phase durations check: ${film.phase} has duration ${phaseDurations[film.phase]}, checking: ${newWeeksInPhase} > ${phaseDurations[film.phase]} = ${newWeeksInPhase > phaseDurations[film.phase]}`);
               }
               
-              // Condition-based: Awaiting-greenlight → Pre-production (when talent hired)
-              if (newPhase === 'awaiting-greenlight' && film.hasHiredTalent) {
-                newPhase = 'pre-production';
-                newWeeksInPhase = 0;
-                transitioned = true;
-              }
-              
-              // Time-based: Pre-production → Production
-              if (newPhase === 'pre-production' && newWeeksInPhase > phaseDurations['pre-production']) {
-                newPhase = 'production';
-                newWeeksInPhase = 0;
-                transitioned = true;
-              }
-              
-              // Time-based: Production → Filmed
-              if (newPhase === 'production' && newWeeksInPhase > phaseDurations['production']) {
-                newPhase = 'filmed';
-                newWeeksInPhase = 0;
-                transitioned = true;
-              }
-              
-              // Condition-based: Filmed → Post-production (when edit complete)
-              if (newPhase === 'filmed' && film.hasEditedPostProduction) {
-                newPhase = 'post-production';
-                newWeeksInPhase = 0;
-                transitioned = true;
-              }
-              
-              // Time-based: Post-production → Production-complete
-              if (newPhase === 'post-production' && newWeeksInPhase > phaseDurations['post-production']) {
-                newPhase = 'production-complete';
-                newWeeksInPhase = 0;
-                transitioned = true;
+              if (newWeeksInPhase > phaseDurations[film.phase]) {
+                // Development phase: advance to awaiting-greenlight
+                if (film.phase === 'development') {
+                  newPhase = 'awaiting-greenlight';
+                  newWeeksInPhase = 0;
+                }
+                // Pre-production to production
+                else if (film.phase === 'pre-production') {
+                  newPhase = 'production';
+                  newWeeksInPhase = 0;
+                }
+                // Production to filmed
+                else if (film.phase === 'production') {
+                  if (film.title === 'Jack Hammer') {
+                    console.log(`[JACK-DEBUG] TRANSITIONING FROM PRODUCTION TO FILMED`);
+                  }
+                  newPhase = 'filmed';
+                  newWeeksInPhase = 0;
+                }
+                // Post-production to production-complete
+                else if (film.phase === 'post-production') {
+                  newPhase = 'production-complete';
+                  newWeeksInPhase = 0;
+                }
               }
             }
             
             // Check if production-complete films have territory releases scheduled
             if (film.phase === 'production-complete' || newPhase === 'production-complete') {
-              const filmStudio = allStudios.find(s => s.id === film.studioId);
-              const isAIFilm = filmStudio?.isAI === true;
-              
-              // For AI films in production-complete during preload, schedule releases and release immediately
-              if (isAIFilm) {
-                const existingReleases = await storage.getFilmReleasesByFilm(film.id);
-                if (existingReleases.length === 0) {
-                  // Schedule releases for THIS week so they can be released in the same iteration
-                  const releaseWeek = currentWeek;
-                  const releaseYear = currentYear;
-                  
-                  // Use cached allTerritories from preload start
-                  await Promise.all(allTerritories.map(territory =>
-                    storage.createFilmRelease({
-                      filmId: film.id,
-                      territoryId: territory.id,
-                      releaseWeek,
-                      releaseYear,
-                      isReleased: false,
-                      weeklyBoxOffice: [],
-                      totalBoxOffice: 0,
-                    })
-                  ));
-                  
-                  await storage.updateFilm(film.id, {
-                    releaseWeek,
-                    releaseYear,
-                  });
-                }
-                // AI films go directly to awaiting-release
+              const releases = await storage.getFilmReleasesByFilm(film.id);
+              if (releases && releases.length > 0) {
                 newPhase = 'awaiting-release';
                 newWeeksInPhase = 0;
-              } else {
-                // Player films check for existing releases
-                const releases = await storage.getFilmReleasesByFilm(film.id);
-                if (releases && releases.length > 0) {
-                  newPhase = 'awaiting-release';
-                  newWeeksInPhase = 0;
-                }
               }
             }
             
@@ -2593,111 +2542,8 @@ export async function registerRoutes(
           }
         }
 
-        // Handle awaiting-release films - release them when their release date arrives (preload)
-        // Re-fetch films to get updated phases after transitions above
-        const refreshedFilms = await storage.getAllFilms();
-        const refreshedSaveFilms = refreshedFilms.filter(f => {
-          const filmStudio = allStudios.find(s => s.id === f.studioId);
-          return filmStudio && (filmStudio.id === id || filmStudio.playerGameId === id);
-        });
-        const awaitingReleaseFilms = refreshedSaveFilms.filter(f => f.phase === 'awaiting-release');
-        console.log(`[PRELOAD-DEBUG] Week ${currentWeek}/${currentYear}: Found ${awaitingReleaseFilms.length} awaiting-release films`);
-        for (const film of awaitingReleaseFilms) {
-          const releases = await storage.getFilmReleasesByFilm(film.id);
-          console.log(`[PRELOAD-DEBUG] Film "${film.title}" has ${releases?.length || 0} territory releases`);
-          if (releases && releases.length > 0) {
-            // Find earliest release date
-            let earliestWeek = releases[0].releaseWeek;
-            let earliestYear = releases[0].releaseYear;
-            for (const release of releases) {
-              const releaseNum = release.releaseYear * 52 + release.releaseWeek;
-              const earliestNum = earliestYear * 52 + earliestWeek;
-              if (releaseNum < earliestNum) {
-                earliestWeek = release.releaseWeek;
-                earliestYear = release.releaseYear;
-              }
-            }
-            
-            // Check if release date has arrived
-            const currentWeekNum = currentYear * 52 + currentWeek;
-            const releaseWeekNum = earliestYear * 52 + earliestWeek;
-            console.log(`[PRELOAD-DEBUG] Film "${film.title}" release check: current=${currentWeekNum}, release=${releaseWeekNum}, shouldRelease=${currentWeekNum >= releaseWeekNum}`);
-            
-            if (currentWeekNum >= releaseWeekNum) {
-              const filmStudio = allStudios.find(s => s.id === film.studioId);
-              const isAIFilm = filmStudio?.isAI === true;
-              
-              if (isAIFilm) {
-                // Calculate opening weekend for AI film
-                const qualityFactor = (film.scriptQuality || 70) / 100;
-                const budgetFactor = Math.min(1, (film.productionBudget || 50000000) / 100000000);
-                const qualityBoost = ((film.scriptQuality || 70) - 80) * 0.35;
-                const randomBase = 55 + Math.random() * 15;
-                const audienceSwing = (Math.random() - 0.5) * 15;
-                
-                let genreBonus = 0;
-                let audienceGenreBonus = 0;
-                if (film.genre === 'drama') { genreBonus = 10; audienceGenreBonus = -5; }
-                else if (film.genre === 'action') { genreBonus = -5; audienceGenreBonus = 7; }
-                else if (film.genre === 'comedy') { genreBonus = -3; audienceGenreBonus = 0; }
-                else if (film.genre === 'horror') { genreBonus = -5; audienceGenreBonus = 3; }
-                else if (film.genre === 'scifi') { genreBonus = 0; audienceGenreBonus = 4; }
-                else if (film.genre === 'animation') { genreBonus = 0; audienceGenreBonus = 5; }
-                else if (film.genre === 'fantasy') { genreBonus = -3; audienceGenreBonus = 5; }
-                else if (film.genre === 'musicals') { genreBonus = 5; audienceGenreBonus = 2; }
-                else if (film.genre === 'romance') { genreBonus = 5; audienceGenreBonus = 2; }
-                else if (film.genre === 'thriller') { genreBonus = 3; audienceGenreBonus = 5; }
-                
-                const rawCriticScore = randomBase + qualityBoost + genreBonus;
-                const rawAudienceScore = randomBase + audienceSwing + qualityBoost + audienceGenreBonus;
-                const criticScore = Math.min(100, Math.max(20, Math.floor(rawCriticScore)));
-                const audienceScore = Math.min(10, Math.max(2, Math.round((rawAudienceScore / 10) * 10) / 10));
-                
-                const investmentBudget = film.totalBudget || film.productionBudget || 50000000;
-                const marketingMultiplier = Math.min(2.0, (film.marketingBudget || 0) / (investmentBudget || 1));
-                
-                let genreBoxOfficeMultiplier = 1.0;
-                if (film.genre === 'action') genreBoxOfficeMultiplier = 1.3;
-                else if (film.genre === 'scifi') genreBoxOfficeMultiplier = 1.2;
-                else if (film.genre === 'comedy') genreBoxOfficeMultiplier = 0.9;
-                else if (film.genre === 'drama') genreBoxOfficeMultiplier = 0.8;
-                else if (film.genre === 'animation') genreBoxOfficeMultiplier = 1.1;
-                
-                const audienceBoost = audienceScore >= 7.0 ? (1.0 + Math.random() * 1.0) : (0.7 + Math.random() * 0.3);
-                const clampedBudget = clampInvestmentBudgetByGenre(investmentBudget, film.genre);
-                const randomLuck = 0.5 + Math.random() * 0.8;
-                const qualityMultiplier = 0.5 + qualityFactor * 0.8;
-                const baseOpening = clampedBudget * randomLuck * marketingMultiplier * qualityMultiplier * genreBoxOfficeMultiplier * audienceBoost;
-                const openingWeekend = Math.floor(baseOpening);
-                
-                // Update film to released
-                await storage.updateFilm(film.id, {
-                  phase: 'released',
-                  weeksInCurrentPhase: 0,
-                  criticScore,
-                  audienceScore,
-                  weeklyBoxOffice: [openingWeekend],
-                  totalBoxOffice: openingWeekend,
-                  releaseWeek: earliestWeek,
-                  releaseYear: earliestYear,
-                } as any);
-                
-                // Mark territory releases as released
-                await Promise.all(releases.map(release => 
-                  storage.updateFilmRelease(release.id, { isReleased: true })
-                ));
-              }
-            }
-          }
-        }
-
         // Handle box office for all released films (only for this save)
-        // Re-fetch films to get updated phases
-        const updatedSaveFilms = (await storage.getAllFilms()).filter(f => {
-          const filmStudio = allStudios.find(s => s.id === f.studioId);
-          return filmStudio && (filmStudio.id === id || filmStudio.playerGameId === id);
-        });
-        const saveReleasedFilms = updatedSaveFilms.filter(f => f.phase === 'released' && f.weeklyBoxOffice.length > 0 && f.weeklyBoxOffice.length < 24);
+        const saveReleasedFilms = saveFilms.filter(f => f.phase === 'released' && f.weeklyBoxOffice.length > 0 && f.weeklyBoxOffice.length < 24);
         for (const film of saveReleasedFilms) {
           const lastWeek = film.weeklyBoxOffice[film.weeklyBoxOffice.length - 1];
           
@@ -2841,10 +2687,17 @@ export async function registerRoutes(
               // Generate phase durations based on genre and production needs
               const phaseDurations = calculatePhaseDurations(genre, Math.floor(prodBudget), false);
               const { devWeeks, preWeeks, prodWeeks, postWeeks } = phaseDurations;
+              // CRITICAL: Include awaiting-greenlight (1 week) and filmed (1 week) phases!
+              // Add 2 weeks to account for the additional release week
+              const totalWeeks = devWeeks + 1 + preWeeks + prodWeeks + 1 + postWeeks + 2;
               
-              // Use centralized function for release date calculation
-              const totalWeeks = calculateAIFilmTotalProductionWeeks(phaseDurations);
-              const { releaseWeek, releaseYear } = calculateReleaseDate(currentWeek, currentYear, totalWeeks);
+              // Calculate release date based on creation + total weeks
+              let releaseWeek = currentWeek + totalWeeks;
+              let releaseYear = currentYear;
+              if (releaseWeek > 52) {
+                releaseYear += Math.floor(releaseWeek / 52);
+                releaseWeek = ((releaseWeek - 1) % 52) + 1;
+              }
 
               const newFilm = await storage.createFilm({
                 studioId: aiStudio.id,
@@ -2943,8 +2796,9 @@ export async function registerRoutes(
               
               const episodesPerSeason = tvGenre === 'animation' ? 10 : (8 + Math.floor(Math.random() * 5));
               
-              // Pick a streaming service for this AI show (use cached services)
-              const targetService = allStreamingServices[Math.floor(Math.random() * allStreamingServices.length)];
+              // Pick a streaming service for this AI show
+              const services = await storage.getAllStreamingServices();
+              const targetService = services[Math.floor(Math.random() * services.length)];
               
               const newTVShow = await storage.createTVShow({
                 studioId: aiStudio.id,
@@ -4283,10 +4137,16 @@ export async function registerRoutes(
             // Generate phase durations based on genre and production needs
             const phaseDurations = calculatePhaseDurations(genre, Math.floor(prodBudget), false);
             const { devWeeks, preWeeks, prodWeeks, postWeeks } = phaseDurations;
+            // CRITICAL: Include awaiting-greenlight (1 week) and filmed (1 week) phases!
+            const totalWeeks = devWeeks + 1 + preWeeks + prodWeeks + 1 + postWeeks;
             
-            // Use centralized function for release date calculation
-            const totalWeeks = calculateAIFilmTotalProductionWeeks(phaseDurations);
-            const { releaseWeek, releaseYear } = calculateReleaseDate(aiNewWeek, aiNewYear, totalWeeks);
+            // Calculate release date based on creation + total weeks
+            let releaseWeek = aiNewWeek + totalWeeks;
+            let releaseYear = aiNewYear;
+            if (releaseWeek > 52) {
+              releaseYear += Math.floor(releaseWeek / 52);
+              releaseWeek = ((releaseWeek - 1) % 52) + 1;
+            }
 
             try {
               const newFilm = await storage.createFilm({
@@ -4655,20 +4515,6 @@ export async function registerRoutes(
       
       console.log(`[ALL-FILMS] Player: ${playerId}, gameSessionId: ${playerStudio.gameSessionId}, gameStudios: ${gameStudios.length}, totalFilms: ${allFilms.length}, filteredFilms: ${filtered.length}`);
       
-      // Fix totalBudget for AI films - should be production + departments, not including marketing
-      // This corrects existing films that had inflated totalBudget values
-      for (const film of filtered) {
-        const filmStudio = allStudios.find(s => s.id === film.studioId);
-        if (filmStudio?.isAI) {
-          // Recalculate totalBudget as production + departments (no marketing)
-          const correctTotalBudget = (film.productionBudget || 0) + 
-            (film.setsBudget || 0) + (film.costumesBudget || 0) + 
-            (film.stuntsBudget || 0) + (film.makeupBudget || 0) + 
-            (film.practicalEffectsBudget || 0) + (film.soundCrewBudget || 0);
-          film.totalBudget = correctTotalBudget;
-        }
-      }
-      
       // Enrich films with lead/supporting actor info for Oscar predictions
       const enrichedFilms = await Promise.all(filtered.map(async (film) => {
         const roles = await storage.getFilmRolesByFilm(film.id);
@@ -4697,60 +4543,12 @@ export async function registerRoutes(
           }
         }
         
-        // Calculate opening weekend projection using exact same formula as release
-        // but with average values for random components
-        let projectedOpeningLow = 0;
-        let projectedOpeningHigh = 0;
-        
-        if (film.phase !== 'released') {
-          // Simplified projection: budget × base multiplier × adjustments
-          const budget = film.totalBudget || film.productionBudget || 50000000;
-          const scriptQuality = film.scriptQuality || 70;
-          
-          // Base multiplier: films typically open at 2-3x their budget
-          let multiplier = 2.5;
-          
-          // Marketing adjustment: if marketing is set and substantial, boost projection
-          const marketingBudget = film.marketingBudget || 0;
-          if (marketingBudget > budget * 0.5) {
-            multiplier += 0.5; // Good marketing adds 0.5x
-          }
-          if (marketingBudget > budget) {
-            multiplier += 0.3; // Excellent marketing adds another 0.3x
-          }
-          
-          // Quality adjustment
-          if (scriptQuality >= 80) {
-            multiplier += 0.5; // Great script
-          } else if (scriptQuality >= 70) {
-            multiplier += 0.2; // Good script
-          } else if (scriptQuality < 60) {
-            multiplier -= 0.5; // Poor script
-          }
-          
-          // Genre adjustment
-          if (film.genre === 'action') multiplier += 0.4;
-          else if (film.genre === 'scifi') multiplier += 0.3;
-          else if (film.genre === 'animation') multiplier += 0.2;
-          else if (film.genre === 'horror') multiplier += 0.3;
-          else if (film.genre === 'drama') multiplier -= 0.3;
-          
-          // Calculate base projection
-          const baseProjection = budget * multiplier;
-          
-          // Apply ±25% range
-          projectedOpeningLow = Math.floor(baseProjection * 0.75);
-          projectedOpeningHigh = Math.floor(baseProjection * 1.25);
-        }
-        
         return {
           ...film,
           leadActorId,
           leadActressId,
           supportingActorId,
           supportingActressId,
-          projectedOpeningLow,
-          projectedOpeningHigh,
         };
       }));
       
@@ -4794,29 +4592,37 @@ export async function registerRoutes(
             continue;
           }
           
-          // AI films - ALWAYS recalculate release date based on current phase and remaining weeks
-          // This ensures the calendar shows accurate release dates as films progress through production
-          // AI films go through: development → pre-production → production → post-production → released
-          let totalRemainingWeeks = 0;
-          
-          if (film.phase === 'development') {
-            totalRemainingWeeks = (film.developmentDurationWeeks - film.weeksInCurrentPhase) + 
-              film.preProductionDurationWeeks + film.productionDurationWeeks + film.postProductionDurationWeeks;
-          } else if (film.phase === 'pre-production') {
-            totalRemainingWeeks = (film.preProductionDurationWeeks - film.weeksInCurrentPhase) + 
-              film.productionDurationWeeks + film.postProductionDurationWeeks;
-          } else if (film.phase === 'production') {
-            totalRemainingWeeks = (film.productionDurationWeeks - film.weeksInCurrentPhase) + 
-              film.postProductionDurationWeeks;
-          } else if (film.phase === 'post-production') {
-            totalRemainingWeeks = film.postProductionDurationWeeks - film.weeksInCurrentPhase;
-          }
-          
-          // Calculate release date from current week + remaining weeks
-          const { releaseWeek, releaseYear } = calculateReleaseDate(currentWeek, currentYear, Math.max(totalRemainingWeeks, 1));
-          
-          // Update film if release date changed
-          if (film.releaseWeek !== releaseWeek || film.releaseYear !== releaseYear) {
+          // AI films - only calculate release date if not already set
+          // Once set at creation time, the release date should NOT change
+          // This prevents films from randomly moving to current week
+          if (!film.releaseWeek || !film.releaseYear) {
+            // Phases: development → awaiting-greenlight(1) → pre-production → production → filmed(1) → post-production → production-complete(1) → awaiting-release(1) → released
+            let totalRemainingWeeks = 0;
+            
+            if (film.phase === 'development') {
+              totalRemainingWeeks = (film.developmentDurationWeeks - film.weeksInCurrentPhase) + 1 + film.preProductionDurationWeeks + film.productionDurationWeeks + 1 + film.postProductionDurationWeeks + 1 + 1;
+            } else if (film.phase === 'awaiting-greenlight') {
+              totalRemainingWeeks = (1 - film.weeksInCurrentPhase) + film.preProductionDurationWeeks + film.productionDurationWeeks + 1 + film.postProductionDurationWeeks + 1 + 1;
+            } else if (film.phase === 'pre-production') {
+              totalRemainingWeeks = (film.preProductionDurationWeeks - film.weeksInCurrentPhase) + film.productionDurationWeeks + 1 + film.postProductionDurationWeeks + 1 + 1;
+            } else if (film.phase === 'production') {
+              totalRemainingWeeks = (film.productionDurationWeeks - film.weeksInCurrentPhase) + 1 + film.postProductionDurationWeeks + 1 + 1;
+            } else if (film.phase === 'filmed') {
+              totalRemainingWeeks = (1 - film.weeksInCurrentPhase) + film.postProductionDurationWeeks + 1 + 1;
+            } else if (film.phase === 'post-production') {
+              totalRemainingWeeks = (film.postProductionDurationWeeks - film.weeksInCurrentPhase) + 1 + 1;
+            } else if (film.phase === 'production-complete') {
+              totalRemainingWeeks = (1 - film.weeksInCurrentPhase) + 1;
+            } else if (film.phase === 'awaiting-release') {
+              totalRemainingWeeks = 1 - film.weeksInCurrentPhase;
+            }
+            
+            let releaseWeek = currentWeek + Math.max(totalRemainingWeeks, 1);
+            let releaseYear = currentYear;
+            if (releaseWeek > 52) {
+              releaseYear += Math.floor(releaseWeek / 52);
+              releaseWeek = ((releaseWeek - 1) % 52) + 1;
+            }
             await storage.updateFilm(film.id, { releaseWeek, releaseYear });
             film.releaseWeek = releaseWeek;
             film.releaseYear = releaseYear;
