@@ -2604,7 +2604,13 @@ export async function registerRoutes(
         }
 
         // Handle awaiting-release films - release them when their release date arrives (preload)
-        const awaitingReleaseFilms = saveFilms.filter(f => f.phase === 'awaiting-release');
+        // Re-fetch films to get updated phases after transitions above
+        const refreshedFilms = await storage.getAllFilms();
+        const refreshedSaveFilms = refreshedFilms.filter(f => {
+          const filmStudio = allStudios.find(s => s.id === f.studioId);
+          return filmStudio && (filmStudio.id === id || filmStudio.playerGameId === id);
+        });
+        const awaitingReleaseFilms = refreshedSaveFilms.filter(f => f.phase === 'awaiting-release');
         for (const film of awaitingReleaseFilms) {
           const releases = await storage.getFilmReleasesByFilm(film.id);
           if (releases && releases.length > 0) {
