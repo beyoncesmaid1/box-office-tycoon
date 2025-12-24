@@ -2480,75 +2480,61 @@ export async function registerRoutes(
             let newWeeksInPhase = (film.weeksInCurrentPhase || 0) + 1;
             let newPhase = film.phase;
             
-            // DEBUG: Log Jack Hammer in detail
-            if (film.title === 'Jack Hammer') {
-              console.log(`[JACK-DEBUG] Current phase: ${film.phase}, weeks in phase: ${film.weeksInCurrentPhase}, new weeks: ${newWeeksInPhase}`);
-            }
+            // Phase durations for time-based transitions
+            const phaseDurations: Record<string, number> = {
+              'development': film.developmentDurationWeeks || 2,
+              'awaiting-greenlight': 999999, // Waits for talent hire
+              'pre-production': film.preProductionDurationWeeks || 2,
+              'production': film.productionDurationWeeks || 4,
+              'filmed': 999999, // Waits for post-production edit
+              'post-production': film.postProductionDurationWeeks || 2,
+            };
             
-            // Special check: Awaiting greenlight transitions when talent is hired (regardless of time)
-            if (film.phase === 'awaiting-greenlight' && film.hasHiredTalent) {
-              console.log(`[PHASE-TRANSITION] ${film.title} transitioning from awaiting-greenlight to pre-production (hasHiredTalent=${film.hasHiredTalent})`);
-              newPhase = 'pre-production';
-              newWeeksInPhase = 0;
-            }
-            else if (film.phase === 'awaiting-greenlight') {
-              console.log(`[PHASE-CHECK] ${film.title} stuck in awaiting-greenlight (hasHiredTalent=${film.hasHiredTalent})`);
-            }
-            // Special check: Production transitions to filmed when production weeks are complete
-            else if (film.phase === 'production' && newWeeksInPhase >= (film.productionDurationWeeks || 4)) {
-              console.log(`[PHASE-TRANSITION] ${film.title} transitioning from production to filmed (weeks: ${newWeeksInPhase} >= ${film.productionDurationWeeks || 4})`);
-              newPhase = 'filmed';
-              newWeeksInPhase = 0;
-            }
-            // Special check: Filmed transitions when edit is complete (regardless of time)
-            else if (film.phase === 'filmed' && film.hasEditedPostProduction) {
-              console.log(`[PHASE-TRANSITION] ${film.title} transitioning from filmed to post-production (hasEditedPostProduction=${film.hasEditedPostProduction})`);
-              newPhase = 'post-production';
-              newWeeksInPhase = 0;
-            }
-            else if (film.phase === 'filmed') {
-              console.log(`[PHASE-CHECK] ${film.title} stuck in filmed (hasEditedPostProduction=${film.hasEditedPostProduction})`);
-            }
-            // Time-based phase transitions
-            else {
-              // Check if should advance to next phase
-              const phaseDurations: Record<string, number> = {
-                'development': film.developmentDurationWeeks || 2,
-                'awaiting-greenlight': 999999, // Awaiting greenlight has no time duration - waits for talent hire
-                'pre-production': film.preProductionDurationWeeks || 2,
-                'production': film.productionDurationWeeks || 4,
-                'filmed': 999999, // Filmed phase waits for post-production edit
-                'post-production': film.postProductionDurationWeeks || 2,
-              };
+            // Loop to allow multiple phase transitions in a single iteration (for AI films)
+            let transitioned = true;
+            while (transitioned) {
+              transitioned = false;
               
-              if (film.title === 'Jack Hammer') {
-                console.log(`[JACK-DEBUG] Phase durations check: ${film.phase} has duration ${phaseDurations[film.phase]}, checking: ${newWeeksInPhase} > ${phaseDurations[film.phase]} = ${newWeeksInPhase > phaseDurations[film.phase]}`);
+              // Time-based: Development → Awaiting-greenlight
+              if (newPhase === 'development' && newWeeksInPhase > phaseDurations['development']) {
+                newPhase = 'awaiting-greenlight';
+                newWeeksInPhase = 0;
+                transitioned = true;
               }
               
-              if (newWeeksInPhase > phaseDurations[film.phase]) {
-                // Development phase: advance to awaiting-greenlight
-                if (film.phase === 'development') {
-                  newPhase = 'awaiting-greenlight';
-                  newWeeksInPhase = 0;
-                }
-                // Pre-production to production
-                else if (film.phase === 'pre-production') {
-                  newPhase = 'production';
-                  newWeeksInPhase = 0;
-                }
-                // Production to filmed
-                else if (film.phase === 'production') {
-                  if (film.title === 'Jack Hammer') {
-                    console.log(`[JACK-DEBUG] TRANSITIONING FROM PRODUCTION TO FILMED`);
-                  }
-                  newPhase = 'filmed';
-                  newWeeksInPhase = 0;
-                }
-                // Post-production to production-complete
-                else if (film.phase === 'post-production') {
-                  newPhase = 'production-complete';
-                  newWeeksInPhase = 0;
-                }
+              // Condition-based: Awaiting-greenlight → Pre-production (when talent hired)
+              if (newPhase === 'awaiting-greenlight' && film.hasHiredTalent) {
+                newPhase = 'pre-production';
+                newWeeksInPhase = 0;
+                transitioned = true;
+              }
+              
+              // Time-based: Pre-production → Production
+              if (newPhase === 'pre-production' && newWeeksInPhase > phaseDurations['pre-production']) {
+                newPhase = 'production';
+                newWeeksInPhase = 0;
+                transitioned = true;
+              }
+              
+              // Time-based: Production → Filmed
+              if (newPhase === 'production' && newWeeksInPhase > phaseDurations['production']) {
+                newPhase = 'filmed';
+                newWeeksInPhase = 0;
+                transitioned = true;
+              }
+              
+              // Condition-based: Filmed → Post-production (when edit complete)
+              if (newPhase === 'filmed' && film.hasEditedPostProduction) {
+                newPhase = 'post-production';
+                newWeeksInPhase = 0;
+                transitioned = true;
+              }
+              
+              // Time-based: Post-production → Production-complete
+              if (newPhase === 'post-production' && newWeeksInPhase > phaseDurations['post-production']) {
+                newPhase = 'production-complete';
+                newWeeksInPhase = 0;
+                transitioned = true;
               }
             }
             
