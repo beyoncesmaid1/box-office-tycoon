@@ -80,10 +80,16 @@ async function loadWeekSaveCache(playerStudioId: string): Promise<WeekSaveCache>
   ]);
 
   const cache = new WeekSaveCache(playerStudioId);
+  const saveFilmIds = new Set(filmIds);
+  const saveTalent = talent.map(candidate =>
+    candidate.currentFilmId && !saveFilmIds.has(candidate.currentFilmId)
+      ? { ...candidate, currentFilmId: null, busyUntilWeek: null, busyUntilYear: null }
+      : candidate
+  );
   cache.hydrateCollections({
     studios: relevantStudios,
     films,
-    talent,
+    talent: saveTalent,
     filmReleases,
     filmRoles,
     marketingActions,

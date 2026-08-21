@@ -3250,7 +3250,14 @@ export async function registerRoutes(
           candidate.type === type &&
           !used.has(candidate.id) &&
           (talentBusyUntil.get(candidate.id) || 0) <= creationAbsolute
-        );
+        ).map(candidate => ({
+          ...candidate,
+          // Talent busy state belongs to another save surprisingly often because
+          // talent is shared globally. Preload tracks this save's bookings above.
+          currentFilmId: null,
+          busyUntilWeek: null,
+          busyUntilYear: null,
+        }));
         return selectTalentCandidate(candidates, {
           genre,
           role,
@@ -3304,23 +3311,30 @@ export async function registerRoutes(
           const departmentBudget = setsBudget + costumesBudget + stuntsBudget + makeupBudget +
             practicalEffectsBudget + soundCrewBudget;
 
-          const usedTalent = new Set<string>();
-          let remainingTalentBudget = Math.max(5_000_000, Math.min(availableBudget * 0.25, prodBudget * 0.65));
-          const director = chooseTalent("director", "director", genre, profile, remainingTalentBudget, usedTalent, creationAbsolute);
-          if (director) { usedTalent.add(director.id); remainingTalentBudget -= Number(director.askingPrice || 5_000_000); }
-          const writer = chooseTalent("writer", "writer", genre, profile, remainingTalentBudget, usedTalent, creationAbsolute);
-          if (writer) { usedTalent.add(writer.id); remainingTalentBudget -= Number(writer.askingPrice || 5_000_000); }
-          const composer = chooseTalent("composer", "composer", genre, profile, remainingTalentBudget, usedTalent, creationAbsolute);
-          if (composer) { usedTalent.add(composer.id); remainingTalentBudget -= Number(composer.askingPrice || 3_000_000); }
           const castCount = genre === "action" ? 6 : genre === "animation" ? 5 : 4;
+          const usedTalent = new Set<string>();
+          const availableAfterProduction = Math.max(0, availableBudget - prodBudget - departmentBudget);
+          const plannedTalentBudget = Math.max(
+            12_000_000 + castCount * 4_000_000,
+            Math.min(availableBudget * 0.22, Math.max(30_000_000, prodBudget * 0.65)),
+          );
+          let remainingTalentBudget = Math.min(availableAfterProduction, plannedTalentBudget);
+          const director = chooseTalent("director", "director", genre, profile, remainingTalentBudget * 0.32, usedTalent, creationAbsolute);
+          if (director) { usedTalent.add(director.id); remainingTalentBudget -= Number(director.askingPrice || 5_000_000); }
+          const writer = chooseTalent("writer", "writer", genre, profile, remainingTalentBudget * 0.20, usedTalent, creationAbsolute);
+          if (writer) { usedTalent.add(writer.id); remainingTalentBudget -= Number(writer.askingPrice || 5_000_000); }
           const cast: typeof talentPool = [];
           for (let castIndex = 0; castIndex < castCount; castIndex += 1) {
-            const actor = chooseTalent("actor", "actor", genre, profile, remainingTalentBudget, usedTalent, creationAbsolute);
+            const remainingRoles = castCount - castIndex;
+            const actorBudget = remainingTalentBudget / Math.max(1, remainingRoles + 1);
+            const actor = chooseTalent("actor", "actor", genre, profile, actorBudget, usedTalent, creationAbsolute);
             if (!actor) break;
             cast.push(actor);
             usedTalent.add(actor.id);
             remainingTalentBudget -= Number(actor.askingPrice || 5_000_000);
           }
+          const composer = chooseTalent("composer", "composer", genre, profile, remainingTalentBudget, usedTalent, creationAbsolute);
+          if (composer) { usedTalent.add(composer.id); remainingTalentBudget -= Number(composer.askingPrice || 3_000_000); }
           const hiredTalent = [director, writer, composer, ...cast].filter(Boolean) as typeof talentPool;
           const talentBudget = Math.max(0, Math.floor(hiredTalent.reduce(
             (sum, candidate) => sum + Number(candidate.askingPrice || 0), 0,
@@ -3354,7 +3368,9 @@ export async function registerRoutes(
             premiumBookings,
           );
           const releaseAbsolute = absoluteWeek(releaseDate.releaseWeek, releaseDate.releaseYear);
-          const busyThrough = releaseAbsolute + 2;
+          // Talent work ends when principal production ends; post-production and
+          // release-calendar delays should not keep the entire cast unavailable.
+          const busyThrough = creationAbsolute + devWeeks + 1 + preWeeks + prodWeeks;
           for (const candidate of hiredTalent) talentBusyUntil.set(candidate.id, busyThrough);
 
           const finalAbsolute = absoluteWeek(studio.currentWeek, studio.currentYear) + weeks;
@@ -3441,7 +3457,7 @@ export async function registerRoutes(
               vfxStudioId: selectedVFX?.id,
               scriptQuality: writer ? calculateScriptQualityFromWriter(writer) : Math.floor(60 + Math.random() * 30),
               cinematographyQuality: Math.floor(58 + Math.random() * 34),
-              hasHiredTalent: true,
+              hasHiredTalent: Boolean(director && writer && cast.length === roleCount),
               hasEditedPostProduction: true,
               createdAtWeek: currentWeek,
               createdAtYear: currentYear,
@@ -5697,8 +5713,7 @@ export async function registerRoutes(
       const filmsNeedingTalent = saveFilms.filter(f => 
         f.phase !== 'released' && 
         f.status !== 'archived' && 
-        !f.hasHiredTalent &&
-        (!f.directorId || !f.writerId || !f.castIds || f.castIds.length === 0)
+        (!f.hasHiredTalent || !f.directorId || !f.writerId || !f.castIds || f.castIds.length === 0)
       );
       
       for (const film of filmsNeedingTalent) {
