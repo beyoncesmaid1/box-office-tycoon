@@ -61,6 +61,7 @@ export interface IStorage {
   getFilmsByStudio(studioId: string): Promise<Film[]>;
   getAllFilms(): Promise<Film[]>;
   createFilm(film: InsertFilm): Promise<Film>;
+  createFilms(filmRows: InsertFilm[]): Promise<Film[]>;
   updateFilm(id: string, updates: Partial<InsertFilm>): Promise<Film | undefined>;
   deleteFilm(id: string): Promise<void>;
   
@@ -132,6 +133,7 @@ export interface IStorage {
   getFilmReleasesByFilm(filmId: string): Promise<FilmRelease[]>;
   getFilmReleaseByTerritory(filmId: string, territoryCode: string): Promise<FilmRelease | undefined>;
   createFilmRelease(release: InsertFilmRelease): Promise<FilmRelease>;
+  createFilmReleases(releases: InsertFilmRelease[]): Promise<FilmRelease[]>;
   updateFilmRelease(id: string, updates: Partial<InsertFilmRelease>): Promise<FilmRelease | undefined>;
   deleteFilmRelease(id: string): Promise<void>;
 
@@ -159,6 +161,7 @@ export interface IStorage {
   getFilmRole(id: string): Promise<FilmRole | undefined>;
   getFilmRolesByFilm(filmId: string): Promise<FilmRole[]>;
   createFilmRole(role: InsertFilmRole): Promise<FilmRole>;
+  createFilmRoles(roles: InsertFilmRole[]): Promise<FilmRole[]>;
   updateFilmRole(id: string, updates: Partial<InsertFilmRole>): Promise<FilmRole | undefined>;
   deleteFilmRole(id: string): Promise<void>;
   deleteFilmRolesByFilm(filmId: string): Promise<void>;
@@ -331,6 +334,11 @@ export class DatabaseStorage implements IStorage {
   async createFilm(insertFilm: any): Promise<Film> {
     const [film] = await db.insert(films).values(insertFilm).returning();
     return film;
+  }
+
+  async createFilms(filmRows: InsertFilm[]): Promise<Film[]> {
+    if (filmRows.length === 0) return [];
+    return await db.insert(films).values(filmRows).returning();
   }
 
   async updateFilm(id: string, updates: any): Promise<Film | undefined> {
@@ -1162,6 +1170,11 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
+  async createFilmReleases(releases: InsertFilmRelease[]): Promise<FilmRelease[]> {
+    if (releases.length === 0) return [];
+    return await db.insert(filmReleases).values(releases).returning();
+  }
+
   async updateFilmRelease(id: string, updates: Partial<InsertFilmRelease>): Promise<FilmRelease | undefined> {
     const [updated] = await db.update(filmReleases).set(updates).where(eq(filmReleases.id, id)).returning();
     return updated;
@@ -1255,6 +1268,11 @@ export class DatabaseStorage implements IStorage {
   async createFilmRole(role: any): Promise<FilmRole> {
     const [created] = await db.insert(filmRoles).values(role).returning();
     return created;
+  }
+
+  async createFilmRoles(roles: InsertFilmRole[]): Promise<FilmRole[]> {
+    if (roles.length === 0) return [];
+    return await db.insert(filmRoles).values(roles).returning();
   }
 
   async updateFilmRole(id: string, updates: Partial<InsertFilmRole>): Promise<FilmRole | undefined> {

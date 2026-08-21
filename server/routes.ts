@@ -3043,8 +3043,368 @@ export async function registerRoutes(
     }
   });
 
-  // Preload weeks to generate unique box office data for each save
+  // Build a full year of history mostly in memory, then persist it in bounded
+  // batches. This avoids thousands of sequential round trips to a remote DB.
   app.post("/api/studio/:id/preload", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const requestedWeeks = Number(req.body?.weeks ?? 52);
+      const weeks = Math.max(1, Math.min(104, Number.isFinite(requestedWeeks) ? requestedWeeks : 52));
+      const studio = await storage.getStudio(id);
+      if (!studio) return res.status(404).json({ error: "Studio not found" });
+
+      const runBatched = async <T, R>(
+        items: T[],
+        size: number,
+        worker: (item: T) => Promise<R>,
+      ): Promise<R[]> => {
+        const results: R[] = [];
+        for (let offset = 0; offset < items.length; offset += size) {
+          results.push(...await Promise.all(items.slice(offset, offset + size).map(worker)));
+        }
+        return results;
+      };
+      const advanceDate = (week: number, year: number, amount = 1) => {
+        const absolute = year * 52 + week + amount;
+        return { week: ((absolute - 1) % 52) + 1, year: Math.floor((absolute - 1) / 52) };
+      };
+
+      const [allStudios, talentPool, premiumBookings] = await Promise.all([
+        storage.getAllStudios(),
+        storage.getAllTalent(),
+        storage.getAllPremiumBookings(),
+      ]);
+      const isMultiplayer = Boolean(studio.gameSessionId);
+      const aiStudios = allStudios.filter(candidate => candidate.isAI && (
+        isMultiplayer
+          ? candidate.gameSessionId === studio.gameSessionId
+          : candidate.playerGameId === id
+      ));
+      const studioBudgets = new Map(aiStudios.map(candidate => [candidate.id, Number(candidate.budget || 0)]));
+      const talentBusyUntil = new Map<string, number>();
+      const usedTitles = new Set<string>();
+      const plans: Array<{
+        studio: Studio;
+        filmData: any;
+        roleData: any[];
+        releaseAbsolute: number;
+        film?: Film;
+      }> = [];
+      let currentWeek = studio.currentWeek;
+      let currentYear = studio.currentYear;
+
+      const chooseTalent = (
+        type: string,
+        role: "director" | "writer" | "actor" | "composer",
+        genre: string,
+        profile: ReturnType<typeof createStudioDecisionProfile>,
+        remainingBudget: number,
+        used: Set<string>,
+        creationAbsolute: number,
+      ) => {
+        const candidates = talentPool.filter(candidate =>
+          candidate.type === type &&
+          !used.has(candidate.id) &&
+          (talentBusyUntil.get(candidate.id) || 0) <= creationAbsolute
+        );
+        return selectTalentCandidate(candidates, {
+          genre,
+          role,
+          currentWeek,
+          currentYear,
+          remainingBudget,
+          profile,
+        });
+      };
+
+      for (let simulatedWeek = 0; simulatedWeek < weeks; simulatedWeek += 1) {
+        ({ week: currentWeek, year: currentYear } = advanceDate(currentWeek, currentYear));
+        const creationAbsolute = absoluteWeek(currentWeek, currentYear);
+
+        for (const aiStudio of aiStudios) {
+          let availableBudget = studioBudgets.get(aiStudio.id) || 0;
+          if (Math.random() >= 0.25 || availableBudget <= 30_000_000) continue;
+
+          const profile = createStudioDecisionProfile({ ...aiStudio, budget: availableBudget } as Studio);
+          const genre = selectAIGenre(GENRES, profile);
+          const titleList = filmTitles[genre] || filmTitles.drama;
+          let title = titleList[Math.floor(Math.random() * titleList.length)];
+          let duplicateNumber = 2;
+          while (usedTitles.has(title)) title = `${titleList[Math.floor(Math.random() * titleList.length)]} ${duplicateNumber++}`;
+          usedTitles.add(title);
+
+          let prodBudget: number;
+          if (genre === "action" || genre === "scifi") prodBudget = 40_000_000 + Math.random() * 90_000_000;
+          else if (genre === "animation") prodBudget = 30_000_000 + Math.random() * 90_000_000;
+          else if (genre === "fantasy") prodBudget = 50_000_000 + Math.random() * 80_000_000;
+          else if (genre === "thriller") prodBudget = 15_000_000 + Math.random() * 65_000_000;
+          else if (genre === "comedy" || genre === "romance") prodBudget = 8_000_000 + Math.random() * 52_000_000;
+          else if (genre === "musicals") prodBudget = 25_000_000 + Math.random() * 95_000_000;
+          else if (genre === "horror") prodBudget = Math.random() < 0.8
+            ? 1_000_000 + Math.random() * 14_000_000
+            : 40_000_000 + Math.random() * 40_000_000;
+          else if (genre === "drama") prodBudget = 4_000_000 + Math.random() * 36_000_000;
+          else prodBudget = 8_000_000 + Math.random() * 52_000_000;
+          prodBudget = Math.floor(Math.min(prodBudget, Math.max(5_000_000, availableBudget * 0.55)));
+
+          const setsBudget = Math.floor(prodBudget * (0.08 + Math.random() * 0.12));
+          const costumesBudget = Math.floor(prodBudget * (0.02 + Math.random() * 0.03));
+          const stuntsBudget = Math.floor(prodBudget * (
+            ["action", "scifi", "fantasy"].includes(genre)
+              ? 0.04 + Math.random() * 0.06
+              : 0.01 + Math.random() * 0.03
+          ));
+          const makeupBudget = Math.floor(prodBudget * (0.01 + Math.random() * 0.02));
+          const practicalEffectsBudget = Math.floor(prodBudget * (0.02 + Math.random() * 0.04));
+          const soundCrewBudget = Math.floor(prodBudget * (0.01 + Math.random() * 0.02));
+          const departmentBudget = setsBudget + costumesBudget + stuntsBudget + makeupBudget +
+            practicalEffectsBudget + soundCrewBudget;
+
+          const usedTalent = new Set<string>();
+          let remainingTalentBudget = Math.max(5_000_000, Math.min(availableBudget * 0.25, prodBudget * 0.65));
+          const director = chooseTalent("director", "director", genre, profile, remainingTalentBudget, usedTalent, creationAbsolute);
+          if (director) { usedTalent.add(director.id); remainingTalentBudget -= Number(director.askingPrice || 5_000_000); }
+          const writer = chooseTalent("writer", "writer", genre, profile, remainingTalentBudget, usedTalent, creationAbsolute);
+          if (writer) { usedTalent.add(writer.id); remainingTalentBudget -= Number(writer.askingPrice || 5_000_000); }
+          const composer = chooseTalent("composer", "composer", genre, profile, remainingTalentBudget, usedTalent, creationAbsolute);
+          if (composer) { usedTalent.add(composer.id); remainingTalentBudget -= Number(composer.askingPrice || 3_000_000); }
+          const castCount = genre === "action" ? 6 : genre === "animation" ? 5 : 4;
+          const cast: typeof talentPool = [];
+          for (let castIndex = 0; castIndex < castCount; castIndex += 1) {
+            const actor = chooseTalent("actor", "actor", genre, profile, remainingTalentBudget, usedTalent, creationAbsolute);
+            if (!actor) break;
+            cast.push(actor);
+            usedTalent.add(actor.id);
+            remainingTalentBudget -= Number(actor.askingPrice || 5_000_000);
+          }
+          const hiredTalent = [director, writer, composer, ...cast].filter(Boolean) as typeof talentPool;
+          const talentBudget = Math.max(0, Math.floor(hiredTalent.reduce(
+            (sum, candidate) => sum + Number(candidate.askingPrice || 0), 0,
+          )));
+          const investmentBudget = prodBudget + departmentBudget + talentBudget;
+          const marketingRatio = 0.38 + profile.riskTolerance * 0.30 +
+            Math.random() * (0.30 - profile.valueDiscipline * 0.10);
+          const marketingBudget = Math.floor(investmentBudget * marketingRatio);
+
+          const vfxRequired = ["action", "scifi", "fantasy", "animation", "horror"].includes(genre);
+          const selectedVFX = vfxRequired
+            ? selectVFXStudio(vfxStudios, genre, Math.max(0, availableBudget - investmentBudget), profile)
+            : undefined;
+          const vfxCost = Number(selectedVFX?.cost || 0);
+          const projectCost = investmentBudget + vfxCost;
+          if (projectCost > availableBudget) continue;
+
+          const { devWeeks, preWeeks, prodWeeks, postWeeks } = calculatePhaseDurations(genre, prodBudget, vfxRequired);
+          const totalProductionWeeks = devWeeks + 1 + preWeeks + prodWeeks + 1 + postWeeks + 2;
+          const initialReleaseDate = advanceDate(currentWeek, currentYear, totalProductionWeeks);
+          let releaseDate = {
+            releaseWeek: initialReleaseDate.week,
+            releaseYear: initialReleaseDate.year,
+          };
+          releaseDate = chooseAIReleaseDate(
+            releaseDate.releaseWeek,
+            releaseDate.releaseYear,
+            genre,
+            plans.map(plan => plan.filmData as Film),
+            profile,
+            premiumBookings,
+          );
+          const releaseAbsolute = absoluteWeek(releaseDate.releaseWeek, releaseDate.releaseYear);
+          const busyThrough = releaseAbsolute + 2;
+          for (const candidate of hiredTalent) talentBusyUntil.set(candidate.id, busyThrough);
+
+          const finalAbsolute = absoluteWeek(studio.currentWeek, studio.currentYear) + weeks;
+          const elapsed = finalAbsolute - creationAbsolute;
+          let phase = "development";
+          let weeksInCurrentPhase = elapsed;
+          const phaseSchedule: Array<[string, number]> = [
+            ["development", devWeeks],
+            ["awaiting-greenlight", 1],
+            ["pre-production", preWeeks],
+            ["production", prodWeeks],
+            ["filmed", 1],
+            ["post-production", postWeeks],
+            ["production-complete", 2],
+          ];
+          let remainingElapsed = elapsed;
+          for (const [candidatePhase, duration] of phaseSchedule) {
+            phase = candidatePhase;
+            weeksInCurrentPhase = Math.max(0, remainingElapsed);
+            if (remainingElapsed < duration) break;
+            remainingElapsed -= duration;
+          }
+          if (finalAbsolute >= releaseAbsolute) {
+            phase = "released";
+            weeksInCurrentPhase = 0;
+          }
+
+          const elements = genreStoryElements[genre] || genreStoryElements.drama;
+          const stakes = elements.stakes[Math.floor(Math.random() * elements.stakes.length)];
+          const antagonist = elements.antagonists[Math.floor(Math.random() * elements.antagonists.length)];
+          const storyRole = elements.roles[Math.floor(Math.random() * elements.roles.length)];
+          const synopsis = generateFilmDescription(
+            genre,
+            title,
+            cast[0]?.name || "An unlikely hero",
+            director?.name || "a visionary director",
+            cast.slice(0, 3).map(candidate => candidate.name),
+            antagonist,
+            storyRole,
+            stakes,
+          );
+          const roleCount = castCount;
+          const roleImportances = ["lead", "lead", "supporting", "supporting", "minor", "minor"];
+          const roleTypes = ["hero", "villain", "love_interest", "mentor", "sidekick", "comic_relief"];
+          const roleData = Array.from({ length: roleCount }, (_, roleIndex) => ({
+            roleName: generateCharacterName(roleIndex % 2 === 0 ? "female" : "male"),
+            importance: roleImportances[roleIndex] || "minor",
+            characterType: roleTypes[roleIndex] || "other",
+            genderPreference: "any",
+            actorId: cast[roleIndex]?.id,
+            isCast: Boolean(cast[roleIndex]),
+          }));
+
+          plans.push({
+            studio: aiStudio,
+            releaseAbsolute,
+            roleData,
+            filmData: {
+              studioId: aiStudio.id,
+              title,
+              genre,
+              synopsis,
+              phase,
+              productionBudget: prodBudget,
+              marketingBudget,
+              campaignLimit: marketingBudget,
+              campaignSpent: marketingBudget,
+              campaignStrategy: profile.riskTolerance > 0.68
+                ? "blockbuster"
+                : profile.valueDiscipline > 0.68 ? "targeted" : "balanced",
+              autoManageMarketing: true,
+              talentBudget,
+              setsBudget,
+              costumesBudget,
+              stuntsBudget,
+              makeupBudget,
+              practicalEffectsBudget,
+              soundCrewBudget,
+              totalBudget: investmentBudget + marketingBudget + vfxCost,
+              directorId: director?.id,
+              writerId: writer?.id,
+              composerId: composer?.id,
+              castIds: cast.map(candidate => candidate.id),
+              vfxStudioId: selectedVFX?.id,
+              scriptQuality: writer ? calculateScriptQualityFromWriter(writer) : Math.floor(60 + Math.random() * 30),
+              cinematographyQuality: Math.floor(58 + Math.random() * 34),
+              hasHiredTalent: true,
+              hasEditedPostProduction: true,
+              createdAtWeek: currentWeek,
+              createdAtYear: currentYear,
+              developmentDurationWeeks: devWeeks,
+              preProductionDurationWeeks: preWeeks,
+              productionDurationWeeks: prodWeeks,
+              postProductionDurationWeeks: postWeeks,
+              weeksInCurrentPhase,
+              releaseWeek: releaseDate.releaseWeek,
+              releaseYear: releaseDate.releaseYear,
+              posterUrl: generatePosterUrl(genre),
+            },
+          });
+          studioBudgets.set(aiStudio.id, availableBudget - projectCost);
+        }
+      }
+
+      const createdFilms = await storage.createFilms(plans.map(plan => plan.filmData));
+      const createdByKey = new Map(createdFilms.map(film => [
+        `${film.studioId}:${film.title}:${film.createdAtYear}:${film.createdAtWeek}`,
+        film,
+      ]));
+      for (const plan of plans) {
+        const key = `${plan.filmData.studioId}:${plan.filmData.title}:${plan.filmData.createdAtYear}:${plan.filmData.createdAtWeek}`;
+        plan.film = createdByKey.get(key);
+        if (!plan.film) throw new Error(`Bulk film insert lost preload plan ${plan.filmData.title}`);
+      }
+      const roleRows = plans.flatMap(plan => plan.roleData.map(role => ({
+        ...role,
+        filmId: plan.film!.id,
+      })));
+      await storage.createFilmRoles(roleRows);
+
+      const finalAbsolute = absoluteWeek(currentWeek, currentYear);
+      const releasedPlans = plans.filter(plan => plan.film?.phase === "released");
+      const releaseRows = releasedPlans.flatMap(plan => BOX_OFFICE_COUNTRIES.map(country => ({
+        filmId: plan.film!.id,
+        territoryCode: country.code,
+        releaseWeek: plan.film!.releaseWeek || currentWeek,
+        releaseYear: plan.film!.releaseYear || currentYear,
+        productionBudget: plan.film!.productionBudget || 0,
+        marketingBudget: plan.film!.marketingBudget || 0,
+        awareness: 58,
+        interest: 62,
+        expectation: 60,
+        openingExpectation: 60,
+        isReleased: true,
+      })));
+      await storage.createFilmReleases(releaseRows);
+
+      await runBatched(releasedPlans, 8, async plan => {
+        const film = plan.film!;
+        const scores = await calculateCanonicalFilmScores(film, talentPool);
+        Object.assign(film, {
+          criticScore: scores.criticScore,
+          audienceScore: Math.round(scores.audienceScore * 10) / 10,
+          criticScoreBreakdown: scores.criticBreakdown,
+          audienceScoreBreakdown: scores.audienceBreakdown,
+        });
+        const run = await calculateCanonicalBoxOfficeRun(film, createdFilms, talentPool);
+        const historyLength = Math.max(1, Math.min(
+          run.weeklyGrosses.length,
+          finalAbsolute - plan.releaseAbsolute + 1,
+        ));
+        const weeklyBoxOffice = run.weeklyGrosses.slice(0, historyLength);
+        Object.assign(film, {
+          weeklyBoxOffice,
+          totalBoxOffice: weeklyBoxOffice.reduce((sum, gross) => sum + gross, 0),
+          theaterCount: run.theaterCount,
+          boxOfficeBreakdown: {
+            ...run.breakdown,
+            projectedTotalGross: run.totalGross,
+            projectedLegsMultiplier: run.legsMultiplier,
+          },
+        });
+        await storage.updateFilm(film.id, {
+          criticScore: film.criticScore,
+          audienceScore: film.audienceScore,
+          criticScoreBreakdown: film.criticScoreBreakdown,
+          audienceScoreBreakdown: film.audienceScoreBreakdown,
+          weeklyBoxOffice: film.weeklyBoxOffice,
+          totalBoxOffice: film.totalBoxOffice,
+          theaterCount: film.theaterCount,
+          boxOfficeBreakdown: film.boxOfficeBreakdown,
+        } as any);
+      });
+
+      await Promise.all([
+        storage.updateStudio(id, { currentWeek, currentYear }),
+        ...aiStudios.map(aiStudio => storage.updateStudio(aiStudio.id, {
+          currentWeek,
+          currentYear,
+          budget: studioBudgets.get(aiStudio.id) || aiStudio.budget,
+        })),
+      ]);
+      console.log(`[PRELOAD] Built ${weeks} weeks with ${plans.length} films and 0 TV shows.`);
+      res.json(await storage.getStudio(id));
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error("Error preloading game:", errorMsg);
+      res.status(500).json({ error: "Failed to preload game", details: errorMsg });
+    }
+  });
+
+  // Kept temporarily for save-compatibility reference; this route is not used
+  // by the client and cannot create TV shows during normal new-game preload.
+  if (false) app.post("/api/studio/:id/preload-legacy-disabled", async (req, res) => {
     try {
       const { id } = req.params;
       const { weeks = 24 } = req.body;

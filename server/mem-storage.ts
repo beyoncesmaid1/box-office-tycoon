@@ -238,6 +238,10 @@ export class MemStorage implements IStorage {
     return film;
   }
 
+  async createFilms(filmRows: InsertFilm[]): Promise<Film[]> {
+    return Promise.all(filmRows.map(film => this.createFilm(film)));
+  }
+
   async updateFilm(id: string, updates: Partial<InsertFilm>): Promise<Film | undefined> {
     const film = this.films.get(id);
     if (!film) return undefined;
@@ -780,6 +784,10 @@ export class MemStorage implements IStorage {
     return r;
   }
 
+  async createFilmReleases(releases: InsertFilmRelease[]): Promise<FilmRelease[]> {
+    return Promise.all(releases.map(release => this.createFilmRelease(release)));
+  }
+
   async updateFilmRelease(id: string, updates: Partial<InsertFilmRelease>): Promise<FilmRelease | undefined> {
     const rel = this.filmReleases.get(id);
     if (!rel) return undefined;
@@ -890,6 +898,10 @@ export class MemStorage implements IStorage {
     };
     this.filmRoles.set(id, r);
     return r;
+  }
+
+  async createFilmRoles(roles: InsertFilmRole[]): Promise<FilmRole[]> {
+    return Promise.all(roles.map(role => this.createFilmRole(role)));
   }
 
   async updateFilmRole(id: string, updates: Partial<InsertFilmRole>): Promise<FilmRole | undefined> {

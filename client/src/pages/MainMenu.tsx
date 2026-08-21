@@ -88,7 +88,7 @@ export function MainMenu({ onSelectStudio, onOpenEditor, onOpenMultiplayer }: Ma
         const preloadResponse = await fetch(`/api/studio/${studio.id}/preload`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ weeks: 24 }),
+          body: JSON.stringify({ weeks: 52 }),
         });
 
         if (!preloadResponse.ok) throw new Error('Preload failed');
