@@ -43,6 +43,7 @@ interface FilmCardProps {
 
 function FilmCard({ film, rank, isYours, studioName, showWeeklyChange = true, isExpanded, onToggle, territoryFilter = 'ALL', getTerritoryBoxOffice, getTerritoryWeeklyEarnings }: FilmCardProps) {
   const weekly = getWeeklyBoxOffice(film);
+  let isOpeningWeek = weekly.length === 1;
   // Use territory-specific weekly earnings if available
   const lastWeek = getTerritoryWeeklyEarnings && territoryFilter !== 'ALL'
     ? getTerritoryWeeklyEarnings(film, territoryFilter)
@@ -57,6 +58,10 @@ function FilmCard({ film, rank, isYours, studioName, showWeeklyChange = true, is
       'DE': 'Germany', 'KR': 'South Korea', 'MX': 'Mexico', 'AU': 'Australia', 'IN': 'India', 'OTHER': 'Other Territories',
     };
     const territoryName = territoryNameMap[territoryFilter] || territoryFilter;
+    const priorTerritoryGrosses = weeklyByCountry
+      .slice(0, -1)
+      .map(week => Number(week?.[territoryName] || 0));
+    isOpeningWeek = lastWeek > 0 && priorTerritoryGrosses.every(gross => gross <= 0);
     if (weeklyByCountry.length >= 2) {
       const prevWeekData = weeklyByCountry[weeklyByCountry.length - 2] || {};
       prevWeek = prevWeekData[territoryName] || lastWeek;
@@ -134,10 +139,16 @@ function FilmCard({ film, rank, isYours, studioName, showWeeklyChange = true, is
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-gray-400">This Week</span>
                   {showWeeklyChange && (
-                    <span className={`text-xs flex items-center gap-1 ${change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      {change >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                      {Math.abs(change).toFixed(0)}%
-                    </span>
+                    isOpeningWeek ? (
+                      <Badge className="h-5 bg-sky-500/20 px-2 text-[10px] font-bold tracking-wider text-sky-300 hover:bg-sky-500/20">
+                        NEW
+                      </Badge>
+                    ) : (
+                      <span className={`text-xs flex items-center gap-1 ${change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        {change >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                        {Math.abs(change).toFixed(0)}%
+                      </span>
+                    )
                   )}
                 </div>
                 <p className="font-display text-lg text-white">{formatMoney(lastWeek)}</p>
