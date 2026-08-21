@@ -153,7 +153,8 @@ export function FilmDevelopment() {
     const isFromMarketplace = urlParams.get('fromMarketplace') === 'true';
     
     if (isFromMarketplace) {
-      const storedScript = localStorage.getItem('purchasedScript');
+      const purchasedScriptKey = `purchasedScript:${state.studioId}`;
+      const storedScript = localStorage.getItem(purchasedScriptKey);
       if (storedScript) {
         try {
           const purchasedScript = JSON.parse(storedScript);
@@ -176,7 +177,7 @@ export function FilmDevelopment() {
             setFilmRoles(loadedRoles);
           }
           
-          localStorage.removeItem('purchasedScript');
+          localStorage.removeItem(purchasedScriptKey);
           
           toast({
             title: "Script Loaded",
@@ -187,7 +188,9 @@ export function FilmDevelopment() {
         }
       }
     } else if (isSequelMode) {
-      const storedFilm = localStorage.getItem('sequelOriginalFilm');
+      const sequelFilmKey = `sequelOriginalFilm:${state.studioId}`;
+      const sequelRolesKey = `sequelOriginalRoles:${state.studioId}`;
+      const storedFilm = localStorage.getItem(sequelFilmKey);
       if (storedFilm) {
         try {
           const originalFilm = JSON.parse(storedFilm) as SequelOriginalFilm;
@@ -202,7 +205,7 @@ export function FilmDevelopment() {
           setSynopsis(`Continuing the story from "${originalFilm.title}"...`);
           
           // Load roles from original film
-          const storedRoles = localStorage.getItem('sequelOriginalRoles');
+          const storedRoles = localStorage.getItem(sequelRolesKey);
           if (storedRoles) {
             try {
               const originalRoles = JSON.parse(storedRoles);
@@ -226,13 +229,13 @@ export function FilmDevelopment() {
                   description: `The original film has no defined character roles. Define new ones for this sequel.`,
                 });
               }
-              localStorage.removeItem('sequelOriginalRoles');
+              localStorage.removeItem(sequelRolesKey);
             } catch (e) {
               console.error('Failed to parse sequel roles:', e);
             }
           }
           
-          localStorage.removeItem('sequelOriginalFilm');
+          localStorage.removeItem(sequelFilmKey);
           
           toast({
             title: "Sequel Development Mode",
@@ -243,7 +246,7 @@ export function FilmDevelopment() {
         }
       }
     }
-  }, []);
+  }, [state.studioId, toast]);
   
   const [editingRoleIndex, setEditingRoleIndex] = useState<number | null>(null);
   const [showActorSelector, setShowActorSelector] = useState(false);

@@ -57,13 +57,14 @@ export function CastingModal({ film, open, onOpenChange }: CastingModalProps) {
   });
 
   const { data: availableActors = [], isLoading: actorsLoading } = useQuery<Talent[]>({
-    queryKey: ['/api/casting/available-talent', state.currentWeek, state.currentYear, film.genre],
+    queryKey: ['/api/casting/available-talent', state.studioId, state.currentWeek, state.currentYear, film.genre],
     queryFn: async () => {
       const params = new URLSearchParams({
         type: 'actor',
         week: String(state.currentWeek),
         year: String(state.currentYear),
         genre: film.genre,
+        playerGameId: state.studioId,
       });
       const res = await fetch(`/api/casting/available-talent?${params}`);
       return res.json();

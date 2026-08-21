@@ -3,6 +3,11 @@ import { createServer, type Server } from "http";
 import { runWithStorage, storage } from "./storage";
 import { getWeekSaveCache, invalidateWeekSaveCache, warmWeekSaveCache } from "./week-cache";
 import {
+  applySaveTalentAvailability,
+  getSinglePlayerSaveIdForStudio,
+  getSinglePlayerSaveStudios,
+} from "./save-scope";
+import {
   insertFilmSchema,
   insertStudioSchema,
   insertTalentSchema,
@@ -2391,6 +2396,32 @@ const aiStrategies: ('action' | 'drama' | 'comedy' | 'scifi' | 'horror' | 'anima
   'balanced', 'animation', 'action', 'balanced', 'comedy', 'drama', 'scifi'
 ];
 
+async function getGameScopeForStudio(studioId: string): Promise<{
+  playerStudioId: string;
+  studio: Studio;
+  studios: Studio[];
+  studioIds: string[];
+  films: Film[];
+}> {
+  const [studio, allStudios] = await Promise.all([
+    storage.getStudio(studioId),
+    storage.getAllStudios(),
+  ]);
+  if (!studio) throw new Error("Studio not found");
+  const playerStudioId = getSinglePlayerSaveIdForStudio(studio);
+  const scopedStudios = studio.gameSessionId
+    ? allStudios.filter(candidate => candidate.gameSessionId === studio.gameSessionId)
+    : getSinglePlayerSaveStudios(playerStudioId, allStudios);
+  const studioIds = scopedStudios.map(candidate => candidate.id);
+  return {
+    playerStudioId,
+    studio,
+    studios: scopedStudios,
+    studioIds,
+    films: await storage.getFilmsByStudioIds(studioIds),
+  };
+}
+
 function chooseAIReleaseDate(
   earliestWeek: number,
   earliestYear: number,
@@ -3213,10 +3244,9 @@ export async function registerRoutes(
         return { week: ((absolute - 1) % 52) + 1, year: Math.floor((absolute - 1) / 52) };
       };
 
-      const [allStudios, talentPool, premiumBookings] = await Promise.all([
+      const [allStudios, talentPool] = await Promise.all([
         storage.getAllStudios(),
         storage.getAllTalent(),
-        storage.getAllPremiumBookings(),
       ]);
       const isMultiplayer = Boolean(studio.gameSessionId);
       const aiStudios = allStudios.filter(candidate => candidate.isAI && (
@@ -3224,6 +3254,10 @@ export async function registerRoutes(
           ? candidate.gameSessionId === studio.gameSessionId
           : candidate.playerGameId === id
       ));
+      const premiumBookings = await storage.getPremiumBookingsByStudioIds([
+        id,
+        ...aiStudios.map(candidate => candidate.id),
+      ]);
       const studioBudgets = new Map(aiStudios.map(candidate => [candidate.id, Number(candidate.budget || 0)]));
       const talentBusyUntil = new Map<string, number>();
       const usedTitles = new Set<string>();
@@ -4252,6 +4286,12 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Studio not found" });
       }
 
+      if (!studio.gameSessionId) {
+        await storage.deleteSinglePlayerSave(id);
+        invalidateWeekSaveCache(id);
+        return res.json({ message: "Save deleted" });
+      }
+
       // Get all studios and films for cleanup
       const allStudios = await storage.getAllStudios();
       
@@ -4362,17 +4402,6 @@ export async function registerRoutes(
         // Delete the AI studio
         await storage.deleteStudio(aiStudio.id);
       }));
-
-      // Reset all talent busy states so they can be hired again in new saves
-      const allTalent = await storage.getAllTalent();
-      await Promise.all(allTalent.map(t => 
-        storage.updateTalent(t.id, { 
-          currentFilmId: null, 
-          busyUntilWeek: 0, 
-          busyUntilYear: 0 
-        })
-      ));
-      console.log(`[DELETE-SAVE] Reset busy states for ${allTalent.length} talent members`);
 
       // Delete the player studio
       await storage.deleteStudio(id);
@@ -6803,7 +6832,7 @@ export async function registerRoutes(
       const randomLuck = 0.5 + Math.random() * 0.8;
       const qualityMultiplier = 0.5 + qualityFactor * 0.8;
       const baseOpening = clampedInvestmentBudget3 * randomLuck * marketingMultiplier * qualityMultiplier * genreBoxOfficeMultiplier * audienceBoost;
-      const calendarFilms = await storage.getAllFilms();
+      const calendarFilms = (await getGameScopeForStudio(film.studioId)).films;
       const canonicalBoxOffice = await calculateCanonicalBoxOfficeRun(
         { ...film, criticScore, audienceScore } as Film,
         calendarFilms,
@@ -7009,12 +7038,15 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/premium-bookings", async (_req, res) => {
+  app.get("/api/premium-bookings", async (req, res) => {
     try {
-      const [bookings, films] = await Promise.all([
-        storage.getAllPremiumBookings(),
-        storage.getAllFilms(),
-      ]);
+      const playerGameId = String(req.query.playerGameId || "");
+      if (!playerGameId) {
+        return res.status(400).json({ error: "playerGameId is required" });
+      }
+      const scope = await getGameScopeForStudio(playerGameId);
+      const bookings = await storage.getPremiumBookingsByStudioIds(scope.studioIds);
+      const films = scope.films;
       res.json(bookings.map(booking => ({
         ...booking,
         filmTitle: films.find(film => film.id === booking.filmId)?.title || "Untitled Film",
@@ -7051,7 +7083,8 @@ export async function registerRoutes(
         dolbySuitability: profile.dolbySuitability,
       });
 
-      const allBookings = await storage.getAllPremiumBookings();
+      const bookingScope = await getGameScopeForStudio(studio.id);
+      const allBookings = await storage.getPremiumBookingsByStudioIds(bookingScope.studioIds);
       const requestStart = absoluteWeek(startWeek, startYear);
       const requestEnd = requestStart + durationWeeks;
       const exclusiveConflict = accessLevel === "exclusive" && allBookings.some(booking => {
@@ -7106,7 +7139,10 @@ export async function registerRoutes(
   
   app.get("/api/all-releases", async (req, res) => {
     try {
-      const releases = await storage.getAllFilmReleases();
+      const playerGameId = String(req.query.playerGameId || "");
+      if (!playerGameId) return res.status(400).json({ error: "playerGameId is required" });
+      const scope = await getGameScopeForStudio(playerGameId);
+      const releases = await storage.getFilmReleasesByFilms(scope.films.map(film => film.id));
       res.json(releases);
     } catch (error) {
       console.error("Error fetching all releases:", error);
@@ -7976,9 +8012,18 @@ export async function registerRoutes(
 
   app.get("/api/marketplace-scripts", async (req, res) => {
     try {
+      const playerGameId = String(req.query.playerGameId || "");
+      if (!playerGameId) {
+        return res.status(400).json({ error: "playerGameId is required" });
+      }
+      const scope = await getGameScopeForStudio(playerGameId);
       await storage.seedMarketplaceScripts();
-      const scripts = await storage.getAvailableMarketplaceScripts();
-      res.json(scripts);
+      const [scripts, purchases] = await Promise.all([
+        storage.getAllMarketplaceScripts(),
+        storage.getMarketplaceScriptPurchasesByPlayer(scope.playerStudioId),
+      ]);
+      const purchasedIds = new Set(purchases.map(purchase => purchase.scriptId));
+      res.json(scripts.filter(script => !purchasedIds.has(script.id)));
     } catch (error) {
       console.error("Error fetching marketplace scripts:", error);
       res.status(500).json({ error: "Failed to fetch marketplace scripts" });
@@ -8009,25 +8054,30 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Script not found" });
       }
       
-      if (!script.isAvailable) {
-        return res.status(400).json({ error: "Script is no longer available" });
-      }
-      
-      const studio = await storage.getStudio(studioId);
+      const scope = await getGameScopeForStudio(studioId);
+      const studio = await storage.getStudio(scope.playerStudioId);
       if (!studio) {
         return res.status(404).json({ error: "Studio not found" });
+      }
+
+      const purchases = await storage.getMarketplaceScriptPurchasesByPlayer(scope.playerStudioId);
+      if (purchases.some(purchase => purchase.scriptId === id)) {
+        return res.status(400).json({ error: "This save already purchased that script" });
       }
       
       if (studio.budget < script.price) {
         return res.status(400).json({ error: "Insufficient funds" });
       }
       
-      await storage.updateStudio(studioId, {
+      await storage.updateStudio(scope.playerStudioId, {
         budget: studio.budget - script.price
       });
-      
-      await storage.updateMarketplaceScript(id, {
-        isAvailable: false
+
+      await storage.createMarketplaceScriptPurchase({
+        playerGameId: scope.playerStudioId,
+        scriptId: id,
+        purchasedWeek: studio.currentWeek,
+        purchasedYear: studio.currentYear,
       });
       
       res.json({ 
@@ -8924,7 +8974,10 @@ export async function registerRoutes(
   app.get("/api/talent/:id/availability", async (req, res) => {
     try {
       const { id } = req.params;
-      const { week, year } = req.query;
+      const { week, year, playerGameId } = req.query;
+      if (!playerGameId || typeof playerGameId !== "string") {
+        return res.status(400).json({ error: "playerGameId is required" });
+      }
       
       const talentData = await storage.getTalent(id);
       if (!talentData) {
@@ -8935,21 +8988,28 @@ export async function registerRoutes(
       const currentWeek = parseInt(week as string) || 1;
       const currentYear = parseInt(year as string) || 2025;
       
+      const scope = await getGameScopeForStudio(playerGameId);
+      const [scopedTalent] = applySaveTalentAvailability(
+        [talentData],
+        scope.films,
+        currentWeek,
+        currentYear,
+      );
       let isAvailable = true;
       let busyUntil = null;
       
-      if (talentData.busyUntilWeek && talentData.busyUntilYear) {
-        if (talentData.busyUntilYear > currentYear || 
-            (talentData.busyUntilYear === currentYear && talentData.busyUntilWeek > currentWeek)) {
+      if (scopedTalent.busyUntilWeek && scopedTalent.busyUntilYear) {
+        if (scopedTalent.busyUntilYear > currentYear ||
+            (scopedTalent.busyUntilYear === currentYear && scopedTalent.busyUntilWeek > currentWeek)) {
           isAvailable = false;
-          busyUntil = { week: talentData.busyUntilWeek, year: talentData.busyUntilYear };
+          busyUntil = { week: scopedTalent.busyUntilWeek, year: scopedTalent.busyUntilYear };
         }
       }
       
       res.json({
         isAvailable,
         busyUntil,
-        currentFilmId: talentData.currentFilmId,
+        currentFilmId: scopedTalent.currentFilmId,
       });
     } catch (error) {
       console.error("Error checking talent availability:", error);
@@ -9045,15 +9105,23 @@ export async function registerRoutes(
       if (!talentData || !role || !film || !studio) {
         return res.status(404).json({ error: "Required data not found" });
       }
-      
+      const castingScope = await getGameScopeForStudio(studio.id);
+      const talentAvailability = applySaveTalentAvailability(
+        [talentData],
+        castingScope.films,
+        Number(currentWeek),
+        Number(currentYear),
+      )[0];
+
       // Check availability
-      if (talentData.busyUntilWeek && talentData.busyUntilYear) {
-        if (talentData.busyUntilYear > currentYear || 
-            (talentData.busyUntilYear === currentYear && talentData.busyUntilWeek > currentWeek)) {
+      if (talentAvailability.busyUntilWeek && talentAvailability.busyUntilYear &&
+          talentAvailability.currentFilmId !== filmId) {
+        if (talentAvailability.busyUntilYear > currentYear ||
+            (talentAvailability.busyUntilYear === currentYear && talentAvailability.busyUntilWeek > currentWeek)) {
           return res.status(400).json({ 
             success: false, 
             reason: "unavailable",
-            message: `${talentData.name} is busy until Week ${talentData.busyUntilWeek}, Year ${talentData.busyUntilYear}`
+            message: `${talentData.name} is busy until Week ${talentAvailability.busyUntilWeek}, Year ${talentAvailability.busyUntilYear}`
           });
         }
       }
@@ -9176,11 +9244,19 @@ export async function registerRoutes(
   // Get available talent for casting (filters by type and availability)
   app.get("/api/casting/available-talent", async (req, res) => {
     try {
-      const { type, week, year, genre } = req.query;
+      const { type, week, year, genre, playerGameId } = req.query;
       const currentWeek = parseInt(week as string) || 1;
       const currentYear = parseInt(year as string) || 2025;
-      
-      let allTalent = await storage.getAllTalent();
+      if (!playerGameId) {
+        return res.status(400).json({ error: "playerGameId is required for save-isolated casting" });
+      }
+      const scope = await getGameScopeForStudio(String(playerGameId));
+      let allTalent = applySaveTalentAvailability(
+        await storage.getAllTalent(),
+        scope.films,
+        currentWeek,
+        currentYear,
+      );
       
       // Filter by type
       if (type) {

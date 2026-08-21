@@ -46,9 +46,10 @@ interface ProjectCardProps {
   film: FilmWithTalent;
   currentWeek?: number;
   currentYear?: number;
+  playerGameId: string;
 }
 
-function ProjectCard({ film, currentWeek = 1, currentYear = 2025 }: ProjectCardProps) {
+function ProjectCard({ film, currentWeek = 1, currentYear = 2025, playerGameId }: ProjectCardProps) {
   const [showTerritoryScheduler, setShowTerritoryScheduler] = useState(false);
   const [showMarketingCampaign, setShowMarketingCampaign] = useState(false);
   const [showCastingModal, setShowCastingModal] = useState(false);
@@ -138,12 +139,12 @@ function ProjectCard({ film, currentWeek = 1, currentYear = 2025 }: ProjectCardP
       if (!res.ok) throw new Error(data.error);
       
       // Store BOTH original film data AND roles in localStorage for FilmDevelopment
-      localStorage.setItem('sequelOriginalFilm', JSON.stringify({
+      localStorage.setItem(`sequelOriginalFilm:${playerGameId}`, JSON.stringify({
         id: film.id,
         title: film.title,
         genre: film.genre,
       }));
-      localStorage.setItem('sequelOriginalRoles', JSON.stringify(originalRoles));
+      localStorage.setItem(`sequelOriginalRoles:${playerGameId}`, JSON.stringify(originalRoles));
       
       // Navigate to film development in sequel mode
       window.location.href = '/develop-film?sequel=true';
@@ -1046,6 +1047,7 @@ export function ActiveProjects() {
           film={film} 
           currentYear={state.currentYear}
           currentWeek={state.currentWeek}
+          playerGameId={state.studioId!}
         />
       ))}
     </div>

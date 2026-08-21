@@ -193,7 +193,7 @@ export function FilmLibrary() {
       const originalRoles = await rolesRes.json();
       
       // Store film data
-      localStorage.setItem('sequelOriginalFilm', JSON.stringify({
+      localStorage.setItem(`sequelOriginalFilm:${state.studioId}`, JSON.stringify({
         id: film.id,
         title: film.title,
         genre: film.genre,
@@ -206,7 +206,7 @@ export function FilmLibrary() {
       }));
       
       // Store the roles
-      localStorage.setItem('sequelOriginalRoles', JSON.stringify(originalRoles));
+      localStorage.setItem(`sequelOriginalRoles:${state.studioId}`, JSON.stringify(originalRoles));
       
       toast({
         title: "Starting sequel development",

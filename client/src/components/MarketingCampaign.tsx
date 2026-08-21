@@ -70,7 +70,12 @@ export function MarketingCampaign({ film, open, onOpenChange }: MarketingCampaig
     enabled: open,
   });
   const { data: premiumCalendar = [] } = useQuery<CalendarBooking[]>({
-    queryKey: ['/api/premium-bookings'],
+    queryKey: ['/api/premium-bookings', state.studioId],
+    queryFn: async () => {
+      const response = await fetch(`/api/premium-bookings?playerGameId=${encodeURIComponent(state.studioId)}`);
+      if (!response.ok) throw new Error('Failed to load premium calendar');
+      return response.json();
+    },
     enabled: open,
   });
 
@@ -85,7 +90,7 @@ export function MarketingCampaign({ film, open, onOpenChange }: MarketingCampaig
 
   const refresh = async () => {
     await queryClient.invalidateQueries({ queryKey: ['/api/films', film.id, 'campaign'] });
-    await queryClient.invalidateQueries({ queryKey: ['/api/premium-bookings'] });
+    await queryClient.invalidateQueries({ queryKey: ['/api/premium-bookings', state.studioId] });
     await queryClient.invalidateQueries({ queryKey: ['/api/studio'] });
   };
 
@@ -485,4 +490,3 @@ export function MarketingCampaign({ film, open, onOpenChange }: MarketingCampaig
     </Dialog>
   );
 }
-

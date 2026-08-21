@@ -65,8 +65,9 @@ export default function ScriptMarketplacePage() {
   const budget = state.budget;
 
   const { data: scripts, isLoading } = useQuery<MarketplaceScript[]>({
-    queryKey: ['marketplace-scripts'],
-    queryFn: () => fetch('/api/marketplace-scripts').then(res => res.json()),
+    queryKey: ['marketplace-scripts', studioId],
+    queryFn: () => fetch(`/api/marketplace-scripts?playerGameId=${encodeURIComponent(studioId!)}`).then(res => res.json()),
+    enabled: Boolean(studioId),
   });
 
   const purchaseMutation = useMutation({
@@ -77,13 +78,13 @@ export default function ScriptMarketplacePage() {
       return response.json();
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['marketplace-scripts'] });
+      queryClient.invalidateQueries({ queryKey: ['marketplace-scripts', studioId] });
       queryClient.invalidateQueries({ queryKey: ['/api/studio', studioId] });
       setPurchaseSuccess(data.message);
       setSelectedScript(null);
       
       if (data.script) {
-        localStorage.setItem('purchasedScript', JSON.stringify(data.script));
+        localStorage.setItem(`purchasedScript:${studioId}`, JSON.stringify(data.script));
       }
       
       setTimeout(() => setPurchaseSuccess(null), 5000);

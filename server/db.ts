@@ -60,27 +60,29 @@ export async function withDatabaseRetry<T>(
 // Run manual migrations for new columns
 export async function runMigrations(): Promise<void> {
   if (!pool) return;
+  const migrationQuery = (statement: string) =>
+    withDatabaseRetry("migration", () => pool!.query(statement));
   
   try {
-    await pool.query(`
+    await migrationQuery(`
       ALTER TABLE films ADD COLUMN IF NOT EXISTS territory_percentages jsonb NOT NULL DEFAULT '{}'::jsonb;
     `);
     console.log('[MIGRATION] Added territory_percentages column');
 
     // Add skill_fantasy column if it doesn't exist
-    await pool.query(`
+    await migrationQuery(`
       ALTER TABLE talent ADD COLUMN IF NOT EXISTS skill_fantasy INTEGER NOT NULL DEFAULT 50;
     `);
     console.log('[MIGRATION] Added skill_fantasy column');
     
     // Add skill_musicals column if it doesn't exist
-    await pool.query(`
+    await migrationQuery(`
       ALTER TABLE talent ADD COLUMN IF NOT EXISTS skill_musicals INTEGER NOT NULL DEFAULT 50;
     `);
     console.log('[MIGRATION] Added skill_musicals column');
     
     // Create co_production_deals table if it doesn't exist
-    await pool.query(`
+    await migrationQuery(`
       CREATE TABLE IF NOT EXISTS co_production_deals (
         id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
         player_game_id VARCHAR NOT NULL,
@@ -96,7 +98,7 @@ export async function runMigrations(): Promise<void> {
     `);
     console.log('[MIGRATION] Created co_production_deals table');
     
-    await pool.query(`
+    await migrationQuery(`
       ALTER TABLE films ADD COLUMN IF NOT EXISTS campaign_limit BIGINT NOT NULL DEFAULT 0;
       ALTER TABLE films ADD COLUMN IF NOT EXISTS campaign_spent BIGINT NOT NULL DEFAULT 0;
       ALTER TABLE films ADD COLUMN IF NOT EXISTS campaign_strategy TEXT NOT NULL DEFAULT 'balanced';
@@ -140,6 +142,62 @@ export async function runMigrations(): Promise<void> {
       );
     `);
     console.log('[MIGRATION] Added campaign and premium exhibition tables');
+
+    await migrationQuery(`
+      CREATE TABLE IF NOT EXISTS marketplace_script_purchases (
+        player_game_id VARCHAR NOT NULL REFERENCES studios(id) ON DELETE CASCADE,
+        script_id VARCHAR NOT NULL REFERENCES marketplace_scripts(id) ON DELETE CASCADE,
+        purchased_week INTEGER NOT NULL,
+        purchased_year INTEGER NOT NULL,
+        PRIMARY KEY (player_game_id, script_id)
+      );
+
+      UPDATE marketplace_scripts SET is_available = true WHERE is_available = false;
+    `);
+    console.log('[MIGRATION] Added save-specific marketplace purchases');
+
+    // Talent is a shared catalog, but availability is now derived from each
+    // save's own film assignments. Remove historical global busy pointers.
+    await migrationQuery(`
+      UPDATE talent
+      SET current_film_id = NULL, busy_until_week = NULL, busy_until_year = NULL
+      WHERE current_film_id IS NOT NULL OR busy_until_week IS NOT NULL OR busy_until_year IS NOT NULL;
+
+      UPDATE studios AS ai
+      SET player_game_id = ownership.player_id
+      FROM (
+        SELECT ai_candidate.id AS ai_id, MIN(player.id) AS player_id
+        FROM studios AS ai_candidate
+        JOIN studios AS player
+          ON player.device_id = ai_candidate.device_id
+         AND player.is_ai = false
+         AND player.game_session_id IS NULL
+        WHERE ai_candidate.is_ai = true
+          AND ai_candidate.player_game_id IS NULL
+          AND ai_candidate.game_session_id IS NULL
+        GROUP BY ai_candidate.id
+        HAVING COUNT(player.id) = 1
+      ) AS ownership
+      WHERE ai.id = ownership.ai_id;
+
+      DELETE FROM award_nominations AS nomination
+      USING films AS film, studios AS film_studio, studios AS save_owner
+      WHERE nomination.film_id = film.id
+        AND film.studio_id = film_studio.id
+        AND save_owner.id = COALESCE(film_studio.player_game_id, film_studio.id)
+        AND save_owner.game_session_id IS NULL
+        AND nomination.player_game_id <> save_owner.id;
+
+      DELETE FROM emails AS record
+      WHERE NOT EXISTS (SELECT 1 FROM studios WHERE studios.id = record.player_game_id);
+      DELETE FROM award_ceremonies AS record
+      WHERE NOT EXISTS (SELECT 1 FROM studios WHERE studios.id = record.player_game_id);
+      DELETE FROM slate_financing_deals AS record
+      WHERE NOT EXISTS (SELECT 1 FROM studios WHERE studios.id = record.player_game_id);
+      DELETE FROM co_production_deals AS record
+      WHERE NOT EXISTS (SELECT 1 FROM studios WHERE studios.id = record.player_game_id);
+    `);
+    console.log('[MIGRATION] Repaired single-player save ownership');
     
   } catch (error) {
     console.error('[MIGRATION] Error running migrations:', error);

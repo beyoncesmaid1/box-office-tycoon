@@ -26,6 +26,7 @@ import {
   type TVDeal, type InsertTVDeal,
   type TVNetwork, type InsertTVNetwork,
   type MarketplaceScript, type InsertMarketplaceScript,
+  type MarketplaceScriptPurchase, type InsertMarketplaceScriptPurchase,
   type CoProductionDeal, type InsertCoProductionDeal,
 } from "@shared/schema";
 import { IStorage } from "./storage";
@@ -39,6 +40,40 @@ function generateId(): string {
 export class MemStorage implements IStorage {
   async commitWeekSnapshot(collections: Record<string, any[]>): Promise<void> {
     this.hydrateCollections(collections);
+  }
+
+  async deleteSinglePlayerSave(playerStudioId: string): Promise<void> {
+    const player = this.studios.get(playerStudioId);
+    if (!player) throw new Error("Studio not found");
+    if (player.gameSessionId) throw new Error("Multiplayer saves use their own deletion flow");
+    const studioIds = new Set(Array.from(this.studios.values())
+      .filter(studio => studio.id === playerStudioId || studio.playerGameId === playerStudioId)
+      .map(studio => studio.id));
+    const filmIds = new Set(Array.from(this.films.values())
+      .filter(film => studioIds.has(film.studioId)).map(film => film.id));
+    const showIds = new Set(Array.from(this.tvShows.values())
+      .filter(show => studioIds.has(show.studioId)).map(show => show.id));
+    const deleteMatching = (map: Map<string, any>, predicate: (row: any) => boolean) => {
+      for (const [rowId, row] of Array.from(map.entries())) if (predicate(row)) map.delete(rowId);
+    };
+    for (const map of [this.filmReleases, this.marketingActions, this.premiumBookings,
+      this.filmMilestones, this.filmRoles]) {
+      deleteMatching(map, row => filmIds.has(row.filmId));
+    }
+    deleteMatching(this.streamingDeals, row => filmIds.has(row.filmId) || studioIds.has(row.playerGameId));
+    deleteMatching(this.awardNominations, row => filmIds.has(row.filmId) || row.playerGameId === playerStudioId);
+    deleteMatching(this.awardCeremonies, row => row.playerGameId === playerStudioId);
+    deleteMatching(this.emails, row => row.playerGameId === playerStudioId);
+    deleteMatching(this.slateFinancingDeals, row => row.playerGameId === playerStudioId);
+    deleteMatching(this.coProductionDeals, row => filmIds.has(row.filmId) || row.playerGameId === playerStudioId);
+    deleteMatching(this.marketplaceScriptPurchases, row => row.playerGameId === playerStudioId);
+    deleteMatching(this.tvDeals, row => showIds.has(row.tvShowId) || row.playerGameId === playerStudioId);
+    deleteMatching(this.tvEpisodes, row => showIds.has(row.tvShowId));
+    deleteMatching(this.tvSeasons, row => showIds.has(row.tvShowId));
+    deleteMatching(this.tvShows, row => showIds.has(row.id));
+    deleteMatching(this.franchises, row => studioIds.has(row.studioId));
+    deleteMatching(this.films, row => filmIds.has(row.id));
+    deleteMatching(this.studios, row => studioIds.has(row.id));
   }
   protected users: Map<string, User> = new Map();
   protected studios: Map<string, Studio> = new Map();
@@ -66,6 +101,7 @@ export class MemStorage implements IStorage {
   protected tvDeals: Map<string, TVDeal> = new Map();
   protected tvNetworks: Map<string, TVNetwork> = new Map();
   protected marketplaceScripts: Map<string, MarketplaceScript> = new Map();
+  protected marketplaceScriptPurchases: Map<string, MarketplaceScriptPurchase> = new Map();
   protected coProductionDeals: Map<string, CoProductionDeal> = new Map();
   protected slateFinancingDeals: Map<string, SlateFinancingDeal> = new Map();
 
@@ -1468,6 +1504,19 @@ export class MemStorage implements IStorage {
     const updated = { ...script, ...updates } as MarketplaceScript;
     this.marketplaceScripts.set(id, updated);
     return updated;
+  }
+
+  async getMarketplaceScriptPurchasesByPlayer(playerGameId: string): Promise<MarketplaceScriptPurchase[]> {
+    return Array.from(this.marketplaceScriptPurchases.values())
+      .filter(purchase => purchase.playerGameId === playerGameId);
+  }
+
+  async createMarketplaceScriptPurchase(
+    purchase: InsertMarketplaceScriptPurchase,
+  ): Promise<MarketplaceScriptPurchase> {
+    const created = { ...purchase } as MarketplaceScriptPurchase;
+    this.marketplaceScriptPurchases.set(`${purchase.playerGameId}:${purchase.scriptId}`, created);
+    return created;
   }
 
   async seedMarketplaceScripts(): Promise<void> {}

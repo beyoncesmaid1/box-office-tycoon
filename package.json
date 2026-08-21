@@ -8,6 +8,8 @@
     "build": "tsx script/build.ts",
     "start": "node dist/index.cjs",
     "check": "tsc",
+    "test:isolation": "tsx script/save-isolation-test.ts",
+    "test:isolation:db": "tsx --env-file=.env script/database-save-isolation-test.ts",
     "balance": "tsx script/balance-simulation.ts",
     "db:push": "drizzle-kit push"
   },

@@ -8,6 +8,7 @@ import {
   boolean,
   real,
   jsonb,
+  primaryKey,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
@@ -540,6 +541,19 @@ export const marketplaceScripts = pgTable("marketplace_scripts", {
 export const insertMarketplaceScriptSchema = createInsertSchema(marketplaceScripts).omit({ id: true });
 export type InsertMarketplaceScript = z.infer<typeof insertMarketplaceScriptSchema>;
 export type MarketplaceScript = typeof marketplaceScripts.$inferSelect;
+
+export const marketplaceScriptPurchases = pgTable("marketplace_script_purchases", {
+  playerGameId: varchar("player_game_id").notNull().references(() => studios.id, { onDelete: "cascade" }),
+  scriptId: varchar("script_id").notNull().references(() => marketplaceScripts.id, { onDelete: "cascade" }),
+  purchasedWeek: integer("purchased_week").notNull(),
+  purchasedYear: integer("purchased_year").notNull(),
+}, table => ({
+  playerScriptPrimaryKey: primaryKey({ columns: [table.playerGameId, table.scriptId] }),
+}));
+
+export const insertMarketplaceScriptPurchaseSchema = createInsertSchema(marketplaceScriptPurchases);
+export type InsertMarketplaceScriptPurchase = z.infer<typeof insertMarketplaceScriptPurchaseSchema>;
+export type MarketplaceScriptPurchase = typeof marketplaceScriptPurchases.$inferSelect;
 
 // ==================== TV SHOWS ====================
 

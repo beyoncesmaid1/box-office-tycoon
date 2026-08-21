@@ -17,6 +17,7 @@ import {
   type FilmRole, type InsertFilmRole,
   type Franchise, type InsertFranchise,
   type MarketplaceScript, type InsertMarketplaceScript,
+  type MarketplaceScriptPurchase, type InsertMarketplaceScriptPurchase,
   type TVShow, type InsertTVShow,
   type TVSeason, type InsertTVSeason,
   type TVEpisode, type InsertTVEpisode,
@@ -30,6 +31,7 @@ import {
   studios, films, talent, users, streamingServices, streamingDeals, emails,
   awardShows, awardCategories, awardNominations, awardCeremonies,
   filmReleases, marketingActions, premiumBookings, filmMilestones, filmRoles, franchises, marketplaceScripts,
+  marketplaceScriptPurchases,
   tvShows, tvSeasons, tvEpisodes, tvDeals, tvNetworks, slateFinancingDeals,
   coProductionDeals,
   gameSessions, gameSessionPlayers, gameActivityLog
@@ -41,8 +43,19 @@ import * as fs from "fs";
 import * as path from "path";
 import { MemStorage } from "./mem-storage";
 
+function withoutGlobalTalentAvailability<T extends Talent | undefined>(candidate: T): T {
+  if (!candidate) return candidate;
+  return {
+    ...candidate,
+    currentFilmId: null,
+    busyUntilWeek: null,
+    busyUntilYear: null,
+  } as T;
+}
+
 export interface IStorage {
   commitWeekSnapshot(collections: Record<string, any[]>): Promise<void>;
+  deleteSinglePlayerSave(playerStudioId: string): Promise<void>;
   // Users
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -197,6 +210,8 @@ export interface IStorage {
   getAvailableMarketplaceScripts(): Promise<MarketplaceScript[]>;
   createMarketplaceScript(script: InsertMarketplaceScript): Promise<MarketplaceScript>;
   updateMarketplaceScript(id: string, updates: Partial<InsertMarketplaceScript>): Promise<MarketplaceScript | undefined>;
+  getMarketplaceScriptPurchasesByPlayer(playerGameId: string): Promise<MarketplaceScriptPurchase[]>;
+  createMarketplaceScriptPurchase(purchase: InsertMarketplaceScriptPurchase): Promise<MarketplaceScriptPurchase>;
   seedMarketplaceScripts(): Promise<void>;
   
   // TV Shows
@@ -291,7 +306,6 @@ export class DatabaseStorage implements IStorage {
 
     const snapshots = [
       { collection: "studios", table: studios, tableName: "studios" },
-      { collection: "talent", table: talent, tableName: "talent" },
       { collection: "films", table: films, tableName: "films" },
       { collection: "filmReleases", table: filmReleases, tableName: "film_releases" },
       { collection: "filmRoles", table: filmRoles, tableName: "film_roles" },
@@ -349,6 +363,90 @@ export class DatabaseStorage implements IStorage {
     if (!previousUpsert) return;
     const statement = `WITH ${ctes.join(",\n")} SELECT count(*) FROM ${previousUpsert}`;
     await withDatabaseRetry("weekly snapshot save", () => databasePool.query(statement, parameters), 3);
+  }
+
+  async deleteSinglePlayerSave(playerStudioId: string): Promise<void> {
+    if (!pool) throw new Error("Cannot delete a save without a database connection");
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const playerResult = await client.query(
+        "SELECT id, game_session_id FROM studios WHERE id = $1 AND is_ai = false FOR UPDATE",
+        [playerStudioId],
+      );
+      if (playerResult.rows.length === 0) throw new Error("Studio not found");
+      if (playerResult.rows[0].game_session_id) throw new Error("Multiplayer saves use their own deletion flow");
+
+      const studioRows = await client.query(
+        "SELECT id FROM studios WHERE id = $1 OR player_game_id = $1",
+        [playerStudioId],
+      );
+      const studioIds = studioRows.rows.map(row => row.id);
+      const filmRows = await client.query(
+        "SELECT id FROM films WHERE studio_id = ANY($1::varchar[])",
+        [studioIds],
+      );
+      const filmIds = filmRows.rows.map(row => row.id);
+      const showRows = await client.query(
+        "SELECT id FROM tv_shows WHERE studio_id = ANY($1::varchar[])",
+        [studioIds],
+      );
+      const showIds = showRows.rows.map(row => row.id);
+
+      if (showIds.length > 0) {
+        await client.query(
+          "DELETE FROM tv_deals WHERE tv_show_id = ANY($1::varchar[]) OR player_game_id = $2",
+          [showIds, playerStudioId],
+        );
+        await client.query("DELETE FROM tv_episodes WHERE tv_show_id = ANY($1::varchar[])", [showIds]);
+        await client.query("DELETE FROM tv_seasons WHERE tv_show_id = ANY($1::varchar[])", [showIds]);
+        await client.query("DELETE FROM tv_shows WHERE id = ANY($1::varchar[])", [showIds]);
+      } else {
+        await client.query("DELETE FROM tv_deals WHERE player_game_id = $1", [playerStudioId]);
+      }
+
+      if (filmIds.length > 0) {
+        for (const tableName of [
+          "marketing_actions",
+          "premium_bookings",
+          "film_milestones",
+          "film_roles",
+          "film_releases",
+        ]) {
+          await client.query(`DELETE FROM ${tableName} WHERE film_id = ANY($1::varchar[])`, [filmIds]);
+        }
+        await client.query(
+          "DELETE FROM streaming_deals WHERE film_id = ANY($1::varchar[]) OR player_game_id = ANY($2::varchar[])",
+          [filmIds, studioIds],
+        );
+        await client.query(
+          "DELETE FROM award_nominations WHERE film_id = ANY($1::varchar[]) OR player_game_id = $2",
+          [filmIds, playerStudioId],
+        );
+        await client.query(
+          "DELETE FROM co_production_deals WHERE film_id = ANY($1::varchar[]) OR player_game_id = $2",
+          [filmIds, playerStudioId],
+        );
+        await client.query(
+          "UPDATE films SET franchise_id = NULL, prequel_film_id = NULL WHERE id = ANY($1::varchar[])",
+          [filmIds],
+        );
+        await client.query("DELETE FROM franchises WHERE studio_id = ANY($1::varchar[])", [studioIds]);
+        await client.query("DELETE FROM films WHERE id = ANY($1::varchar[])", [filmIds]);
+      }
+
+      await client.query("DELETE FROM award_ceremonies WHERE player_game_id = $1", [playerStudioId]);
+      await client.query("DELETE FROM emails WHERE player_game_id = $1", [playerStudioId]);
+      await client.query("DELETE FROM slate_financing_deals WHERE player_game_id = $1", [playerStudioId]);
+      await client.query("DELETE FROM co_production_deals WHERE player_game_id = $1", [playerStudioId]);
+      await client.query("DELETE FROM studios WHERE id = ANY($1::varchar[])", [studioIds]);
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
   }
   // Users
   async getUser(id: string): Promise<User | undefined> {
@@ -440,31 +538,37 @@ export class DatabaseStorage implements IStorage {
   // Talent
   async getTalent(id: string): Promise<Talent | undefined> {
     const [t] = await db.select().from(talent).where(eq(talent.id, id));
-    return t;
+    return withoutGlobalTalentAvailability(t);
   }
 
   async getAllTalent(): Promise<Talent[]> {
-    return await db.select().from(talent);
+    return (await db.select().from(talent)).map(withoutGlobalTalentAvailability);
   }
 
   async getTalentByIds(talentIds: string[]): Promise<Talent[]> {
     if (talentIds.length === 0) return [];
-    return await db.select().from(talent).where(inArray(talent.id, talentIds));
+    return (await db.select().from(talent).where(inArray(talent.id, talentIds)))
+      .map(withoutGlobalTalentAvailability);
   }
 
   async createTalent(insertTalent: InsertTalent): Promise<Talent> {
-    const [t] = await db.insert(talent).values(insertTalent).returning();
-    return t;
+    const { currentFilmId: _currentFilmId, busyUntilWeek: _busyUntilWeek,
+      busyUntilYear: _busyUntilYear, ...definition } = insertTalent;
+    const [t] = await db.insert(talent).values(definition).returning();
+    return withoutGlobalTalentAvailability(t);
   }
 
   async getTalentByName(name: string): Promise<Talent | undefined> {
     const [t] = await db.select().from(talent).where(eq(talent.name, name));
-    return t;
+    return withoutGlobalTalentAvailability(t);
   }
 
   async updateTalent(id: string, updates: Partial<InsertTalent>): Promise<Talent | undefined> {
-    const [t] = await db.update(talent).set(updates).where(eq(talent.id, id)).returning();
-    return t;
+    const { currentFilmId: _currentFilmId, busyUntilWeek: _busyUntilWeek,
+      busyUntilYear: _busyUntilYear, ...definitionUpdates } = updates;
+    if (Object.keys(definitionUpdates).length === 0) return this.getTalent(id);
+    const [t] = await db.update(talent).set(definitionUpdates).where(eq(talent.id, id)).returning();
+    return withoutGlobalTalentAvailability(t);
   }
 
   async updateTalentSkillsDirect(id: string, skillFantasy: number, skillMusicals: number): Promise<void> {
@@ -1552,6 +1656,18 @@ export class DatabaseStorage implements IStorage {
   async updateMarketplaceScript(id: string, updates: Partial<InsertMarketplaceScript>): Promise<MarketplaceScript | undefined> {
     const [updated] = await db.update(marketplaceScripts).set(updates).where(eq(marketplaceScripts.id, id)).returning();
     return updated;
+  }
+
+  async getMarketplaceScriptPurchasesByPlayer(playerGameId: string): Promise<MarketplaceScriptPurchase[]> {
+    return await db.select().from(marketplaceScriptPurchases)
+      .where(eq(marketplaceScriptPurchases.playerGameId, playerGameId));
+  }
+
+  async createMarketplaceScriptPurchase(
+    purchase: InsertMarketplaceScriptPurchase,
+  ): Promise<MarketplaceScriptPurchase> {
+    const [created] = await db.insert(marketplaceScriptPurchases).values(purchase).returning();
+    return created;
   }
 
   async seedMarketplaceScripts(): Promise<void> {

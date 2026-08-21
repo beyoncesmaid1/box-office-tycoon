@@ -1,5 +1,6 @@
 import { MemStorage } from "./mem-storage";
 import { persistentStorage, setStorageMutationListener } from "./storage";
+import { applySaveTalentAvailability } from "./save-scope";
 
 export class WeekSaveCache extends MemStorage {
   readonly playerStudioId: string;
@@ -22,6 +23,9 @@ export class WeekSaveCache extends MemStorage {
       collection,
       rows.filter(row => this.baseline.get(`${collection}:${row.id}`) !== JSON.stringify(row)),
     ]));
+    // Talent definitions are shared reference data. Busy state is reconstructed
+    // from this save's films and must never be written into the global catalog.
+    changed.talent = [];
     await persistentStorage.commitWeekSnapshot(changed);
     this.captureBaseline(current);
     this.lastAccessedAt = Date.now();
@@ -42,9 +46,16 @@ async function loadWeekSaveCache(playerStudioId: string): Promise<WeekSaveCache>
   if (!playerStudio) throw new Error("Studio not found");
 
   const allStudios = await persistentStorage.getAllStudios();
+  const hasLinkedAIStudios = allStudios.some(studio => studio.playerGameId === playerStudioId);
+  const singlePlayerSavesOnDevice = allStudios.filter(studio =>
+    !studio.isAI && !studio.gameSessionId && studio.deviceId === playerStudio.deviceId
+  ).length;
+  const mayUseLegacyAIStudios = !playerStudio.gameSessionId &&
+    !hasLinkedAIStudios && singlePlayerSavesOnDevice === 1;
   const relevantStudios = allStudios.filter(studio => {
     if (studio.id === playerStudioId || studio.playerGameId === playerStudioId) return true;
-    if (studio.isAI && !studio.playerGameId && studio.deviceId === playerStudio.deviceId) return true;
+    if (mayUseLegacyAIStudios && studio.isAI && !studio.playerGameId &&
+        !studio.gameSessionId && studio.deviceId === playerStudio.deviceId) return true;
     return Boolean(playerStudio.gameSessionId && studio.gameSessionId === playerStudio.gameSessionId);
   });
   const studioIds = relevantStudios.map(studio => studio.id);
@@ -80,11 +91,11 @@ async function loadWeekSaveCache(playerStudioId: string): Promise<WeekSaveCache>
   ]);
 
   const cache = new WeekSaveCache(playerStudioId);
-  const saveFilmIds = new Set(filmIds);
-  const saveTalent = talent.map(candidate =>
-    candidate.currentFilmId && !saveFilmIds.has(candidate.currentFilmId)
-      ? { ...candidate, currentFilmId: null, busyUntilWeek: null, busyUntilYear: null }
-      : candidate
+  const saveTalent = applySaveTalentAvailability(
+    talent,
+    films,
+    playerStudio.currentWeek,
+    playerStudio.currentYear,
   );
   cache.hydrateCollections({
     studios: relevantStudios,
