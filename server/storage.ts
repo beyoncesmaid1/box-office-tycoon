@@ -87,7 +87,9 @@ export interface IStorage {
   // Streaming Deals
   getStreamingDeal(id: string): Promise<StreamingDeal | undefined>;
   getStreamingDealsByFilm(filmId: string): Promise<StreamingDeal[]>;
+  getStreamingDealsByFilms(filmIds: string[]): Promise<StreamingDeal[]>;
   getStreamingDealsByPlayer(playerGameId: string): Promise<StreamingDeal[]>;
+  getStreamingDealsByPlayers(playerGameIds: string[]): Promise<StreamingDeal[]>;
   getStreamingDealsByService(streamingServiceId: string): Promise<StreamingDeal[]>;
   createStreamingDeal(deal: InsertStreamingDeal): Promise<StreamingDeal>;
   updateStreamingDeal(id: string, updates: Partial<InsertStreamingDeal>): Promise<StreamingDeal | undefined>;
@@ -119,6 +121,7 @@ export interface IStorage {
   getNominationsByFilm(filmId: string): Promise<AwardNomination[]>;
   getNominationsByCeremony(playerGameId: string, awardShowId: string, ceremonyYear: number): Promise<AwardNomination[]>;
   createAwardNomination(nomination: InsertAwardNomination): Promise<AwardNomination>;
+  createAwardNominations(nominations: InsertAwardNomination[]): Promise<AwardNomination[]>;
   updateAwardNomination(id: string, updates: Partial<InsertAwardNomination>): Promise<AwardNomination | undefined>;
   deleteAwardNomination(id: string): Promise<void>;
   
@@ -138,15 +141,19 @@ export interface IStorage {
   createFilmRelease(release: InsertFilmRelease): Promise<FilmRelease>;
   createFilmReleases(releases: InsertFilmRelease[]): Promise<FilmRelease[]>;
   updateFilmRelease(id: string, updates: Partial<InsertFilmRelease>): Promise<FilmRelease | undefined>;
+  updateFilmReleaseWeeks(releases: FilmRelease[]): Promise<void>;
   deleteFilmRelease(id: string): Promise<void>;
 
   // Marketing campaigns and aggregate premium bookings
   getMarketingActionsByFilm(filmId: string): Promise<MarketingAction[]>;
+  getMarketingActionsByFilms(filmIds: string[]): Promise<MarketingAction[]>;
   createMarketingAction(action: InsertMarketingAction): Promise<MarketingAction>;
+  createMarketingActions(actions: InsertMarketingAction[]): Promise<MarketingAction[]>;
   getPremiumBooking(id: string): Promise<PremiumBooking | undefined>;
   getPremiumBookingsByFilm(filmId: string): Promise<PremiumBooking[]>;
   getAllPremiumBookings(): Promise<PremiumBooking[]>;
   createPremiumBooking(booking: InsertPremiumBooking): Promise<PremiumBooking>;
+  createPremiumBookings(bookings: InsertPremiumBooking[]): Promise<PremiumBooking[]>;
   updatePremiumBooking(id: string, updates: Partial<InsertPremiumBooking>): Promise<PremiumBooking | undefined>;
   deletePremiumBooking(id: string): Promise<void>;
   
@@ -828,8 +835,18 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(streamingDeals).where(eq(streamingDeals.filmId, filmId));
   }
 
+  async getStreamingDealsByFilms(filmIds: string[]): Promise<StreamingDeal[]> {
+    if (filmIds.length === 0) return [];
+    return await db.select().from(streamingDeals).where(inArray(streamingDeals.filmId, filmIds));
+  }
+
   async getStreamingDealsByPlayer(playerGameId: string): Promise<StreamingDeal[]> {
     return await db.select().from(streamingDeals).where(eq(streamingDeals.playerGameId, playerGameId));
+  }
+
+  async getStreamingDealsByPlayers(playerGameIds: string[]): Promise<StreamingDeal[]> {
+    if (playerGameIds.length === 0) return [];
+    return await db.select().from(streamingDeals).where(inArray(streamingDeals.playerGameId, playerGameIds));
   }
 
   async getStreamingDealsByService(streamingServiceId: string): Promise<StreamingDeal[]> {
@@ -1115,6 +1132,11 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
+  async createAwardNominations(nominations: InsertAwardNomination[]): Promise<AwardNomination[]> {
+    if (nominations.length === 0) return [];
+    return await db.insert(awardNominations).values(nominations).returning();
+  }
+
   async updateAwardNomination(id: string, updates: Partial<InsertAwardNomination>): Promise<AwardNomination | undefined> {
     const [updated] = await db.update(awardNominations).set(updates).where(eq(awardNominations.id, id)).returning();
     return updated;
@@ -1199,6 +1221,58 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
+  async updateFilmReleaseWeeks(releases: FilmRelease[]): Promise<void> {
+    if (releases.length === 0) return;
+    const payload = releases.map(release => ({
+      id: release.id,
+      awareness: release.awareness,
+      interest: release.interest,
+      expectation: release.expectation,
+      buzz: release.buzz,
+      paid_reach: release.paidReach,
+      opening_expectation: release.openingExpectation,
+      is_released: release.isReleased,
+      weekly_box_office: release.weeklyBoxOffice,
+      weekly_capacity_breakdown: release.weeklyCapacityBreakdown,
+      total_box_office: release.totalBoxOffice,
+      theater_count: release.theaterCount,
+      weeks_in_release: release.weeksInRelease,
+    }));
+    await db.execute(sql`
+      UPDATE film_releases AS target SET
+        awareness = source.awareness,
+        interest = source.interest,
+        expectation = source.expectation,
+        buzz = source.buzz,
+        paid_reach = source.paid_reach,
+        opening_expectation = source.opening_expectation,
+        is_released = source.is_released,
+        weekly_box_office = ARRAY(
+          SELECT item::bigint FROM jsonb_array_elements_text(source.weekly_box_office) AS item
+        ),
+        weekly_capacity_breakdown = source.weekly_capacity_breakdown,
+        total_box_office = source.total_box_office,
+        theater_count = source.theater_count,
+        weeks_in_release = source.weeks_in_release
+      FROM jsonb_to_recordset(${JSON.stringify(payload)}::jsonb) AS source(
+        id text,
+        awareness real,
+        interest real,
+        expectation real,
+        buzz real,
+        paid_reach real,
+        opening_expectation real,
+        is_released boolean,
+        weekly_box_office jsonb,
+        weekly_capacity_breakdown jsonb,
+        total_box_office bigint,
+        theater_count integer,
+        weeks_in_release integer
+      )
+      WHERE target.id = source.id
+    `);
+  }
+
   async deleteFilmRelease(id: string): Promise<void> {
     await db.delete(filmReleases).where(eq(filmReleases.id, id));
   }
@@ -1207,9 +1281,19 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(marketingActions).where(eq(marketingActions.filmId, filmId));
   }
 
+  async getMarketingActionsByFilms(filmIds: string[]): Promise<MarketingAction[]> {
+    if (filmIds.length === 0) return [];
+    return await db.select().from(marketingActions).where(inArray(marketingActions.filmId, filmIds));
+  }
+
   async createMarketingAction(action: InsertMarketingAction): Promise<MarketingAction> {
     const [created] = await db.insert(marketingActions).values(action).returning();
     return created;
+  }
+
+  async createMarketingActions(actions: InsertMarketingAction[]): Promise<MarketingAction[]> {
+    if (actions.length === 0) return [];
+    return await db.insert(marketingActions).values(actions).returning();
   }
 
   async getPremiumBooking(id: string): Promise<PremiumBooking | undefined> {
@@ -1228,6 +1312,11 @@ export class DatabaseStorage implements IStorage {
   async createPremiumBooking(booking: InsertPremiumBooking): Promise<PremiumBooking> {
     const [created] = await db.insert(premiumBookings).values(booking).returning();
     return created;
+  }
+
+  async createPremiumBookings(bookings: InsertPremiumBooking[]): Promise<PremiumBooking[]> {
+    if (bookings.length === 0) return [];
+    return await db.insert(premiumBookings).values(bookings).returning();
   }
 
   async updatePremiumBooking(

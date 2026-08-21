@@ -508,8 +508,18 @@ export class MemStorage implements IStorage {
     return Array.from(this.streamingDeals.values()).filter(d => d.filmId === filmId);
   }
 
+  async getStreamingDealsByFilms(filmIds: string[]): Promise<StreamingDeal[]> {
+    const ids = new Set(filmIds);
+    return Array.from(this.streamingDeals.values()).filter(deal => deal.filmId && ids.has(deal.filmId));
+  }
+
   async getStreamingDealsByPlayer(playerGameId: string): Promise<StreamingDeal[]> {
     return Array.from(this.streamingDeals.values()).filter(d => d.playerGameId === playerGameId);
+  }
+
+  async getStreamingDealsByPlayers(playerGameIds: string[]): Promise<StreamingDeal[]> {
+    const ids = new Set(playerGameIds);
+    return Array.from(this.streamingDeals.values()).filter(deal => ids.has(deal.playerGameId));
   }
 
   async getStreamingDealsByService(streamingServiceId: string): Promise<StreamingDeal[]> {
@@ -702,6 +712,10 @@ export class MemStorage implements IStorage {
     return n;
   }
 
+  async createAwardNominations(nominations: InsertAwardNomination[]): Promise<AwardNomination[]> {
+    return Promise.all(nominations.map(nomination => this.createAwardNomination(nomination)));
+  }
+
   async updateAwardNomination(id: string, updates: Partial<InsertAwardNomination>): Promise<AwardNomination | undefined> {
     const nom = this.awardNominations.get(id);
     if (!nom) return undefined;
@@ -811,6 +825,10 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
+  async updateFilmReleaseWeeks(releases: FilmRelease[]): Promise<void> {
+    for (const release of releases) this.filmReleases.set(release.id, release);
+  }
+
   async deleteFilmRelease(id: string): Promise<void> {
     this.filmReleases.delete(id);
   }
@@ -819,10 +837,19 @@ export class MemStorage implements IStorage {
     return Array.from(this.marketingActions.values()).filter(action => action.filmId === filmId);
   }
 
+  async getMarketingActionsByFilms(filmIds: string[]): Promise<MarketingAction[]> {
+    const ids = new Set(filmIds);
+    return Array.from(this.marketingActions.values()).filter(action => ids.has(action.filmId));
+  }
+
   async createMarketingAction(action: InsertMarketingAction): Promise<MarketingAction> {
     const created: MarketingAction = { id: generateId(), ...action } as MarketingAction;
     this.marketingActions.set(created.id, created);
     return created;
+  }
+
+  async createMarketingActions(actions: InsertMarketingAction[]): Promise<MarketingAction[]> {
+    return Promise.all(actions.map(action => this.createMarketingAction(action)));
   }
 
   async getPremiumBooking(id: string): Promise<PremiumBooking | undefined> {
@@ -841,6 +868,10 @@ export class MemStorage implements IStorage {
     const created: PremiumBooking = { id: generateId(), ...booking } as PremiumBooking;
     this.premiumBookings.set(created.id, created);
     return created;
+  }
+
+  async createPremiumBookings(bookings: InsertPremiumBooking[]): Promise<PremiumBooking[]> {
+    return Promise.all(bookings.map(booking => this.createPremiumBooking(booking)));
   }
 
   async updatePremiumBooking(
