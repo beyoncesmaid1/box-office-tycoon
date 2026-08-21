@@ -146,6 +146,11 @@ export class MemStorage implements IStorage {
     return Array.from(this.films.values()).filter(f => f.studioId === studioId);
   }
 
+  async getFilmsByStudioIds(studioIds: string[]): Promise<Film[]> {
+    const ids = new Set(studioIds);
+    return Array.from(this.films.values()).filter(film => ids.has(film.studioId));
+  }
+
   async getAllFilms(): Promise<Film[]> {
     return Array.from(this.films.values());
   }
@@ -270,6 +275,11 @@ export class MemStorage implements IStorage {
 
   async getAllTalent(): Promise<Talent[]> {
     return Array.from(this.talentMap.values());
+  }
+
+  async getTalentByIds(talentIds: string[]): Promise<Talent[]> {
+    const ids = new Set(talentIds);
+    return Array.from(this.talentMap.values()).filter(candidate => ids.has(candidate.id));
   }
 
   async createTalent(insertTalent: InsertTalent): Promise<Talent> {
@@ -753,6 +763,11 @@ export class MemStorage implements IStorage {
     return Array.from(this.filmReleases.values()).filter(r => r.filmId === filmId);
   }
 
+  async getFilmReleasesByFilms(filmIds: string[]): Promise<FilmRelease[]> {
+    const ids = new Set(filmIds);
+    return Array.from(this.filmReleases.values()).filter(release => ids.has(release.filmId));
+  }
+
   async getFilmReleaseByTerritory(filmId: string, territoryCode: string): Promise<FilmRelease | undefined> {
     return Array.from(this.filmReleases.values()).find(r => r.filmId === filmId && r.territoryCode === territoryCode);
   }
@@ -883,6 +898,11 @@ export class MemStorage implements IStorage {
 
   async getFilmRolesByFilm(filmId: string): Promise<FilmRole[]> {
     return Array.from(this.filmRoles.values()).filter(r => r.filmId === filmId);
+  }
+
+  async getFilmRolesByFilms(filmIds: string[]): Promise<FilmRole[]> {
+    const ids = new Set(filmIds);
+    return Array.from(this.filmRoles.values()).filter(role => ids.has(role.filmId));
   }
 
   async createFilmRole(role: InsertFilmRole): Promise<FilmRole> {

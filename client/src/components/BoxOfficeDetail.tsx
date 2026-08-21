@@ -794,7 +794,7 @@ export function BoxOfficeDetail() {
   const [territoryFilter, setTerritoryFilter] = useState<string>('ALL');
   
   // In multiplayer, fetch films from the session endpoint to see all players' films
-  const { data: sessionFilmsData } = useQuery<{ films: FilmType[]; studios: Studio[] }>({
+  const { data: sessionFilmsData, isLoading: sessionFilmsLoading } = useQuery<{ films: FilmType[]; studios: Studio[] }>({
     queryKey: ['/api/multiplayer/sessions', state.multiplayerSessionId, 'films'],
     queryFn: async () => {
       const res = await fetch(`/api/multiplayer/sessions/${state.multiplayerSessionId}/films`);
@@ -804,11 +804,11 @@ export function BoxOfficeDetail() {
   });
 
   // Single player: use the regular endpoints
-  const { data: singlePlayerFilms } = useQuery<FilmType[]>({
+  const { data: singlePlayerFilms, isLoading: singlePlayerFilmsLoading } = useQuery<FilmType[]>({
     queryKey: ['/api/all-films', state.studioId],
     enabled: !state.isMultiplayer && !!state.studioId,
   });
-  const { data: singlePlayerStudios } = useQuery<Studio[]>({
+  const { data: singlePlayerStudios, isLoading: singlePlayerStudiosLoading } = useQuery<Studio[]>({
     queryKey: ['/api/studios', state.studioId],
     enabled: !state.isMultiplayer && !!state.studioId,
   });
@@ -816,6 +816,20 @@ export function BoxOfficeDetail() {
   // Use multiplayer data if available, otherwise single player
   const allFilms = asArray<FilmType>(state.isMultiplayer ? sessionFilmsData?.films : singlePlayerFilms);
   const allStudios = asArray<Studio>(state.isMultiplayer ? sessionFilmsData?.studios : singlePlayerStudios);
+
+  const boxOfficeLoading = state.isMultiplayer
+    ? sessionFilmsLoading
+    : singlePlayerFilmsLoading || singlePlayerStudiosLoading;
+  if (boxOfficeLoading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <Card className="px-8 py-6 text-center">
+          <Clock className="w-8 h-8 mx-auto mb-3 text-primary animate-pulse" />
+          <p className="font-display text-lg">Loading box office history…</p>
+        </Card>
+      </div>
+    );
+  }
 
   const studioMap = new Map(allStudios.map(s => [s.id, s.name]));
 

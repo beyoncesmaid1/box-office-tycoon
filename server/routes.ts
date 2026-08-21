@@ -6056,8 +6056,6 @@ export async function registerRoutes(
     try {
       const { playerId } = req.params;
       const allStudios = await storage.getAllStudios();
-      const allFilmsRaw = await storage.getAllFilms();
-      const allFilms = Array.isArray(allFilmsRaw) ? allFilmsRaw : [];
       const playerStudio = allStudios.find(s => s.id === playerId);
       
       if (!playerStudio) {
@@ -6072,14 +6070,34 @@ export async function registerRoutes(
         (playerStudio.gameSessionId && s.gameSessionId === playerStudio.gameSessionId)
       );
       const gameStudioIds = new Set(gameStudios.map(s => s.id));
-      
-      const filtered = allFilms.filter(f => gameStudioIds.has(f.studioId));
-      
-      console.log(`[ALL-FILMS] Player: ${playerId}, gameSessionId: ${playerStudio.gameSessionId}, gameStudios: ${gameStudios.length}, totalFilms: ${allFilms.length}, filteredFilms: ${filtered.length}`);
-      
+      const filtered = await storage.getFilmsByStudioIds([...gameStudioIds]);
+      const filmIds = filtered.map(film => film.id);
+      const [allRoles, allReleases] = await Promise.all([
+        storage.getFilmRolesByFilms(filmIds),
+        storage.getFilmReleasesByFilms(filmIds),
+      ]);
+      const actorIds = [...new Set(allRoles
+        .map(role => role.actorId)
+        .filter((actorId): actorId is string => Boolean(actorId)))];
+      const allTalent = await storage.getTalentByIds(actorIds);
+      const rolesByFilm = new Map<string, typeof allRoles>();
+      for (const role of allRoles) {
+        const roles = rolesByFilm.get(role.filmId) || [];
+        roles.push(role);
+        rolesByFilm.set(role.filmId, roles);
+      }
+      const releasesByFilm = new Map<string, typeof allReleases>();
+      for (const release of allReleases) {
+        const releases = releasesByFilm.get(release.filmId) || [];
+        releases.push(release);
+        releasesByFilm.set(release.filmId, releases);
+      }
+      const talentById = new Map(allTalent.map(candidate => [candidate.id, candidate]));
+      console.log(`[ALL-FILMS] Player: ${playerId}, gameStudios: ${gameStudios.length}, filteredFilms: ${filtered.length}`);
+
       // Enrich films with lead/supporting actor info for Oscar predictions
-      const enrichedFilms = await Promise.all(filtered.map(async (film) => {
-        const roles = await storage.getFilmRolesByFilm(film.id);
+      const enrichedFilms = filtered.map(film => {
+        const roles = rolesByFilm.get(film.id) || [];
         let leadActorId: string | null = null;
         let leadActressId: string | null = null;
         let supportingActorId: string | null = null;
@@ -6087,7 +6105,7 @@ export async function registerRoutes(
         
         for (const role of roles) {
           if (!role.actorId || !role.isCast) continue;
-          const talent = await storage.getTalent(role.actorId);
+          const talent = talentById.get(role.actorId);
           if (!talent || talent.type !== 'actor') continue;
           
           if (role.importance === 'lead') {
@@ -6112,14 +6130,14 @@ export async function registerRoutes(
           supportingActorId,
           supportingActressId,
         };
-      }));
+      });
       
       // Ensure all films have release weeks AND years assigned
       const currentWeek = playerStudio.currentWeek;
       const currentYear = playerStudio.currentYear;
       for (const film of enrichedFilms) {
         // First, check if this film has scheduled territory releases (player films)
-        const territoryReleases = await storage.getFilmReleasesByFilm(film.id);
+        const territoryReleases = releasesByFilm.get(film.id) || [];
         if (territoryReleases.length > 0) {
           // Use the earliest scheduled territory release date
           let earliestWeek = territoryReleases[0].releaseWeek;

@@ -35,7 +35,7 @@ import {
   gameSessions, gameSessionPlayers, gameActivityLog
 } from "@shared/schema";
 import { db, hasDatabase } from "./db";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, inArray, sql } from "drizzle-orm";
 import * as fs from "fs";
 import * as path from "path";
 import { MemStorage } from "./mem-storage";
@@ -59,6 +59,7 @@ export interface IStorage {
   // Films
   getFilm(id: string): Promise<Film | undefined>;
   getFilmsByStudio(studioId: string): Promise<Film[]>;
+  getFilmsByStudioIds(studioIds: string[]): Promise<Film[]>;
   getAllFilms(): Promise<Film[]>;
   createFilm(film: InsertFilm): Promise<Film>;
   createFilms(filmRows: InsertFilm[]): Promise<Film[]>;
@@ -69,6 +70,7 @@ export interface IStorage {
   getTalent(id: string): Promise<Talent | undefined>;
   getTalentByName(name: string): Promise<Talent | undefined>;
   getAllTalent(): Promise<Talent[]>;
+  getTalentByIds(talentIds: string[]): Promise<Talent[]>;
   createTalent(t: InsertTalent): Promise<Talent>;
   updateTalent(id: string, updates: Partial<InsertTalent>): Promise<Talent | undefined>;
   updateTalentSkillsDirect(id: string, skillFantasy: number, skillMusicals: number): Promise<void>;
@@ -131,6 +133,7 @@ export interface IStorage {
   getFilmRelease(id: string): Promise<FilmRelease | undefined>;
   getAllFilmReleases(): Promise<FilmRelease[]>;
   getFilmReleasesByFilm(filmId: string): Promise<FilmRelease[]>;
+  getFilmReleasesByFilms(filmIds: string[]): Promise<FilmRelease[]>;
   getFilmReleaseByTerritory(filmId: string, territoryCode: string): Promise<FilmRelease | undefined>;
   createFilmRelease(release: InsertFilmRelease): Promise<FilmRelease>;
   createFilmReleases(releases: InsertFilmRelease[]): Promise<FilmRelease[]>;
@@ -160,6 +163,7 @@ export interface IStorage {
   // Film Roles (casting)
   getFilmRole(id: string): Promise<FilmRole | undefined>;
   getFilmRolesByFilm(filmId: string): Promise<FilmRole[]>;
+  getFilmRolesByFilms(filmIds: string[]): Promise<FilmRole[]>;
   createFilmRole(role: InsertFilmRole): Promise<FilmRole>;
   createFilmRoles(roles: InsertFilmRole[]): Promise<FilmRole[]>;
   updateFilmRole(id: string, updates: Partial<InsertFilmRole>): Promise<FilmRole | undefined>;
@@ -327,6 +331,11 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(films).where(eq(films.studioId, studioId));
   }
 
+  async getFilmsByStudioIds(studioIds: string[]): Promise<Film[]> {
+    if (studioIds.length === 0) return [];
+    return await db.select().from(films).where(inArray(films.studioId, studioIds));
+  }
+
   async getAllFilms(): Promise<Film[]> {
     return await db.select().from(films);
   }
@@ -358,6 +367,11 @@ export class DatabaseStorage implements IStorage {
 
   async getAllTalent(): Promise<Talent[]> {
     return await db.select().from(talent);
+  }
+
+  async getTalentByIds(talentIds: string[]): Promise<Talent[]> {
+    if (talentIds.length === 0) return [];
+    return await db.select().from(talent).where(inArray(talent.id, talentIds));
   }
 
   async createTalent(insertTalent: InsertTalent): Promise<Talent> {
@@ -1155,6 +1169,11 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(filmReleases).where(eq(filmReleases.filmId, filmId));
   }
 
+  async getFilmReleasesByFilms(filmIds: string[]): Promise<FilmRelease[]> {
+    if (filmIds.length === 0) return [];
+    return await db.select().from(filmReleases).where(inArray(filmReleases.filmId, filmIds));
+  }
+
   async getFilmReleaseByTerritory(filmId: string, territoryCode: string): Promise<FilmRelease | undefined> {
     const [release] = await db.select().from(filmReleases).where(
       and(
@@ -1263,6 +1282,11 @@ export class DatabaseStorage implements IStorage {
 
   async getFilmRolesByFilm(filmId: string): Promise<FilmRole[]> {
     return await db.select().from(filmRoles).where(eq(filmRoles.filmId, filmId));
+  }
+
+  async getFilmRolesByFilms(filmIds: string[]): Promise<FilmRole[]> {
+    if (filmIds.length === 0) return [];
+    return await db.select().from(filmRoles).where(inArray(filmRoles.filmId, filmIds));
   }
 
   async createFilmRole(role: any): Promise<FilmRole> {
