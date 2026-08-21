@@ -34,13 +34,15 @@ import {
   coProductionDeals,
   gameSessions, gameSessionPlayers, gameActivityLog
 } from "@shared/schema";
-import { db, hasDatabase } from "./db";
-import { eq, and, inArray, sql } from "drizzle-orm";
+import { db, hasDatabase, pool, withDatabaseRetry } from "./db";
+import { eq, and, inArray, sql, getTableColumns } from "drizzle-orm";
+import { AsyncLocalStorage } from "node:async_hooks";
 import * as fs from "fs";
 import * as path from "path";
 import { MemStorage } from "./mem-storage";
 
 export interface IStorage {
+  commitWeekSnapshot(collections: Record<string, any[]>): Promise<void>;
   // Users
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -283,6 +285,71 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  async commitWeekSnapshot(collections: Record<string, any[]>): Promise<void> {
+    if (!pool) throw new Error("Cannot save a week without a database connection");
+    const databasePool = pool;
+
+    const snapshots = [
+      { collection: "studios", table: studios, tableName: "studios" },
+      { collection: "talent", table: talent, tableName: "talent" },
+      { collection: "films", table: films, tableName: "films" },
+      { collection: "filmReleases", table: filmReleases, tableName: "film_releases" },
+      { collection: "filmRoles", table: filmRoles, tableName: "film_roles" },
+      { collection: "marketingActions", table: marketingActions, tableName: "marketing_actions" },
+      { collection: "premiumBookings", table: premiumBookings, tableName: "premium_bookings" },
+      { collection: "streamingDeals", table: streamingDeals, tableName: "streaming_deals" },
+      { collection: "emails", table: emails, tableName: "emails" },
+      { collection: "awardCeremonies", table: awardCeremonies, tableName: "award_ceremonies" },
+      { collection: "awardNominations", table: awardNominations, tableName: "award_nominations" },
+      { collection: "slateFinancingDeals", table: slateFinancingDeals, tableName: "slate_financing_deals" },
+    ];
+
+    const ctes: string[] = [];
+    const parameters: string[] = [];
+    let previousUpsert: string | undefined;
+    let snapshotIndex = 0;
+
+    for (const snapshot of snapshots) {
+      const rows = collections[snapshot.collection] || [];
+      if (rows.length === 0) continue;
+
+      snapshotIndex += 1;
+      const columns = getTableColumns(snapshot.table) as Record<string, { name: string }>;
+      const columnEntries = Object.entries(columns);
+      const quotedColumns = columnEntries.map(([, column]) => `"${column.name}"`).join(", ");
+      const updateColumns = columnEntries
+        .filter(([key]) => key !== "id")
+        .map(([, column]) => `"${column.name}" = EXCLUDED."${column.name}"`)
+        .join(", ");
+      const databaseRows = rows.map((row: any) => Object.fromEntries(
+        columnEntries.map(([key, column]) => [column.name, row[key] ?? null]),
+      ));
+      const inputName = `snapshot_${snapshotIndex}_input`;
+      const upsertName = `snapshot_${snapshotIndex}_upsert`;
+      const dependency = previousUpsert
+        ? ` WHERE (SELECT count(*) FROM ${previousUpsert}) >= 0`
+        : "";
+
+      parameters.push(JSON.stringify(databaseRows));
+      ctes.push(
+        `${inputName} AS MATERIALIZED (` +
+          `SELECT * FROM jsonb_populate_recordset(NULL::"${snapshot.tableName}", $${parameters.length}::jsonb)` +
+        `)`,
+      );
+      ctes.push(
+        `${upsertName} AS (` +
+          `INSERT INTO "${snapshot.tableName}" (${quotedColumns}) ` +
+          `SELECT ${quotedColumns} FROM ${inputName}${dependency} ` +
+          `ON CONFLICT ("id") DO UPDATE SET ${updateColumns} RETURNING "id"` +
+        `)`,
+      );
+      previousUpsert = upsertName;
+    }
+
+    if (!previousUpsert) return;
+    const statement = `WITH ${ctes.join(",\n")} SELECT count(*) FROM ${previousUpsert}`;
+    await withDatabaseRetry("weekly snapshot save", () => databasePool.query(statement, parameters), 3);
+  }
   // Users
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
@@ -3707,7 +3774,35 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-export const storage: IStorage = hasDatabase ? new DatabaseStorage() : new MemStorage();
+export const persistentStorage: IStorage = hasDatabase ? new DatabaseStorage() : new MemStorage();
+const storageContext = new AsyncLocalStorage<IStorage>();
+let storageMutationListener: (() => void) | undefined;
+
+export function setStorageMutationListener(listener: () => void): void {
+  storageMutationListener = listener;
+}
+
+export const storage: IStorage = new Proxy({} as IStorage, {
+  get(_target, property) {
+    const contextualStorage = storageContext.getStore();
+    const activeStorage = contextualStorage || persistentStorage;
+    const value = (activeStorage as any)[property];
+    if (typeof value !== "function") return value;
+    if (contextualStorage || typeof property !== "string" ||
+        !/^(create|update|delete|seed)/.test(property)) {
+      return value.bind(activeStorage);
+    }
+    return async (...args: any[]) => {
+      const result = await value.apply(activeStorage, args);
+      storageMutationListener?.();
+      return result;
+    };
+  },
+});
+
+export function runWithStorage<T>(override: IStorage, operation: () => Promise<T>): Promise<T> {
+  return storageContext.run(override, operation);
+}
 
 if (!hasDatabase) {
   console.log('Warning: Running with in-memory storage. Data will not persist between restarts.');

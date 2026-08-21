@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { runWithStorage, storage } from "./storage";
+import { getWeekSaveCache, invalidateWeekSaveCache, warmWeekSaveCache } from "./week-cache";
 import {
   insertFilmSchema,
   insertStudioSchema,
@@ -3105,6 +3106,7 @@ export async function registerRoutes(
       if (!studio) {
         return res.status(404).json({ error: "Studio not found" });
       }
+      if (!studio.isAI) warmWeekSaveCache(id);
       res.json(studio);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch studio" });
@@ -3536,6 +3538,7 @@ export async function registerRoutes(
         })),
       ]);
       console.log(`[PRELOAD] Built ${weeks} weeks with ${plans.length} films and 0 TV shows.`);
+      warmWeekSaveCache(id);
       res.json(await storage.getStudio(id));
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
@@ -4380,8 +4383,10 @@ export async function registerRoutes(
   });
 
   app.post("/api/studio/:id/advance-week", async (req, res) => {
+    const { id } = req.params;
     try {
-      const { id } = req.params;
+      const weekCache = await getWeekSaveCache(id);
+      return await runWithStorage(weekCache, async () => {
       // Load the small shared tables first. Films are fetched only for this save;
       // the global film table can be tens of megabytes in long-running databases.
       const [studio, initialStudios, allTalent] = await Promise.all([
@@ -6169,9 +6174,12 @@ export async function registerRoutes(
         processStreamingViews(id, newWeek, newYear, allStudios, finalFilms).catch(() => {})
       ]);
 
+      await weekCache.flush();
       const updatedStudio = await storage.getStudio(id);
       res.json(updatedStudio);
+      });
     } catch (error) {
+      invalidateWeekSaveCache(id);
       console.error("Error advancing week:", error);
       res.status(500).json({ error: "Failed to advance week" });
     }

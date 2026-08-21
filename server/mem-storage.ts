@@ -37,33 +37,93 @@ function generateId(): string {
 }
 
 export class MemStorage implements IStorage {
-  private users: Map<string, User> = new Map();
-  private studios: Map<string, Studio> = new Map();
-  private films: Map<string, Film> = new Map();
-  private talentMap: Map<string, Talent> = new Map();
-  private streamingServices: Map<string, StreamingService> = new Map();
-  private streamingDeals: Map<string, StreamingDeal> = new Map();
-  private emails: Map<string, Email> = new Map();
-  private awardShows: Map<string, AwardShow> = new Map();
-  private awardCategories: Map<string, AwardCategory> = new Map();
-  private awardNominations: Map<string, AwardNomination> = new Map();
-  private awardCeremonies: Map<string, AwardCeremony> = new Map();
-  private filmReleases: Map<string, FilmRelease> = new Map();
-  private marketingActions: Map<string, MarketingAction> = new Map();
-  private premiumBookings: Map<string, PremiumBooking> = new Map();
-  private filmMilestones: Map<string, FilmMilestone> = new Map();
-  private filmRoles: Map<string, FilmRole> = new Map();
-  private franchises: Map<string, Franchise> = new Map();
-  private gameSessions: Map<string, GameSession> = new Map();
-  private gameSessionPlayers: Map<string, GameSessionPlayer> = new Map();
-  private gameActivityLogs: Map<string, GameActivityLog> = new Map();
-  private tvShows: Map<string, TVShow> = new Map();
-  private tvSeasons: Map<string, TVSeason> = new Map();
-  private tvEpisodes: Map<string, TVEpisode> = new Map();
-  private tvDeals: Map<string, TVDeal> = new Map();
-  private tvNetworks: Map<string, TVNetwork> = new Map();
-  private marketplaceScripts: Map<string, MarketplaceScript> = new Map();
-  private coProductionDeals: Map<string, CoProductionDeal> = new Map();
+  async commitWeekSnapshot(collections: Record<string, any[]>): Promise<void> {
+    this.hydrateCollections(collections);
+  }
+  protected users: Map<string, User> = new Map();
+  protected studios: Map<string, Studio> = new Map();
+  protected films: Map<string, Film> = new Map();
+  protected talentMap: Map<string, Talent> = new Map();
+  protected streamingServices: Map<string, StreamingService> = new Map();
+  protected streamingDeals: Map<string, StreamingDeal> = new Map();
+  protected emails: Map<string, Email> = new Map();
+  protected awardShows: Map<string, AwardShow> = new Map();
+  protected awardCategories: Map<string, AwardCategory> = new Map();
+  protected awardNominations: Map<string, AwardNomination> = new Map();
+  protected awardCeremonies: Map<string, AwardCeremony> = new Map();
+  protected filmReleases: Map<string, FilmRelease> = new Map();
+  protected marketingActions: Map<string, MarketingAction> = new Map();
+  protected premiumBookings: Map<string, PremiumBooking> = new Map();
+  protected filmMilestones: Map<string, FilmMilestone> = new Map();
+  protected filmRoles: Map<string, FilmRole> = new Map();
+  protected franchises: Map<string, Franchise> = new Map();
+  protected gameSessions: Map<string, GameSession> = new Map();
+  protected gameSessionPlayers: Map<string, GameSessionPlayer> = new Map();
+  protected gameActivityLogs: Map<string, GameActivityLog> = new Map();
+  protected tvShows: Map<string, TVShow> = new Map();
+  protected tvSeasons: Map<string, TVSeason> = new Map();
+  protected tvEpisodes: Map<string, TVEpisode> = new Map();
+  protected tvDeals: Map<string, TVDeal> = new Map();
+  protected tvNetworks: Map<string, TVNetwork> = new Map();
+  protected marketplaceScripts: Map<string, MarketplaceScript> = new Map();
+  protected coProductionDeals: Map<string, CoProductionDeal> = new Map();
+  protected slateFinancingDeals: Map<string, SlateFinancingDeal> = new Map();
+
+  hydrateCollections(collections: Record<string, any[]>): void {
+    const targets: Record<string, Map<string, any>> = {
+      studios: this.studios,
+      films: this.films,
+      talent: this.talentMap,
+      streamingServices: this.streamingServices,
+      streamingDeals: this.streamingDeals,
+      emails: this.emails,
+      awardShows: this.awardShows,
+      awardCategories: this.awardCategories,
+      awardNominations: this.awardNominations,
+      awardCeremonies: this.awardCeremonies,
+      filmReleases: this.filmReleases,
+      marketingActions: this.marketingActions,
+      premiumBookings: this.premiumBookings,
+      filmMilestones: this.filmMilestones,
+      filmRoles: this.filmRoles,
+      franchises: this.franchises,
+      tvShows: this.tvShows,
+      tvSeasons: this.tvSeasons,
+      tvEpisodes: this.tvEpisodes,
+      tvDeals: this.tvDeals,
+      tvNetworks: this.tvNetworks,
+      marketplaceScripts: this.marketplaceScripts,
+      coProductionDeals: this.coProductionDeals,
+      slateFinancingDeals: this.slateFinancingDeals,
+    };
+    for (const [name, rows] of Object.entries(collections)) {
+      const target = targets[name];
+      if (!target) continue;
+      for (const row of rows) target.set(row.id, structuredClone(row));
+    }
+  }
+
+  exportCollections(): Record<string, any[]> {
+    return {
+      studios: Array.from(this.studios.values()),
+      films: Array.from(this.films.values()),
+      talent: Array.from(this.talentMap.values()),
+      streamingDeals: Array.from(this.streamingDeals.values()),
+      emails: Array.from(this.emails.values()),
+      awardNominations: Array.from(this.awardNominations.values()),
+      awardCeremonies: Array.from(this.awardCeremonies.values()),
+      filmReleases: Array.from(this.filmReleases.values()),
+      marketingActions: Array.from(this.marketingActions.values()),
+      premiumBookings: Array.from(this.premiumBookings.values()),
+      filmRoles: Array.from(this.filmRoles.values()),
+      slateFinancingDeals: Array.from(this.slateFinancingDeals.values()),
+    };
+  }
+
+  containsEntity(collection: string, id: string): boolean {
+    const collections = this.exportCollections();
+    return (collections[collection] || []).some(row => row.id === id);
+  }
 
   async getUser(id: string): Promise<User | undefined> {
     return this.users.get(id);
@@ -78,7 +138,12 @@ export class MemStorage implements IStorage {
     const user: User = { 
       id, 
       username: insertUser.username,
-      password: insertUser.password
+      password: insertUser.password,
+      displayName: insertUser.displayName ?? null,
+      avatarUrl: null,
+      isOnline: false,
+      lastSeenAt: null,
+      createdAt: Math.floor(Date.now() / 1000),
     };
     this.users.set(id, user);
     return user;
@@ -108,8 +173,10 @@ export class MemStorage implements IStorage {
     const studio: Studio = {
       id,
       deviceId: insertStudio.deviceId,
+      userId: insertStudio.userId ?? null,
+      gameSessionId: insertStudio.gameSessionId ?? null,
       name: insertStudio.name ?? "New Studio",
-      budget: insertStudio.budget ?? 100000000,
+      budget: insertStudio.budget ?? 150000000,
       currentWeek: insertStudio.currentWeek ?? 1,
       currentYear: insertStudio.currentYear ?? 2025,
       prestigeLevel: insertStudio.prestigeLevel ?? 1,
@@ -120,7 +187,7 @@ export class MemStorage implements IStorage {
       homeTerritory: insertStudio.homeTerritory ?? "NA",
       isActive: insertStudio.isActive ?? false,
       playerGameId: insertStudio.playerGameId ?? null,
-      createdAt: now,
+      createdAt: insertStudio.createdAt ?? now,
     };
     this.studios.set(id, studio);
     return studio;
@@ -203,41 +270,24 @@ export class MemStorage implements IStorage {
       releaseYear: insertFilm.releaseYear ?? null,
       weeklyBoxOffice: insertFilm.weeklyBoxOffice ?? [],
       weeklyBoxOfficeByCountry: insertFilm.weeklyBoxOfficeByCountry ?? [],
-      openingWeekend: insertFilm.openingWeekend ?? 0,
-      domesticTotal: insertFilm.domesticTotal ?? 0,
-      internationalTotal: insertFilm.internationalTotal ?? 0,
-      grandTotal: insertFilm.grandTotal ?? 0,
-      audienceScore: insertFilm.audienceScore ?? null,
-      criticScore: insertFilm.criticScore ?? null,
-      hypeScore: insertFilm.hypeScore ?? 50,
-      productionQuality: insertFilm.productionQuality ?? 70,
-      vfxQuality: insertFilm.vfxQuality ?? 70,
+      totalBoxOffice: insertFilm.totalBoxOffice ?? 0,
+      totalBoxOfficeByCountry: insertFilm.totalBoxOfficeByCountry ?? {},
+      territoryPercentages: insertFilm.territoryPercentages ?? {},
+      audienceScore: insertFilm.audienceScore ?? 0,
+      criticScore: insertFilm.criticScore ?? 0,
+      criticScoreBreakdown: insertFilm.criticScoreBreakdown ?? {},
+      audienceScoreBreakdown: insertFilm.audienceScoreBreakdown ?? {},
+      boxOfficeBreakdown: insertFilm.boxOfficeBreakdown ?? {},
+      costBreakdown: insertFilm.costBreakdown ?? {},
+      awards: insertFilm.awards ?? [],
       isSequel: insertFilm.isSequel ?? false,
-      sequelNumber: insertFilm.sequelNumber ?? null,
-      originalFilmId: insertFilm.originalFilmId ?? null,
+      prequelFilmId: insertFilm.prequelFilmId ?? null,
       franchiseId: insertFilm.franchiseId ?? null,
-      distributionType: insertFilm.distributionType ?? "theatrical",
-      streamingServiceId: insertFilm.streamingServiceId ?? null,
-      streamingDealValue: insertFilm.streamingDealValue ?? null,
-      presoldTerritories: insertFilm.presoldTerritories ?? [],
-      presaleRevenue: insertFilm.presaleRevenue ?? 0,
-      targetRating: insertFilm.targetRating ?? "PG-13",
-      finalRating: insertFilm.finalRating ?? null,
-      ratingAppealedWeek: insertFilm.ratingAppealedWeek ?? null,
-      ratingAppealedYear: insertFilm.ratingAppealedYear ?? null,
-      scriptWritingApproach: insertFilm.scriptWritingApproach ?? "original",
-      ipLicenseCost: insertFilm.ipLicenseCost ?? null,
-      ipSourceName: insertFilm.ipSourceName ?? null,
-      ipSourceType: insertFilm.ipSourceType ?? null,
-      weeksInRelease: insertFilm.weeksInRelease ?? 0,
-      isReleased: insertFilm.isReleased ?? false,
-      releaseStrategy: insertFilm.releaseStrategy ?? null,
-      selectedTerritories: insertFilm.selectedTerritories ?? null,
-      theaterCount: insertFilm.theaterCount ?? null,
+      posterUrl: insertFilm.posterUrl ?? null,
+      theaterCount: insertFilm.theaterCount ?? 0,
       imaxSuitability: insertFilm.imaxSuitability ?? 0,
       dolbySuitability: insertFilm.dolbySuitability ?? 0,
       boxOfficeModelVersion: insertFilm.boxOfficeModelVersion ?? 2,
-      screenCount: insertFilm.screenCount ?? null,
     };
     this.films.set(id, film);
     return film;
@@ -310,6 +360,8 @@ export class MemStorage implements IStorage {
       skillScifi: insertTalent.skillScifi ?? 50,
       skillAnimation: insertTalent.skillAnimation ?? 50,
       skillRomance: insertTalent.skillRomance ?? 50,
+      skillFantasy: insertTalent.skillFantasy ?? 50,
+      skillMusicals: insertTalent.skillMusicals ?? 50,
       skillCinematography: insertTalent.skillCinematography ?? 50,
       skillEditing: insertTalent.skillEditing ?? 50,
       skillOrchestral: insertTalent.skillOrchestral ?? 50,
@@ -530,19 +582,27 @@ export class MemStorage implements IStorage {
     const id = generateId();
     const d: StreamingDeal = {
       id,
-      filmId: deal.filmId,
+      filmId: deal.filmId ?? null,
       streamingServiceId: deal.streamingServiceId,
-      dealValue: deal.dealValue,
-      dealType: deal.dealType,
       playerGameId: deal.playerGameId,
-      status: deal.status ?? "pending",
-      offeredWeek: deal.offeredWeek ?? null,
-      offeredYear: deal.offeredYear ?? null,
-      acceptedWeek: deal.acceptedWeek ?? null,
-      acceptedYear: deal.acceptedYear ?? null,
-      startWeek: deal.startWeek ?? null,
-      startYear: deal.startYear ?? null,
-      durationWeeks: deal.durationWeeks ?? null,
+      licenseFee: deal.licenseFee ?? 0,
+      weeklyRevenue: deal.weeklyRevenue ?? 0,
+      totalRevenue: deal.totalRevenue ?? 0,
+      startWeek: deal.startWeek,
+      startYear: deal.startYear,
+      endWeek: deal.endWeek ?? null,
+      endYear: deal.endYear ?? null,
+      weeksActive: deal.weeksActive ?? 0,
+      isActive: deal.isActive ?? true,
+      dealType: deal.dealType ?? "license",
+      licenseYears: deal.licenseYears ?? 2,
+      weeklyViews: deal.weeklyViews ?? [],
+      totalViews: deal.totalViews ?? 0,
+      annualPayment: deal.annualPayment ?? 0,
+      upfrontPayment: deal.upfrontPayment ?? 0,
+      isProductionDeal: deal.isProductionDeal ?? false,
+      productionDeadlineWeek: deal.productionDeadlineWeek ?? null,
+      productionDeadlineYear: deal.productionDeadlineYear ?? null,
     };
     this.streamingDeals.set(id, d);
     return d;
@@ -583,21 +643,20 @@ export class MemStorage implements IStorage {
     const e: Email = {
       id,
       playerGameId: email.playerGameId,
-      senderName: email.senderName,
-      senderTitle: email.senderTitle ?? null,
-      senderCompany: email.senderCompany ?? null,
+      type: email.type,
       subject: email.subject,
+      sender: email.sender,
+      senderTitle: email.senderTitle ?? "",
       body: email.body,
-      emailType: email.emailType,
-      relatedFilmId: email.relatedFilmId ?? null,
-      dealData: email.dealData ?? null,
       isRead: email.isRead ?? false,
       isArchived: email.isArchived ?? false,
-      receivedWeek: email.receivedWeek,
-      receivedYear: email.receivedYear,
+      hasAction: email.hasAction ?? false,
+      actionLabel: email.actionLabel ?? null,
+      actionData: email.actionData ?? null,
+      sentWeek: email.sentWeek,
+      sentYear: email.sentYear,
       expiresWeek: email.expiresWeek ?? null,
       expiresYear: email.expiresYear ?? null,
-      responseStatus: email.responseStatus ?? null,
     };
     this.emails.set(id, e);
     return e;
@@ -706,7 +765,8 @@ export class MemStorage implements IStorage {
       talentId: nomination.talentId ?? null,
       ceremonyYear: nomination.ceremonyYear,
       isWinner: nomination.isWinner ?? false,
-      announced: nomination.announced ?? false,
+      announcedWeek: nomination.announcedWeek,
+      announcedYear: nomination.announcedYear,
     };
     this.awardNominations.set(id, n);
     return n;
@@ -753,9 +813,9 @@ export class MemStorage implements IStorage {
       playerGameId: ceremony.playerGameId,
       awardShowId: ceremony.awardShowId,
       ceremonyYear: ceremony.ceremonyYear,
-      status: ceremony.status ?? "upcoming",
       nominationsAnnounced: ceremony.nominationsAnnounced ?? false,
       ceremonyComplete: ceremony.ceremonyComplete ?? false,
+      winnersAnnounced: ceremony.winnersAnnounced ?? false,
     };
     this.awardCeremonies.set(id, c);
     return c;
@@ -964,11 +1024,13 @@ export class MemStorage implements IStorage {
     const r: FilmRole = {
       id,
       filmId: role.filmId,
-      talentId: role.talentId ?? null,
       roleName: role.roleName,
-      roleType: role.roleType,
-      salary: role.salary ?? 0,
-      isLead: role.isLead ?? false,
+      characterAge: role.characterAge ?? null,
+      importance: role.importance ?? "supporting",
+      characterType: role.characterType ?? "hero",
+      genderPreference: role.genderPreference ?? "any",
+      actorId: role.actorId ?? null,
+      isCast: role.isCast ?? false,
     };
     this.filmRoles.set(id, r);
     return r;
@@ -1197,27 +1259,35 @@ export class MemStorage implements IStorage {
 
   // Financing is optional in memory-only development games. These no-op
   // implementations keep the weekly simulation usable without PostgreSQL.
-  async getActiveSlateFinancingDeals(_playerGameId: string): Promise<SlateFinancingDeal[]> {
-    return [];
+  async getActiveSlateFinancingDeals(playerGameId: string): Promise<SlateFinancingDeal[]> {
+    return Array.from(this.slateFinancingDeals.values())
+      .filter(deal => deal.playerGameId === playerGameId && deal.isActive);
   }
 
   async updateSlateFinancingDeal(
-    _id: string,
-    _updates: Partial<InsertSlateFinancingDeal>,
+    id: string,
+    updates: Partial<InsertSlateFinancingDeal>,
   ): Promise<SlateFinancingDeal | undefined> {
-    return undefined;
+    const deal = this.slateFinancingDeals.get(id);
+    if (!deal) return undefined;
+    const updated = { ...deal, ...updates } as SlateFinancingDeal;
+    this.slateFinancingDeals.set(id, updated);
+    return updated;
   }
 
-  async getSlateFinancingDeal(_id: string): Promise<SlateFinancingDeal | undefined> {
-    return undefined;
+  async getSlateFinancingDeal(id: string): Promise<SlateFinancingDeal | undefined> {
+    return this.slateFinancingDeals.get(id);
   }
 
-  async getSlateFinancingDealsByPlayer(_playerGameId: string): Promise<SlateFinancingDeal[]> {
-    return [];
+  async getSlateFinancingDealsByPlayer(playerGameId: string): Promise<SlateFinancingDeal[]> {
+    return Array.from(this.slateFinancingDeals.values())
+      .filter(deal => deal.playerGameId === playerGameId);
   }
 
   async createSlateFinancingDeal(deal: InsertSlateFinancingDeal): Promise<SlateFinancingDeal> {
-    return { id: generateId(), ...deal } as SlateFinancingDeal;
+    const created = { id: generateId(), ...deal } as SlateFinancingDeal;
+    this.slateFinancingDeals.set(created.id, created);
+    return created;
   }
 
   async getTVShow(id: string): Promise<TVShow | undefined> {
