@@ -135,8 +135,17 @@ export function warmWeekSaveCache(playerStudioId: string): void {
 }
 
 export function invalidateWeekSaveCache(playerStudioId?: string): void {
-  if (playerStudioId) saveCaches.delete(playerStudioId);
-  else saveCaches.clear();
+  if (playerStudioId) {
+    saveCaches.delete(playerStudioId);
+    savesToRewarm.delete(playerStudioId);
+  } else {
+    saveCaches.clear();
+    savesToRewarm.clear();
+  }
+  if (savesToRewarm.size === 0 && rewarmTimer) {
+    clearTimeout(rewarmTimer);
+    rewarmTimer = undefined;
+  }
 }
 
 const savesToRewarm = new Set<string>();
@@ -147,6 +156,7 @@ setStorageMutationListener(() => {
   saveCaches.clear();
   if (rewarmTimer) clearTimeout(rewarmTimer);
   rewarmTimer = setTimeout(() => {
+    rewarmTimer = undefined;
     const saveIds = Array.from(savesToRewarm);
     savesToRewarm.clear();
     for (const saveId of saveIds) warmWeekSaveCache(saveId);

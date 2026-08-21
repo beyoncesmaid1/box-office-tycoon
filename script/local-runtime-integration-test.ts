@@ -110,10 +110,25 @@ async function main() {
     assert.equal(weekResponse.status, 200);
     assert.ok(nextWeekMs < 3_000, `Next Week took ${nextWeekMs.toFixed(0)}ms`);
     assert.equal(contentRequests, 1, "Simulation must not make remote content or database requests");
+
+    const deleteResponse = await fetch(`${baseUrl}/api/studio/${studio.id}`, { method: "DELETE" });
+    assert.equal(deleteResponse.status, 200);
+    const deleteResult = await deleteResponse.json();
+    assert.equal(deleteResult.deletion.playerStudioId, studio.id);
+    assert.equal(deleteResult.deletion.deletedStudios, 8);
+    assert.ok(deleteResult.deletion.deletedFilms > 0);
+    const savesAfterDelete = await fetch(`${baseUrl}/api/saves?deviceId=local-runtime-test`).then(r => r.json());
+    assert.deepEqual(savesAfterDelete, []);
+    const baseTalentAfterDelete = await fetch(`${baseUrl}/api/talent`).then(r => r.json());
+    assert.equal(baseTalentAfterDelete.length, 361, "Deleting a save must preserve base content");
+    assert.equal((await fetch(`${baseUrl}/api/studio/${studio.id}`, { method: "DELETE" })).status, 404);
+    await new Promise(resolve => setTimeout(resolve, 400));
+
     const combinedOutput = output.join("");
     assert.ok(combinedOutput.includes("Remote DATABASE_URL is ignored"));
     assert.ok(!combinedOutput.includes("ECONNREFUSED"));
     assert.ok(!combinedOutput.includes("ECONNRESET"));
+    assert.ok(!combinedOutput.includes(`[WEEK-CACHE] Could not warm ${studio.id}`));
     console.log(`Local runtime integration passed: preload ${preloadMs.toFixed(0)}ms, Next Week ${nextWeekMs.toFixed(0)}ms`);
   } finally {
     child.kill("SIGTERM");

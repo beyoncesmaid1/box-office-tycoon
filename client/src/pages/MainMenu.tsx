@@ -26,6 +26,7 @@ export function MainMenu({ onSelectStudio, onOpenEditor, onOpenMultiplayer }: Ma
   const [newStudioName, setNewStudioName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [isPreloading, setIsPreloading] = useState(false);
   const [preloadProgress, setPreloadProgress] = useState(0);
@@ -158,9 +159,13 @@ export function MainMenu({ onSelectStudio, onOpenEditor, onOpenMultiplayer }: Ma
     setIsDeleting(true);
     try {
       const response = await fetch(`/api/studio/${studioId}`, { method: 'DELETE' });
-      if (!response.ok) throw new Error('Failed to delete');
-      setSaves(saves.filter(s => s.id !== studioId));
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.error || 'Failed to delete');
+      }
+      setSaves(current => current.filter(save => save.id !== studioId));
       setDeleteConfirmId(null);
+      setDeleteConfirmationText('');
       toast({
         title: 'Save Deleted',
         description: 'The save has been removed.',
@@ -168,7 +173,7 @@ export function MainMenu({ onSelectStudio, onOpenEditor, onOpenMultiplayer }: Ma
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to delete save',
+        description: error instanceof Error ? error.message : 'Failed to delete save',
         variant: 'destructive',
       });
     } finally {
@@ -285,6 +290,7 @@ export function MainMenu({ onSelectStudio, onOpenEditor, onOpenMultiplayer }: Ma
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setDeleteConfirmId(save.id);
+                                setDeleteConfirmationText('');
                               }}
                               data-testid={`button-delete-save-${save.id}`}
                             >
@@ -353,19 +359,35 @@ export function MainMenu({ onSelectStudio, onOpenEditor, onOpenMultiplayer }: Ma
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={deleteConfirmId !== null} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
+      <AlertDialog
+        open={deleteConfirmId !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteConfirmId(null);
+            setDeleteConfirmationText('');
+          }
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Save?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this save? This action cannot be undone.
+              This permanently removes the studio, its AI competitors, films, deals, awards, and all other progress. Type the studio name to confirm.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <Input
+            value={deleteConfirmationText}
+            onChange={(event) => setDeleteConfirmationText(event.target.value)}
+            placeholder={saves.find(save => save.id === deleteConfirmId)?.name || 'Studio name'}
+            aria-label="Studio name confirmation"
+            autoComplete="off"
+            data-testid="input-confirm-delete-name"
+          />
           <div className="flex gap-3">
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteConfirmId && handleDeleteSave(deleteConfirmId)}
-              disabled={isDeleting}
+              disabled={isDeleting || deleteConfirmationText !== saves.find(save => save.id === deleteConfirmId)?.name}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               data-testid="button-confirm-delete"
             >

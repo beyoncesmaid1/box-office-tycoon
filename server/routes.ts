@@ -4275,9 +4275,12 @@ export async function registerRoutes(
       }
 
       if (!studio.gameSessionId) {
-        await storage.deleteSinglePlayerSave(id);
+        if (studio.isAI) {
+          return res.status(400).json({ error: "An AI studio cannot be deleted as a save" });
+        }
+        const deletion = await storage.deleteSinglePlayerSave(id);
         invalidateWeekSaveCache(id);
-        return res.json({ message: "Save deleted" });
+        return res.json({ message: "Save deleted", deletion });
       }
 
       // Get all studios and films for cleanup

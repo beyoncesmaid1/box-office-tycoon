@@ -30,7 +30,7 @@ import {
   type MarketplaceScriptPurchase, type InsertMarketplaceScriptPurchase,
   type CoProductionDeal, type InsertCoProductionDeal,
 } from "@shared/schema";
-import { IStorage } from "./storage";
+import { IStorage, type SaveDeletionResult } from "./storage";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -43,7 +43,7 @@ export class MemStorage implements IStorage {
     this.hydrateCollections(collections);
   }
 
-  async deleteSinglePlayerSave(playerStudioId: string): Promise<void> {
+  async deleteSinglePlayerSave(playerStudioId: string): Promise<SaveDeletionResult> {
     const player = this.studios.get(playerStudioId);
     if (!player) throw new Error("Studio not found");
     if (player.gameSessionId) throw new Error("Multiplayer saves use their own deletion flow");
@@ -54,27 +54,50 @@ export class MemStorage implements IStorage {
       .filter(film => studioIds.has(film.studioId)).map(film => film.id));
     const showIds = new Set(Array.from(this.tvShows.values())
       .filter(show => studioIds.has(show.studioId)).map(show => show.id));
-    const deleteMatching = (map: Map<string, any>, predicate: (row: any) => boolean) => {
-      for (const [rowId, row] of Array.from(map.entries())) if (predicate(row)) map.delete(rowId);
+    const deletedRows: Record<string, number> = {};
+    const deleteMatching = (
+      tableName: string,
+      map: Map<string, any>,
+      predicate: (row: any) => boolean,
+    ) => {
+      let count = 0;
+      for (const [rowId, row] of Array.from(map.entries())) {
+        if (!predicate(row)) continue;
+        map.delete(rowId);
+        count += 1;
+      }
+      deletedRows[tableName] = (deletedRows[tableName] || 0) + count;
     };
-    for (const map of [this.filmReleases, this.marketingActions, this.premiumBookings,
-      this.filmMilestones, this.filmRoles]) {
-      deleteMatching(map, row => filmIds.has(row.filmId));
+    for (const [tableName, map] of [
+      ["film_releases", this.filmReleases],
+      ["marketing_actions", this.marketingActions],
+      ["premium_bookings", this.premiumBookings],
+      ["film_milestones", this.filmMilestones],
+      ["film_roles", this.filmRoles],
+    ] as const) {
+      deleteMatching(tableName, map, row => filmIds.has(row.filmId));
     }
-    deleteMatching(this.streamingDeals, row => filmIds.has(row.filmId) || studioIds.has(row.playerGameId));
-    deleteMatching(this.awardNominations, row => filmIds.has(row.filmId) || row.playerGameId === playerStudioId);
-    deleteMatching(this.awardCeremonies, row => row.playerGameId === playerStudioId);
-    deleteMatching(this.emails, row => row.playerGameId === playerStudioId);
-    deleteMatching(this.slateFinancingDeals, row => row.playerGameId === playerStudioId);
-    deleteMatching(this.coProductionDeals, row => filmIds.has(row.filmId) || row.playerGameId === playerStudioId);
-    deleteMatching(this.marketplaceScriptPurchases, row => row.playerGameId === playerStudioId);
-    deleteMatching(this.tvDeals, row => showIds.has(row.tvShowId) || row.playerGameId === playerStudioId);
-    deleteMatching(this.tvEpisodes, row => showIds.has(row.tvShowId));
-    deleteMatching(this.tvSeasons, row => showIds.has(row.tvShowId));
-    deleteMatching(this.tvShows, row => showIds.has(row.id));
-    deleteMatching(this.franchises, row => studioIds.has(row.studioId));
-    deleteMatching(this.films, row => filmIds.has(row.id));
-    deleteMatching(this.studios, row => studioIds.has(row.id));
+    deleteMatching("streaming_deals", this.streamingDeals, row => filmIds.has(row.filmId) || studioIds.has(row.playerGameId));
+    deleteMatching("award_nominations", this.awardNominations, row => filmIds.has(row.filmId) || studioIds.has(row.playerGameId));
+    deleteMatching("award_ceremonies", this.awardCeremonies, row => row.playerGameId === playerStudioId);
+    deleteMatching("emails", this.emails, row => row.playerGameId === playerStudioId);
+    deleteMatching("slate_financing_deals", this.slateFinancingDeals, row => row.playerGameId === playerStudioId);
+    deleteMatching("co_production_deals", this.coProductionDeals, row => filmIds.has(row.filmId) || studioIds.has(row.playerGameId));
+    deleteMatching("marketplace_script_purchases", this.marketplaceScriptPurchases, row => row.playerGameId === playerStudioId);
+    deleteMatching("tv_deals", this.tvDeals, row => showIds.has(row.tvShowId) || studioIds.has(row.playerGameId));
+    deleteMatching("tv_episodes", this.tvEpisodes, row => showIds.has(row.tvShowId));
+    deleteMatching("tv_seasons", this.tvSeasons, row => showIds.has(row.tvShowId));
+    deleteMatching("tv_shows", this.tvShows, row => showIds.has(row.id));
+    deleteMatching("franchises", this.franchises, row => studioIds.has(row.studioId));
+    deleteMatching("films", this.films, row => filmIds.has(row.id));
+    deleteMatching("studios", this.studios, row => studioIds.has(row.id));
+    return {
+      playerStudioId,
+      deletedStudios: studioIds.size,
+      deletedFilms: filmIds.size,
+      deletedTVShows: showIds.size,
+      deletedRows,
+    };
   }
   protected users: Map<string, User> = new Map();
   protected studios: Map<string, Studio> = new Map();

@@ -13,6 +13,7 @@
     "content:build": "tsx script/build-content-manifest.ts",
     "test:content": "tsx script/content-update-test.ts",
     "test:local-runtime": "npm run build && tsx script/local-runtime-integration-test.ts",
+    "test:deletion": "tsx script/save-deletion-test.ts",
     "balance": "tsx script/balance-simulation.ts",
     "db:push": "drizzle-kit push"
   },

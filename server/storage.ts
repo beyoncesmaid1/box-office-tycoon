@@ -54,9 +54,17 @@ function withoutGlobalTalentAvailability<T extends Talent | undefined>(candidate
   } as T;
 }
 
+export type SaveDeletionResult = {
+  playerStudioId: string;
+  deletedStudios: number;
+  deletedFilms: number;
+  deletedTVShows: number;
+  deletedRows: Record<string, number>;
+};
+
 export interface IStorage {
   commitWeekSnapshot(collections: Record<string, any[]>): Promise<void>;
-  deleteSinglePlayerSave(playerStudioId: string): Promise<void>;
+  deleteSinglePlayerSave(playerStudioId: string): Promise<SaveDeletionResult>;
   // Users
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -370,78 +378,157 @@ export class DatabaseStorage implements IStorage {
     await withDatabaseRetry("weekly snapshot save", () => databasePool.query(statement, parameters), 3);
   }
 
-  async deleteSinglePlayerSave(playerStudioId: string): Promise<void> {
-    await withLocalTransaction(async query => {
-      const playerResult = await query(
-        "SELECT id, game_session_id FROM studios WHERE id = $1 AND is_ai = false FOR UPDATE",
+  async deleteSinglePlayerSave(playerStudioId: string): Promise<SaveDeletionResult> {
+    return withLocalTransaction(async query => {
+      const playerResult = await query<{
+        id: string;
+        device_id: string;
+        game_session_id: string | null;
+      }>(
+        "SELECT id, device_id, game_session_id FROM studios " +
+        "WHERE id = $1 AND is_ai = false FOR UPDATE",
         [playerStudioId],
       );
-      if (playerResult.rows.length === 0) throw new Error("Studio not found");
-      if (playerResult.rows[0].game_session_id) throw new Error("Multiplayer saves use their own deletion flow");
+      if (playerResult.rows.length === 0) throw new Error("Single-player save not found");
+      const player = playerResult.rows[0];
+      if (player.game_session_id) throw new Error("Multiplayer saves use their own deletion flow");
 
-      const studioRows = await query(
-        "SELECT id FROM studios WHERE id = $1 OR player_game_id = $1",
-        [playerStudioId],
+      // New saves link every AI studio through player_game_id. For older local
+      // saves, include unlinked AI studios only when this is the sole save on
+      // that device; otherwise their owner cannot be determined safely.
+      const saveCountResult = await query<{ count: string }>(
+        "SELECT count(*)::text AS count FROM studios " +
+        "WHERE device_id = $1 AND is_ai = false AND game_session_id IS NULL",
+        [player.device_id],
+      );
+      const includeLegacyAI = Number(saveCountResult.rows[0]?.count || 0) === 1;
+      const studioRows = await query<{ id: string }>(
+        "SELECT id FROM studios WHERE id = $1 OR player_game_id = $1 OR (" +
+        "$2::boolean = true AND is_ai = true AND player_game_id IS NULL " +
+        "AND game_session_id IS NULL AND device_id = $3)",
+        [playerStudioId, includeLegacyAI, player.device_id],
       );
       const studioIds = studioRows.rows.map(row => row.id);
-      const filmRows = await query(
+      const filmRows = await query<{ id: string }>(
         "SELECT id FROM films WHERE studio_id = ANY($1::varchar[])",
         [studioIds],
       );
       const filmIds = filmRows.rows.map(row => row.id);
-      const showRows = await query(
+      const showRows = await query<{ id: string }>(
         "SELECT id FROM tv_shows WHERE studio_id = ANY($1::varchar[])",
         [studioIds],
       );
       const showIds = showRows.rows.map(row => row.id);
 
-      if (showIds.length > 0) {
-        await query(
-          "DELETE FROM tv_deals WHERE tv_show_id = ANY($1::varchar[]) OR player_game_id = $2",
-          [showIds, playerStudioId],
-        );
-        await query("DELETE FROM tv_episodes WHERE tv_show_id = ANY($1::varchar[])", [showIds]);
-        await query("DELETE FROM tv_seasons WHERE tv_show_id = ANY($1::varchar[])", [showIds]);
-        await query("DELETE FROM tv_shows WHERE id = ANY($1::varchar[])", [showIds]);
-      } else {
-        await query("DELETE FROM tv_deals WHERE player_game_id = $1", [playerStudioId]);
+      // Refuse to mutate another save if corrupted data created a cross-save
+      // franchise/prequel reference. The transaction leaves everything intact.
+      const externalReferences = await query<{ source: string; id: string }>(
+        "SELECT 'franchise' AS source, id FROM franchises " +
+        "WHERE original_film_id = ANY($1::varchar[]) AND NOT (studio_id = ANY($2::varchar[])) " +
+        "UNION ALL " +
+        "SELECT 'prequel' AS source, id FROM films " +
+        "WHERE prequel_film_id = ANY($1::varchar[]) AND NOT (studio_id = ANY($2::varchar[]))",
+        [filmIds, studioIds],
+      );
+      if (externalReferences.rows.length > 0) {
+        throw new Error("Save deletion blocked by a cross-save film reference");
       }
 
-      if (filmIds.length > 0) {
-        for (const tableName of [
-          "marketing_actions",
-          "premium_bookings",
-          "film_milestones",
-          "film_roles",
-          "film_releases",
-        ]) {
-          await query(`DELETE FROM ${tableName} WHERE film_id = ANY($1::varchar[])`, [filmIds]);
-        }
-        await query(
-          "DELETE FROM streaming_deals WHERE film_id = ANY($1::varchar[]) OR player_game_id = ANY($2::varchar[])",
-          [filmIds, studioIds],
-        );
-        await query(
-          "DELETE FROM award_nominations WHERE film_id = ANY($1::varchar[]) OR player_game_id = $2",
-          [filmIds, playerStudioId],
-        );
-        await query(
-          "DELETE FROM co_production_deals WHERE film_id = ANY($1::varchar[]) OR player_game_id = $2",
-          [filmIds, playerStudioId],
-        );
-        await query(
-          "UPDATE films SET franchise_id = NULL, prequel_film_id = NULL WHERE id = ANY($1::varchar[])",
-          [filmIds],
-        );
-        await query("DELETE FROM franchises WHERE studio_id = ANY($1::varchar[])", [studioIds]);
-        await query("DELETE FROM films WHERE id = ANY($1::varchar[])", [filmIds]);
+      const deletedRows: Record<string, number> = {};
+      const remove = async (tableName: string, statement: string, parameters: unknown[]) => {
+        const result = await query(statement, parameters);
+        deletedRows[tableName] = (deletedRows[tableName] || 0) + result.rowCount;
+      };
+
+      await remove(
+        "tv_deals",
+        "DELETE FROM tv_deals WHERE tv_show_id = ANY($1::varchar[]) " +
+        "OR player_game_id = ANY($2::varchar[])",
+        [showIds, studioIds],
+      );
+      await remove("tv_episodes", "DELETE FROM tv_episodes WHERE tv_show_id = ANY($1::varchar[])", [showIds]);
+      await remove("tv_seasons", "DELETE FROM tv_seasons WHERE tv_show_id = ANY($1::varchar[])", [showIds]);
+      await remove("tv_shows", "DELETE FROM tv_shows WHERE id = ANY($1::varchar[])", [showIds]);
+
+      for (const tableName of [
+        "marketing_actions",
+        "premium_bookings",
+        "film_milestones",
+        "film_roles",
+        "film_releases",
+      ]) {
+        await remove(tableName, `DELETE FROM ${tableName} WHERE film_id = ANY($1::varchar[])`, [filmIds]);
+      }
+      await remove(
+        "streaming_deals",
+        "DELETE FROM streaming_deals WHERE film_id = ANY($1::varchar[]) " +
+        "OR player_game_id = ANY($2::varchar[])",
+        [filmIds, studioIds],
+      );
+      await remove(
+        "award_nominations",
+        "DELETE FROM award_nominations WHERE film_id = ANY($1::varchar[]) " +
+        "OR player_game_id = ANY($2::varchar[])",
+        [filmIds, studioIds],
+      );
+      await remove(
+        "co_production_deals",
+        "DELETE FROM co_production_deals WHERE film_id = ANY($1::varchar[]) " +
+        "OR player_game_id = ANY($2::varchar[])",
+        [filmIds, studioIds],
+      );
+
+      await query(
+        "UPDATE films SET franchise_id = NULL, prequel_film_id = NULL " +
+        "WHERE id = ANY($1::varchar[])",
+        [filmIds],
+      );
+      await remove("franchises", "DELETE FROM franchises WHERE studio_id = ANY($1::varchar[])", [studioIds]);
+      await remove("films", "DELETE FROM films WHERE id = ANY($1::varchar[])", [filmIds]);
+
+      await remove("award_ceremonies", "DELETE FROM award_ceremonies WHERE player_game_id = $1", [playerStudioId]);
+      await remove("emails", "DELETE FROM emails WHERE player_game_id = $1", [playerStudioId]);
+      await remove("slate_financing_deals", "DELETE FROM slate_financing_deals WHERE player_game_id = $1", [playerStudioId]);
+      await remove("marketplace_script_purchases", "DELETE FROM marketplace_script_purchases WHERE player_game_id = $1", [playerStudioId]);
+      await remove("save_talent_state", "DELETE FROM save_talent_state WHERE player_game_id = $1", [playerStudioId]);
+      await remove("studios", "DELETE FROM studios WHERE id = ANY($1::varchar[])", [studioIds]);
+
+      const residual = await query<{ count: string }>(
+        "SELECT (" +
+        "(SELECT count(*) FROM studios WHERE id = ANY($1::varchar[])) + " +
+        "(SELECT count(*) FROM films WHERE id = ANY($2::varchar[])) + " +
+        "(SELECT count(*) FROM film_releases WHERE film_id = ANY($2::varchar[])) + " +
+        "(SELECT count(*) FROM marketing_actions WHERE film_id = ANY($2::varchar[])) + " +
+        "(SELECT count(*) FROM premium_bookings WHERE film_id = ANY($2::varchar[])) + " +
+        "(SELECT count(*) FROM film_milestones WHERE film_id = ANY($2::varchar[])) + " +
+        "(SELECT count(*) FROM film_roles WHERE film_id = ANY($2::varchar[])) + " +
+        "(SELECT count(*) FROM streaming_deals WHERE film_id = ANY($2::varchar[]) OR player_game_id = ANY($1::varchar[])) + " +
+        "(SELECT count(*) FROM award_nominations WHERE film_id = ANY($2::varchar[]) OR player_game_id = ANY($1::varchar[])) + " +
+        "(SELECT count(*) FROM co_production_deals WHERE film_id = ANY($2::varchar[]) OR player_game_id = ANY($1::varchar[])) + " +
+        "(SELECT count(*) FROM franchises WHERE studio_id = ANY($1::varchar[])) + " +
+        "(SELECT count(*) FROM tv_shows WHERE id = ANY($3::varchar[])) + " +
+        "(SELECT count(*) FROM tv_seasons WHERE tv_show_id = ANY($3::varchar[])) + " +
+        "(SELECT count(*) FROM tv_episodes WHERE tv_show_id = ANY($3::varchar[])) + " +
+        "(SELECT count(*) FROM tv_deals WHERE tv_show_id = ANY($3::varchar[]) OR player_game_id = ANY($1::varchar[])) + " +
+        "(SELECT count(*) FROM award_ceremonies WHERE player_game_id = $4) + " +
+        "(SELECT count(*) FROM emails WHERE player_game_id = $4) + " +
+        "(SELECT count(*) FROM slate_financing_deals WHERE player_game_id = $4) + " +
+        "(SELECT count(*) FROM save_talent_state WHERE player_game_id = $4) + " +
+        "(SELECT count(*) FROM marketplace_script_purchases WHERE player_game_id = $4)" +
+        ")::text AS count",
+        [studioIds, filmIds, showIds, playerStudioId],
+      );
+      if (Number(residual.rows[0]?.count || 0) !== 0) {
+        throw new Error("Save deletion verification failed; no changes were committed");
       }
 
-      await query("DELETE FROM award_ceremonies WHERE player_game_id = $1", [playerStudioId]);
-      await query("DELETE FROM emails WHERE player_game_id = $1", [playerStudioId]);
-      await query("DELETE FROM slate_financing_deals WHERE player_game_id = $1", [playerStudioId]);
-      await query("DELETE FROM co_production_deals WHERE player_game_id = $1", [playerStudioId]);
-      await query("DELETE FROM studios WHERE id = ANY($1::varchar[])", [studioIds]);
+      return {
+        playerStudioId,
+        deletedStudios: studioIds.length,
+        deletedFilms: filmIds.length,
+        deletedTVShows: showIds.length,
+        deletedRows,
+      };
     });
   }
   // Users
