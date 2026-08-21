@@ -1,0 +1,409 @@
+// Major box office markets by country with realistic market share percentages
+// Based on 2024 global box office data from Box Office Mojo, The Numbers, and Deadline
+// Total global box office 2024: ~$30 billion
+
+// Genre factors for domestic (North America) vs international performance
+// Values > 1.0 = more domestic-heavy, < 1.0 = more international-heavy
+// Based on historical box office data patterns
+// Game genres: action, comedy, drama, horror, scifi, romance, thriller, animation, fantasy, musicals
+export const GENRE_DOMESTIC_FACTORS: Record<string, number> = {
+  // Domestic-heavy genres (cultural specificity, language-dependent humor, local appeal)
+  horror: 1.35,      // Horror is very domestic-heavy (cultural fears, doesn't translate well)
+  comedy: 1.30,      // Comedy relies heavily on language/cultural humor
+  romance: 1.20,     // Rom-coms especially are domestic-leaning
+  
+  // Balanced genres
+  drama: 1.05,       // Slightly domestic, but prestige dramas travel
+  thriller: 1.05,    // Fairly balanced
+  musicals: 1.10,    // Slightly domestic
+  
+  // International-heavy genres (visual spectacle, universal appeal)
+  action: 0.85,      // Action translates universally
+  scifi: 0.80,       // Sci-fi has strong international appeal, especially Asia
+  fantasy: 0.85,     // Fantasy travels well internationally
+  animation: 0.75,   // Animation is very strong internationally, especially Asia
+};
+
+// Genre factors for specific international markets
+// Some genres perform exceptionally well in certain territories
+// Game genres: action, comedy, drama, horror, scifi, romance, thriller, animation, fantasy, musicals
+export const GENRE_TERRITORY_FACTORS: Record<string, Record<string, number>> = {
+  animation: {
+    'Japan': 1.4,      // Anime culture = strong animation market
+    'China': 1.3,      // Growing animation market
+    'South Korea': 1.2,
+    'France': 1.15,    // Strong animation tradition
+  },
+  scifi: {
+    'China': 1.25,     // Sci-fi does very well in China
+    'Japan': 1.2,
+    'South Korea': 1.15,
+  },
+  action: {
+    'China': 1.2,      // Action blockbusters dominate in China
+    'Mexico': 1.15,
+    'South Korea': 1.1,
+  },
+  horror: {
+    'Japan': 1.3,      // J-horror influence means horror travels better to Japan
+    'South Korea': 1.2,
+    'Mexico': 1.15,    // Strong horror tradition
+    'UK & Ireland': 0.9,
+    'Germany': 0.85,
+    'France': 0.85,
+  },
+  comedy: {
+    'UK & Ireland': 1.15, // English-speaking, similar humor
+    'Australia': 1.15,
+    'France': 0.8,     // Humor doesn't translate well
+    'Germany': 0.8,
+    'Japan': 0.7,      // Comedy rarely translates to Japan
+    'China': 0.7,
+  },
+  romance: {
+    'France': 1.2,     // French love romance
+    'UK & Ireland': 1.1,
+    'Japan': 0.9,
+  },
+  drama: {
+    'UK & Ireland': 1.15,
+    'France': 1.15,
+    'Germany': 1.1,
+  },
+  fantasy: {
+    'UK & Ireland': 1.2, // Fantasy does great in UK
+    'Germany': 1.1,
+    'France': 1.1,
+  },
+  thriller: {
+    'UK & Ireland': 1.1,
+    'Germany': 1.1,
+    'France': 1.05,
+  },
+  musicals: {
+    'UK & Ireland': 1.2, // West End tradition
+    'Australia': 1.1,
+    'Japan': 0.85,
+  },
+};
+
+export const BOX_OFFICE_COUNTRIES = [
+  // North America: Boosted to 35% base (range 20-75% for strong domestic performance)
+  { code: 'NA', name: 'North America', percentage: 0.35, minPct: 0.20, maxPct: 0.75 },
+  
+  // China: $5.8B = 19% (high variance 0-35%: some films don't release, others dominate)
+  { code: 'CN', name: 'China', percentage: 0.19, minPct: 0.02, maxPct: 0.32 },
+  
+  // UK/Ireland: $1.4B = 4.7% (stable market, 3-7% range)
+  { code: 'GB', name: 'UK & Ireland', percentage: 0.047, minPct: 0.03, maxPct: 0.07 },
+  
+  // France: $1.4B = 4.7% (strong local film culture, 3-7% range)
+  { code: 'FR', name: 'France', percentage: 0.047, minPct: 0.03, maxPct: 0.07 },
+  
+  // Japan: $1.4B = 4.7% (anime dominance affects Hollywood, 2-9% range)
+  { code: 'JP', name: 'Japan', percentage: 0.047, minPct: 0.02, maxPct: 0.09 },
+  
+  // Germany: $0.9B = 3% (2-5% range)
+  { code: 'DE', name: 'Germany', percentage: 0.03, minPct: 0.02, maxPct: 0.05 },
+  
+  // South Korea: $0.85B = 2.8% (recovering market, 2-5% range)
+  { code: 'KR', name: 'South Korea', percentage: 0.028, minPct: 0.018, maxPct: 0.05 },
+  
+  // Mexico: $0.8B = 2.7% (largest Latin American market, 2-4.5% range)
+  { code: 'MX', name: 'Mexico', percentage: 0.027, minPct: 0.018, maxPct: 0.045 },
+  
+  // Australia: $0.65B = 2.2% (1.5-3.5% range)
+  { code: 'AU', name: 'Australia', percentage: 0.022, minPct: 0.015, maxPct: 0.035 },
+  
+  // India: $1.4B = 4.7% but Hollywood only gets ~15-20% of that market
+  // Effective Hollywood share: ~0.7-1% (Bollywood dominates, range 0.3-2.5%)
+  { code: 'IN', name: 'India', percentage: 0.01, minPct: 0.003, maxPct: 0.025 },
+  
+  // Other Territories: ~26% (Italy $550M, Spain $540M, Brazil $300M, 
+  // Russia excluded, rest of EMEA, Latin America, SEA, etc.)
+  { code: 'OTHER', name: 'Other Territories', percentage: 0.262, minPct: 0.18, maxPct: 0.34 },
+];
+
+export type BoxOfficeCountry = (typeof BOX_OFFICE_COUNTRIES)[number];
+
+export interface TerritoryExhibitionProfile {
+  regularOpeningAdmissions: number;
+  imaxAdmissions: number;
+  dolbyAdmissions: number;
+  baseTicketPrice: number;
+  imaxTicketPrice: number;
+  dolbyTicketPrice: number;
+}
+
+/**
+ * Aggregate weekly inventory, not physical theater records. IMAX and Dolby are
+ * intentionally the only premium formats represented by the simulation.
+ */
+export const TERRITORY_EXHIBITION_PROFILES: Record<string, TerritoryExhibitionProfile> = {
+  NA: { regularOpeningAdmissions: 9_300_000, imaxAdmissions: 650_000, dolbyAdmissions: 430_000, baseTicketPrice: 12, imaxTicketPrice: 21, dolbyTicketPrice: 19 },
+  CN: { regularOpeningAdmissions: 5_200_000, imaxAdmissions: 420_000, dolbyAdmissions: 80_000, baseTicketPrice: 9, imaxTicketPrice: 16, dolbyTicketPrice: 14 },
+  GB: { regularOpeningAdmissions: 1_250_000, imaxAdmissions: 85_000, dolbyAdmissions: 55_000, baseTicketPrice: 12, imaxTicketPrice: 20, dolbyTicketPrice: 18 },
+  FR: { regularOpeningAdmissions: 1_200_000, imaxAdmissions: 55_000, dolbyAdmissions: 38_000, baseTicketPrice: 11, imaxTicketPrice: 19, dolbyTicketPrice: 17 },
+  JP: { regularOpeningAdmissions: 1_150_000, imaxAdmissions: 78_000, dolbyAdmissions: 46_000, baseTicketPrice: 12, imaxTicketPrice: 21, dolbyTicketPrice: 19 },
+  DE: { regularOpeningAdmissions: 820_000, imaxAdmissions: 48_000, dolbyAdmissions: 34_000, baseTicketPrice: 11, imaxTicketPrice: 19, dolbyTicketPrice: 17 },
+  KR: { regularOpeningAdmissions: 760_000, imaxAdmissions: 70_000, dolbyAdmissions: 42_000, baseTicketPrice: 10, imaxTicketPrice: 18, dolbyTicketPrice: 16 },
+  MX: { regularOpeningAdmissions: 720_000, imaxAdmissions: 35_000, dolbyAdmissions: 22_000, baseTicketPrice: 7, imaxTicketPrice: 13, dolbyTicketPrice: 12 },
+  AU: { regularOpeningAdmissions: 610_000, imaxAdmissions: 38_000, dolbyAdmissions: 25_000, baseTicketPrice: 12, imaxTicketPrice: 20, dolbyTicketPrice: 18 },
+  IN: { regularOpeningAdmissions: 620_000, imaxAdmissions: 42_000, dolbyAdmissions: 15_000, baseTicketPrice: 5, imaxTicketPrice: 10, dolbyTicketPrice: 9 },
+  OTHER: { regularOpeningAdmissions: 6_800_000, imaxAdmissions: 360_000, dolbyAdmissions: 210_000, baseTicketPrice: 8, imaxTicketPrice: 15, dolbyTicketPrice: 13 },
+};
+
+export const CAMPAIGN_TERRITORY_GROUPS = [
+  { id: "domestic", name: "North America", codes: ["NA"] },
+  { id: "europe", name: "Europe", codes: ["GB", "FR", "DE"] },
+  { id: "china", name: "China", codes: ["CN"] },
+  { id: "east-asia", name: "Japan & South Korea", codes: ["JP", "KR"] },
+  { id: "india", name: "India", codes: ["IN"] },
+  { id: "latin-america", name: "Latin America", codes: ["MX"] },
+  { id: "oceania", name: "Australia & New Zealand", codes: ["AU"] },
+  { id: "other", name: "Other International", codes: ["OTHER"] },
+] as const;
+
+export function getTerritoryExhibitionProfile(code: string): TerritoryExhibitionProfile {
+  return TERRITORY_EXHIBITION_PROFILES[code] ?? TERRITORY_EXHIBITION_PROFILES.OTHER;
+}
+
+// Generate a highly randomized percentage within a country's min/max range
+// Uses multiple random components to ensure each film gets a unique distribution
+// Now accepts an optional genre parameter to adjust domestic/international split
+function getRandomizedPercentage(country: BoxOfficeCountry, genre?: string): number {
+  let basePercentage = country.percentage;
+  let minPct = country.minPct;
+  let maxPct = country.maxPct;
+  
+  // Apply genre-based adjustments
+  if (genre) {
+    const genreLower = genre.toLowerCase();
+    const domesticFactor = GENRE_DOMESTIC_FACTORS[genreLower] || 1.0;
+    const territoryFactor = GENRE_TERRITORY_FACTORS[genreLower]?.[country.name] || 1.0;
+    
+    if (country.name === 'North America') {
+      // Apply domestic factor to North America
+      // Factor > 1.0 = more domestic, < 1.0 = less domestic
+      basePercentage *= domesticFactor;
+      minPct *= domesticFactor;
+      maxPct = Math.min(0.85, maxPct * domesticFactor); // Cap at 85% domestic max
+    } else {
+      // Apply inverse factor to international territories (if domestic is up, international is down)
+      const inverseFactor = 1 / domesticFactor;
+      // But also apply territory-specific genre boost
+      const combinedFactor = inverseFactor * territoryFactor;
+      basePercentage *= combinedFactor;
+      minPct *= Math.max(0.5, combinedFactor); // Don't reduce min too much
+      maxPct *= Math.min(1.5, combinedFactor); // Don't increase max too much
+    }
+  }
+  
+  const range = maxPct - minPct;
+  
+  // Multiple random factors for more variation
+  const baseRandom = Math.random();
+  const fineRandom = Math.random() * 0.1; // Additional fine-grained variance
+  const microRandom = Math.random() * 0.01; // Micro variance for uniqueness
+  
+  // Apply a curve to make extreme values less common, but still possible
+  const curvedRandom = Math.pow(baseRandom, 0.7 + Math.random() * 0.3);
+  const direction = Math.random() > 0.5 ? 1 : -1;
+  
+  // Combine all variance factors
+  const variance = (curvedRandom * direction * range * 0.6) + 
+                   (fineRandom * direction * range * 0.3) +
+                   (microRandom * (Math.random() > 0.5 ? 1 : -1) * range);
+  
+  const result = basePercentage + variance;
+  
+  // Add a tiny unique offset to prevent identical distributions (up to 0.01%)
+  const uniqueOffset = (Math.random() - 0.5) * 0.0002;
+  
+  return Math.max(minPct, Math.min(maxPct, result + uniqueOffset));
+}
+
+// Distribute a total box office amount across countries with randomized percentages
+// Now accepts an optional genre parameter to adjust domestic/international split
+export function distributeBoxOfficeByCountry(total: number, genre?: string): Record<string, number> {
+  // Generate randomized percentages for each country (with genre adjustments)
+  const randomizedPcts: { name: string; pct: number }[] = BOX_OFFICE_COUNTRIES.map(country => ({
+    name: country.name,
+    pct: getRandomizedPercentage(country, genre),
+  }));
+  
+  // Normalize so percentages sum to 1.0
+  const totalPct = randomizedPcts.reduce((sum, c) => sum + c.pct, 0);
+  const normalizedPcts = randomizedPcts.map(c => ({
+    name: c.name,
+    pct: c.pct / totalPct,
+  }));
+  
+  // Distribute the total amount
+  const result: Record<string, number> = {};
+  let distributed = 0;
+  
+  for (let i = 0; i < normalizedPcts.length - 1; i++) {
+    const amount = Math.floor(total * normalizedPcts[i].pct);
+    result[normalizedPcts[i].name] = amount;
+    distributed += amount;
+  }
+  
+  // Give remaining to last country to avoid rounding errors
+  result[normalizedPcts[normalizedPcts.length - 1].name] = total - distributed;
+  
+  return result;
+}
+
+// Generate territory percentages (for first week - these should be stored and reused)
+// Now accepts an optional genre parameter to adjust domestic/international split
+export function generateTerritoryPercentages(genre?: string): Record<string, number> {
+  const randomizedPcts: { name: string; pct: number }[] = BOX_OFFICE_COUNTRIES.map(country => ({
+    name: country.name,
+    pct: getRandomizedPercentage(country, genre),
+  }));
+  
+  const totalPct = randomizedPcts.reduce((sum, c) => sum + c.pct, 0);
+  
+  const result: Record<string, number> = {};
+  for (const c of randomizedPcts) {
+    result[c.name] = c.pct / totalPct;
+  }
+  
+  return result;
+}
+
+// Distribute box office using fixed percentages (for subsequent weeks)
+export function distributeBoxOfficeWithFixedPercentages(total: number, percentages: Record<string, number>): Record<string, number> {
+  const result: Record<string, number> = {};
+  let distributed = 0;
+  const entries = Object.entries(percentages);
+  
+  for (let i = 0; i < entries.length - 1; i++) {
+    const [country, pct] = entries[i];
+    const amount = Math.floor(total * pct);
+    result[country] = amount;
+    distributed += amount;
+  }
+  
+  if (entries.length > 0) {
+    result[entries[entries.length - 1][0]] = total - distributed;
+  }
+  
+  return result;
+}
+
+// Get country list for dropdown/display
+export function getCountryNames(): string[] {
+  return BOX_OFFICE_COUNTRIES.map(c => c.name);
+}
+
+// Get country code from name
+export function getCountryCode(name: string): string | undefined {
+  return BOX_OFFICE_COUNTRIES.find(c => c.name === name)?.code;
+}
+
+// Get country name from code
+export function getCountryName(code: string): string | undefined {
+  return BOX_OFFICE_COUNTRIES.find(c => c.code === code)?.name;
+}
+
+// Get the base market share percentage for a territory
+export function getTerritoryBasePercentage(code: string): number {
+  const country = BOX_OFFICE_COUNTRIES.find(c => c.code === code);
+  return country?.percentage || 0;
+}
+
+// Territory release interface
+export interface TerritoryRelease {
+  territory: string;
+  releaseWeek: number;
+  releaseYear: number;
+  marketingBudget: number;
+  weeksInRelease: number;
+  isOpening: boolean;
+}
+
+// Calculate box office for a specific territory based on release info
+export function calculateTerritoryBoxOffice(
+  territoryRelease: TerritoryRelease,
+  baseOpeningGross: number,
+  filmQuality: number
+): number {
+  const { territory, marketingBudget, weeksInRelease, isOpening } = territoryRelease;
+  
+  const country = BOX_OFFICE_COUNTRIES.find(c => c.code === territory);
+  if (!country) return 0;
+  
+  // Get territory's market share (randomized within range)
+  const marketShare = getRandomizedPercentage(country);
+  
+  // Calculate territory's base opening based on market share
+  // Marketing budget affects the multiplier
+  const marketingMultiplier = Math.min(2.0, (marketingBudget || 5000000) / 30000000);
+  const qualityFactor = (filmQuality / 100) * 0.5 + 0.5;
+  
+  // Opening weekend calculation for this territory
+  const territoryBaseOpening = baseOpeningGross * marketShare * marketingMultiplier * qualityFactor;
+  
+  if (isOpening) {
+    // First week - opening weekend with variance
+    return Math.floor(territoryBaseOpening * (0.7 + Math.random() * 0.6));
+  } else {
+    // Subsequent weeks - apply decay based on weeks in release
+    // Drop % increases gradually: starts at 15% drop, increases to 45% drop by week 20
+    const baseDecay = Math.max(0.5, 0.85 - (weeksInRelease * 0.018));
+    const decay = baseDecay + Math.random() * 0.1;
+    
+    // We need the previous week's gross to calculate decay
+    // This function is designed to be called per-week with the previous gross passed in
+    // For now, just return 0 - the caller should track previous week's gross
+    return 0; // This is handled differently - see calculateTerritoryWeeklyBoxOffice
+  }
+}
+
+
+// Distribute box office only to specific released territories
+// Now accepts an optional genre parameter to adjust domestic/international split
+export function distributeBoxOfficeToTerritories(
+  total: number,
+  releasedTerritories: string[],
+  genre?: string
+): Record<string, number> {
+  if (releasedTerritories.length === 0) return {};
+  
+  // Get countries for released territories
+  const countries = BOX_OFFICE_COUNTRIES.filter(c => 
+    releasedTerritories.includes(c.code)
+  );
+  
+  if (countries.length === 0) return {};
+  
+  // Generate randomized percentages for each released country (with genre adjustments)
+  const randomizedPcts: { name: string; pct: number }[] = countries.map(country => ({
+    name: country.name,
+    pct: getRandomizedPercentage(country, genre),
+  }));
+  
+  // Normalize so percentages sum to 1.0
+  const totalPct = randomizedPcts.reduce((sum, c) => sum + c.pct, 0);
+  const normalizedPcts = randomizedPcts.map(c => ({
+    name: c.name,
+    pct: c.pct / totalPct,
+  }));
+  
+  // Distribute the total amount
+  const result: Record<string, number> = {};
+  let distributed = 0;
+  
+  for (let i = 0; i < normalizedPcts.length - 1; i++) {
+    const amount = Math.floor(total * normalizedPcts[i].pct);
+    result[normalizedPcts[i].name] = amount;
+    distributed += amount;
+  }
+  
+  // Give remaining to last country to avoid rounding errors
+  result[normalizedPcts[normalizedPcts.length - 1].name] = total - distributed;
+  
+  return result;
+}

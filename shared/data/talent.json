@@ -1,0 +1,5983 @@
+{
+  "directors": [
+    {
+      "name": "Steven Spielberg",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 350000000,
+      "awards": 3,
+      "genres": [
+        "action",
+        "drama",
+        "scifi"
+      ],
+      "birthYear": 1946,
+      "popularity": 98,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Steven_Spielberg_Masterclass_Cin%C3%A9math%C3%A8que_Fran%C3%A7aise_2_cropped.jpg/300px-Steven_Spielberg_Masterclass_Cin%C3%A9math%C3%A8que_Fran%C3%A7aise_2_cropped.jpg",
+      "fame": 97,
+      "performance": 97
+    },
+    {
+      "name": "Christopher Nolan",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 5,
+      "boxOfficeAvg": 500000000,
+      "awards": 2,
+      "genres": [
+        "action",
+        "drama",
+        "scifi",
+        "thriller"
+      ],
+      "birthYear": 1970,
+      "popularity": 97,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Christopher_Nolan_Cannes_2018.jpg/300px-Christopher_Nolan_Cannes_2018.jpg",
+      "fame": 78,
+      "performance": 85
+    },
+    {
+      "name": "Martin Scorsese",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 180000000,
+      "awards": 4,
+      "genres": [
+        "drama",
+        "thriller",
+        "action"
+      ],
+      "birthYear": 1942,
+      "popularity": 95,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Martin_Scorsese_at_the_premiere_of_Silence%2C_Tokyo%2C_January_2017.jpg/300px-Martin_Scorsese_at_the_premiere_of_Silence%2C_Tokyo%2C_January_2017.jpg",
+      "fame": 99,
+      "performance": 99
+    },
+    {
+      "name": "Quentin Tarantino",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 2,
+      "genres": [
+        "action",
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1963,
+      "popularity": 94,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Quentin_Tarantino_by_Gage_Skidmore.jpg/300px-Quentin_Tarantino_by_Gage_Skidmore.jpg",
+      "fame": 90,
+      "performance": 92
+    },
+    {
+      "name": "Denis Villeneuve",
+      "gender": "male",
+      "nationality": "Canadian",
+      "starRating": 5,
+      "boxOfficeAvg": 300000000,
+      "awards": 0,
+      "genres": [
+        "scifi",
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1967,
+      "popularity": 92,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Denis_Villeneuve_by_Gage_Skidmore.jpg/300px-Denis_Villeneuve_by_Gage_Skidmore.jpg",
+      "fame": 70,
+      "performance": 80
+    },
+    {
+      "name": "James Cameron",
+      "gender": "male",
+      "nationality": "Canadian",
+      "starRating": 5,
+      "boxOfficeAvg": 800000000,
+      "awards": 3,
+      "genres": [
+        "action",
+        "scifi",
+        "drama"
+      ],
+      "birthYear": 1954,
+      "popularity": 96,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/James_Cameron_by_Gage_Skidmore.jpg/300px-James_Cameron_by_Gage_Skidmore.jpg",
+      "fame": 75,
+      "performance": 78
+    },
+    {
+      "name": "Ridley Scott",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 5,
+      "boxOfficeAvg": 250000000,
+      "awards": 0,
+      "genres": [
+        "scifi",
+        "action",
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1937,
+      "popularity": 90,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Ridley_Scott_by_Gage_Skidmore.jpg/300px-Ridley_Scott_by_Gage_Skidmore.jpg",
+      "fame": 82,
+      "performance": 83
+    },
+    {
+      "name": "Greta Gerwig",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 400000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "comedy",
+        "romance"
+      ],
+      "birthYear": 1983,
+      "popularity": 91,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Greta_Gerwig-7808_(cropped).jpg/300px-Greta_Gerwig-7808_(cropped).jpg",
+      "fame": 55,
+      "performance": 70
+    },
+    {
+      "name": "Chloe Zhao",
+      "gender": "female",
+      "nationality": "Chinese",
+      "starRating": 5,
+      "boxOfficeAvg": 150000000,
+      "awards": 2,
+      "genres": [
+        "drama",
+        "action"
+      ],
+      "birthYear": 1982,
+      "popularity": 85,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Chloe_Zhao.jpg/300px-Chloe_Zhao.jpg",
+      "fame": 50,
+      "performance": 65
+    },
+    {
+      "name": "Jordan Peele",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 1,
+      "genres": [
+        "horror",
+        "thriller"
+      ],
+      "birthYear": 1979,
+      "popularity": 90,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Jordan_Peele_(2019).jpg/300px-Jordan_Peele_(2019).jpg",
+      "fame": 60,
+      "performance": 75
+    },
+    {
+      "name": "David Fincher",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 180000000,
+      "awards": 0,
+      "genres": [
+        "thriller",
+        "drama"
+      ],
+      "birthYear": 1962,
+      "popularity": 88,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/David_Fincher_2023_(cropped).jpg/300px-David_Fincher_2023_(cropped).jpg",
+      "fame": 72,
+      "performance": 82
+    },
+    {
+      "name": "Wes Anderson",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 100000000,
+      "awards": 0,
+      "genres": [
+        "comedy",
+        "drama"
+      ],
+      "birthYear": 1969,
+      "popularity": 86,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Wes_Anderson-7541.jpg/300px-Wes_Anderson-7541.jpg",
+      "fame": 65,
+      "performance": 78
+    },
+    {
+      "name": "Guillermo del Toro",
+      "gender": "male",
+      "nationality": "Mexican",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 2,
+      "genres": [
+        "horror",
+        "scifi",
+        "drama"
+      ],
+      "birthYear": 1964,
+      "popularity": 89,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Guillermo_del_Toro_2025.jpg/300px-Guillermo_del_Toro_2025.jpg",
+      "fame": 68,
+      "performance": 78
+    },
+    {
+      "name": "Alfonso Cuaron",
+      "gender": "male",
+      "nationality": "Mexican",
+      "starRating": 5,
+      "boxOfficeAvg": 250000000,
+      "awards": 4,
+      "genres": [
+        "drama",
+        "scifi",
+        "thriller"
+      ],
+      "birthYear": 1961,
+      "popularity": 87,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/DisclaimerBFILFF101024_%2888_of_113%29_%2854062275143%29_%28cropped%29.jpg?width=300",
+      "fame": 65,
+      "performance": 76
+    },
+    {
+      "name": "Alejandro Gonzalez Inarritu",
+      "gender": "male",
+      "nationality": "Mexican",
+      "starRating": 5,
+      "boxOfficeAvg": 150000000,
+      "awards": 4,
+      "genres": [
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1963,
+      "popularity": 84,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/MKr386809_Alejandro_Gonz%C3%A1lez_I%C3%B1%C3%A1rritu_%28Amores_Perros%2C_Cannes_2025%29.jpg?width=300",
+      "fame": 62,
+      "performance": 75
+    },
+    {
+      "name": "Bong Joon-ho",
+      "gender": "male",
+      "nationality": "South Korean",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 4,
+      "genres": [
+        "thriller",
+        "drama",
+        "comedy"
+      ],
+      "birthYear": 1969,
+      "popularity": 90,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Bong_Joon-ho_2017.jpg/300px-Bong_Joon-ho_2017.jpg",
+      "fame": 72,
+      "performance": 82
+    },
+    {
+      "name": "Edgar Wright",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 4,
+      "boxOfficeAvg": 120000000,
+      "awards": 0,
+      "genres": [
+        "comedy",
+        "action",
+        "horror"
+      ],
+      "birthYear": 1974,
+      "popularity": 82,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Edgar_Wright_%2835706257512%29.jpg/330px-Edgar_Wright_%2835706257512%29.jpg",
+      "fame": 58,
+      "performance": 72
+    },
+    {
+      "name": "Taika Waititi",
+      "gender": "male",
+      "nationality": "New Zealand",
+      "starRating": 4,
+      "boxOfficeAvg": 350000000,
+      "awards": 1,
+      "genres": [
+        "comedy",
+        "action",
+        "drama"
+      ],
+      "birthYear": 1975,
+      "popularity": 88,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Taika_Waititi_photo_by_pouria_afkhami.jpg/330px-Taika_Waititi_photo_by_pouria_afkhami.jpg",
+      "fame": 55,
+      "performance": 68
+    },
+    {
+      "name": "Ryan Coogler",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 500000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "drama"
+      ],
+      "birthYear": 1986,
+      "popularity": 88,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Ryan_Coogler_-_Sinners.jpg/330px-Ryan_Coogler_-_Sinners.jpg",
+      "fame": 58,
+      "performance": 75
+    },
+    {
+      "name": "Ava DuVernay",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 100000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "documentary"
+      ],
+      "birthYear": 1972,
+      "popularity": 80,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Ava_DuVernay_2018.jpg/330px-Ava_DuVernay_2018.jpg",
+      "fame": 55,
+      "performance": 70
+    },
+    {
+      "name": "Damien Chazelle",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 2,
+      "genres": [
+        "drama",
+        "romance"
+      ],
+      "birthYear": 1985,
+      "popularity": 85,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Damien_Chazelle_(2023).jpg/300px-Damien_Chazelle_(2023).jpg",
+      "fame": 60,
+      "performance": 76
+    },
+    {
+      "name": "Barry Jenkins",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 80000000,
+      "awards": 3,
+      "genres": [
+        "drama",
+        "romance"
+      ],
+      "birthYear": 1979,
+      "popularity": 82,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Filmmaker_Barry_Jenkins_%28cropped%29.jpg/330px-Filmmaker_Barry_Jenkins_%28cropped%29.jpg",
+      "fame": 58,
+      "performance": 80
+    },
+    {
+      "name": "Todd Phillips",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 350000000,
+      "awards": 0,
+      "genres": [
+        "comedy",
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1970,
+      "popularity": 83,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Todd_Phillips-64847.jpg/330px-Todd_Phillips-64847.jpg",
+      "fame": 58,
+      "performance": 70
+    },
+    {
+      "name": "Matt Reeves",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 350000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "thriller",
+        "scifi"
+      ],
+      "birthYear": 1966,
+      "popularity": 81,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Matt_Reeves_%2813948765595%29_%28cropped%29.jpg/330px-Matt_Reeves_%2813948765595%29_%28cropped%29.jpg",
+      "fame": 65,
+      "performance": 76
+    },
+    {
+      "name": "Sam Mendes",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 5,
+      "boxOfficeAvg": 300000000,
+      "awards": 2,
+      "genres": [
+        "drama",
+        "action",
+        "thriller"
+      ],
+      "birthYear": 1965,
+      "popularity": 85,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Sam_Mendes_2020_(cropped).jpg/300px-Sam_Mendes_2020_(cropped).jpg",
+      "fame": 70,
+      "performance": 78
+    },
+    {
+      "name": "George Miller",
+      "gender": "male",
+      "nationality": "Australian",
+      "starRating": 5,
+      "boxOfficeAvg": 300000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "scifi",
+        "animation"
+      ],
+      "birthYear": 1945,
+      "popularity": 84,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/George_Miller_%2835706244922%29.jpg/330px-George_Miller_%2835706244922%29.jpg",
+      "fame": 75,
+      "performance": 82
+    },
+    {
+      "name": "James Wan",
+      "gender": "male",
+      "nationality": "Australian",
+      "starRating": 4,
+      "boxOfficeAvg": 400000000,
+      "awards": 0,
+      "genres": [
+        "horror",
+        "action"
+      ],
+      "birthYear": 1977,
+      "popularity": 83,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/James_Wan_2019.jpg/300px-James_Wan_2019.jpg",
+      "fame": 60,
+      "performance": 70
+    },
+    {
+      "name": "Zack Snyder",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 350000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "scifi"
+      ],
+      "birthYear": 1966,
+      "popularity": 80,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Zack_Snyder_(2017).jpg/300px-Zack_Snyder_(2017).jpg",
+      "fame": 55,
+      "performance": 65
+    },
+    {
+      "name": "Jon Favreau",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 500000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "comedy",
+        "scifi"
+      ],
+      "birthYear": 1966,
+      "popularity": 85,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Jon_Favreau_2016.jpeg/300px-Jon_Favreau_2016.jpeg",
+      "fame": 60,
+      "performance": 70
+    },
+    {
+      "name": "J.J. Abrams",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 500000000,
+      "awards": 0,
+      "genres": [
+        "scifi",
+        "action",
+        "thriller"
+      ],
+      "birthYear": 1966,
+      "popularity": 82,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/J._J._Abrams_San_Diego_Comic_Con_International_2015.jpg/330px-J._J._Abrams_San_Diego_Comic_Con_International_2015.jpg",
+      "fame": 62,
+      "performance": 68
+    },
+    {
+      "name": "Emerald Fennell",
+      "gender": "female",
+      "nationality": "British",
+      "starRating": 4,
+      "boxOfficeAvg": 80000000,
+      "awards": 1,
+      "genres": [
+        "thriller",
+        "drama"
+      ],
+      "birthYear": 1985,
+      "popularity": 78,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Emerald_Fennell_in_2020.jpg/300px-Emerald_Fennell_in_2020.jpg"
+    },
+    {
+      "name": "Patty Jenkins",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 400000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "drama"
+      ],
+      "birthYear": 1971,
+      "popularity": 79,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Patty_Jenkins_at_the_2018_Comic-Con_International.jpg/330px-Patty_Jenkins_at_the_2018_Comic-Con_International.jpg"
+    },
+    {
+      "name": "Cary Joji Fukunaga",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 350000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "thriller",
+        "drama"
+      ],
+      "birthYear": 1977,
+      "popularity": 77,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/Maniac_UK_premiere_%28Fukunaga%29.jpg/330px-Maniac_UK_premiere_%28Fukunaga%29.jpg"
+    },
+    {
+      "name": "Robert Eggers",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 70000000,
+      "awards": 0,
+      "genres": [
+        "horror",
+        "drama"
+      ],
+      "birthYear": 1983,
+      "popularity": 75,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Robert_Eggers_-_The_Witch%2CFantastic_Fest_2015-1667_%2828894993650%29_%28cropped%29.jpg/330px-Robert_Eggers_-_The_Witch%2CFantastic_Fest_2015-1667_%2828894993650%29_%28cropped%29.jpg"
+    },
+    {
+      "name": "Ari Aster",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 80000000,
+      "awards": 0,
+      "genres": [
+        "horror",
+        "drama"
+      ],
+      "birthYear": 1986,
+      "popularity": 78,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Ari_Aster_at_the_2025_Cannes_Film_Festival_02.jpg/330px-Ari_Aster_at_the_2025_Cannes_Film_Festival_02.jpg"
+    },
+    {
+      "name": "Mike Flanagan",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 60000000,
+      "awards": 0,
+      "genres": [
+        "horror",
+        "thriller"
+      ],
+      "birthYear": 1978,
+      "popularity": 76,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Mike_Flanagan_at_the_2024_Toronto_International_Film_Festival_%28cropped%29.jpg/330px-Mike_Flanagan_at_the_2024_Toronto_International_Film_Festival_%28cropped%29.jpg"
+    },
+    {
+      "name": "Fede Alvarez",
+      "gender": "male",
+      "nationality": "Uruguayan",
+      "starRating": 4,
+      "boxOfficeAvg": 100000000,
+      "awards": 0,
+      "genres": [
+        "horror",
+        "thriller",
+        "scifi"
+      ],
+      "birthYear": 1978,
+      "popularity": 72,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/Fede_Alvarez_by_Gage_Skidmore.jpg/300px-Fede_Alvarez_by_Gage_Skidmore.jpg"
+    },
+    {
+      "name": "John Krasinski",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "horror",
+        "thriller",
+        "drama"
+      ],
+      "birthYear": 1979,
+      "popularity": 84,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/John_Krasinski_2018.jpg/300px-John_Krasinski_2018.jpg"
+    },
+    {
+      "name": "Paul Thomas Anderson",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 50000000,
+      "awards": 0,
+      "genres": [
+        "drama"
+      ],
+      "birthYear": 1970,
+      "popularity": 82,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Paul_Thomas_Anderson_2007.jpg/300px-Paul_Thomas_Anderson_2007.jpg"
+    },
+    {
+      "name": "Sofia Coppola",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 40000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "romance"
+      ],
+      "birthYear": 1971,
+      "popularity": 78,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Sofia_Coppola_Cannes_2017.jpg/300px-Sofia_Coppola_Cannes_2017.jpg"
+    },
+    {
+      "name": "Luca Guadagnino",
+      "gender": "male",
+      "nationality": "Italian",
+      "starRating": 4,
+      "boxOfficeAvg": 80000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "romance",
+        "horror"
+      ],
+      "birthYear": 1971,
+      "popularity": 77,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Luca_Guadagnino_(2018).jpg/300px-Luca_Guadagnino_(2018).jpg"
+    },
+    {
+      "name": "Yorgos Lanthimos",
+      "gender": "male",
+      "nationality": "Greek",
+      "starRating": 5,
+      "boxOfficeAvg": 100000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "thriller",
+        "comedy"
+      ],
+      "birthYear": 1973,
+      "popularity": 80,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Yorgos_Lanthimos_at_82nd_Venice_International_Film_Festival-1_%28cropped%29.jpg/330px-Yorgos_Lanthimos_at_82nd_Venice_International_Film_Festival-1_%28cropped%29.jpg"
+    },
+    {
+      "name": "Peter Jackson",
+      "gender": "male",
+      "nationality": "New Zealand",
+      "starRating": 5,
+      "boxOfficeAvg": 500000000,
+      "awards": 3,
+      "genres": [
+        "action",
+        "drama",
+        "scifi"
+      ],
+      "birthYear": 1961,
+      "popularity": 88,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Peter_Jackson_SDCC_2014.jpg/330px-Peter_Jackson_SDCC_2014.jpg"
+    },
+    {
+      "name": "Tim Burton",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 250000000,
+      "awards": 0,
+      "genres": [
+        "horror",
+        "comedy",
+        "animation"
+      ],
+      "birthYear": 1958,
+      "popularity": 85,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/Tim_Burton_by_Gage_Skidmore.jpg/300px-Tim_Burton_by_Gage_Skidmore.jpg"
+    },
+    {
+      "name": "David O. Russell",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 100000000,
+      "awards": 0,
+      "genres": [
+        "comedy",
+        "drama"
+      ],
+      "birthYear": 1958,
+      "popularity": 72,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/David_O._Russell_2013.jpg/300px-David_O._Russell_2013.jpg"
+    },
+    {
+      "name": "Kenneth Branagh",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 4,
+      "boxOfficeAvg": 150000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "thriller",
+        "action"
+      ],
+      "birthYear": 1960,
+      "popularity": 78,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Kenneth_Branagh_by_Gage_Skidmore.jpg/300px-Kenneth_Branagh_by_Gage_Skidmore.jpg"
+    },
+    {
+      "name": "Michael Bay",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 400000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "scifi"
+      ],
+      "birthYear": 1965,
+      "popularity": 75,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Michael_Bay_2014.jpg/300px-Michael_Bay_2014.jpg"
+    },
+    {
+      "name": "Ron Howard",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 200000000,
+      "awards": 2,
+      "genres": [
+        "drama",
+        "thriller",
+        "action"
+      ],
+      "birthYear": 1954,
+      "popularity": 80,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Ron_Howard_2011.jpg/300px-Ron_Howard_2011.jpg"
+    },
+    {
+      "name": "M. Night Shyamalan",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 150000000,
+      "awards": 0,
+      "genres": [
+        "thriller",
+        "horror",
+        "scifi"
+      ],
+      "birthYear": 1970,
+      "popularity": 79,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/M._Night_Shyamalan_%2828769148857%29_%28cropped_2%29.jpg/330px-M._Night_Shyamalan_%2828769148857%29_%28cropped_2%29.jpg"
+    },
+    {
+      "name": "Antoine Fuqua",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 150000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "thriller",
+        "drama"
+      ],
+      "birthYear": 1966,
+      "popularity": 74,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Antoine_Fuqua_%2829682821190%29.jpg/330px-Antoine_Fuqua_%2829682821190%29.jpg"
+    },
+    {
+      "name": "Chad Stahelski",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 300000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "thriller"
+      ],
+      "birthYear": 1968,
+      "popularity": 75,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Chad_Stahelski_-_Wick_is_Pain.jpg/330px-Chad_Stahelski_-_Wick_is_Pain.jpg"
+    },
+    {
+      "name": "Jennifer Lee",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 700000000,
+      "awards": 2,
+      "genres": [
+        "animation",
+        "comedy"
+      ],
+      "birthYear": 1971,
+      "popularity": 82,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Jennifer_Lee_in_2019.jpg/300px-Jennifer_Lee_in_2019.jpg"
+    },
+    {
+      "name": "Pete Docter",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 500000000,
+      "awards": 2,
+      "genres": [
+        "animation",
+        "comedy",
+        "drama"
+      ],
+      "birthYear": 1968,
+      "popularity": 85,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Pete_Docter_2015.jpg/300px-Pete_Docter_2015.jpg"
+    },
+    {
+      "name": "Brad Bird",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 400000000,
+      "awards": 2,
+      "genres": [
+        "animation",
+        "action",
+        "scifi"
+      ],
+      "birthYear": 1957,
+      "popularity": 84,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/3/3a/Brad_bird_cropped_2009.jpg"
+    },
+    {
+      "name": "Andrew Stanton",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 350000000,
+      "awards": 2,
+      "genres": [
+        "animation",
+        "scifi"
+      ],
+      "birthYear": 1965,
+      "popularity": 78,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/5/52/Andrew_Stanton_cropped_2009.jpg"
+    },
+    {
+      "name": "Lee Unkrich",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 500000000,
+      "awards": 2,
+      "genres": [
+        "animation",
+        "drama"
+      ],
+      "birthYear": 1967,
+      "popularity": 76,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Lee_Unkrich.jpg/300px-Lee_Unkrich.jpg"
+    },
+    {
+      "name": "Hirokazu Kore-eda",
+      "gender": "male",
+      "nationality": "Japanese",
+      "starRating": 5,
+      "boxOfficeAvg": 30000000,
+      "awards": 1,
+      "genres": [
+        "drama"
+      ],
+      "birthYear": 1962,
+      "popularity": 75,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Hirokazu_Koreeda_(cropped).jpg/300px-Hirokazu_Koreeda_(cropped).jpg"
+    },
+    {
+      "name": "Park Chan-wook",
+      "gender": "male",
+      "nationality": "South Korean",
+      "starRating": 5,
+      "boxOfficeAvg": 80000000,
+      "awards": 0,
+      "genres": [
+        "thriller",
+        "drama",
+        "action"
+      ],
+      "birthYear": 1963,
+      "popularity": 82,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Park_Chan-wook_Cannes_2017.jpg/300px-Park_Chan-wook_Cannes_2017.jpg"
+    },
+    {
+      "name": "Wong Kar-wai",
+      "gender": "male",
+      "nationality": "Hong Kong",
+      "starRating": 5,
+      "boxOfficeAvg": 30000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "romance"
+      ],
+      "birthYear": 1958,
+      "popularity": 78,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Wong_Kar-wai%2C_Berlin_2023%2C_1.jpg/300px-Wong_Kar-wai%2C_Berlin_2023%2C_1.jpg"
+    },
+    {
+      "name": "Hayao Miyazaki",
+      "gender": "male",
+      "nationality": "Japanese",
+      "starRating": 5,
+      "boxOfficeAvg": 300000000,
+      "awards": 1,
+      "genres": [
+        "animation",
+        "drama"
+      ],
+      "birthYear": 1941,
+      "popularity": 92,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/Hayao_Miyazaki.jpg/300px-Hayao_Miyazaki.jpg"
+    },
+    {
+      "name": "Makoto Shinkai",
+      "gender": "male",
+      "nationality": "Japanese",
+      "starRating": 5,
+      "boxOfficeAvg": 250000000,
+      "awards": 0,
+      "genres": [
+        "animation",
+        "drama",
+        "romance"
+      ],
+      "birthYear": 1973,
+      "popularity": 85,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Makoto_Shinkai.jpg/300px-Makoto_Shinkai.jpg"
+    },
+    {
+      "name": "Justin Lin",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 400000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "scifi"
+      ],
+      "birthYear": 1971,
+      "popularity": 74,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Justin_Lin_at_the_2025_Sundance_Film_Festival_%28cropped%29.jpg/330px-Justin_Lin_at_the_2025_Sundance_Film_Festival_%28cropped%29.jpg"
+    },
+    {
+      "name": "Louis Leterrier",
+      "gender": "male",
+      "nationality": "French",
+      "starRating": 4,
+      "boxOfficeAvg": 350000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "thriller"
+      ],
+      "birthYear": 1973,
+      "popularity": 70,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/Louis_Leterrier_Cannes_2024.jpg/300px-Louis_Leterrier_Cannes_2024.jpg"
+    },
+    {
+      "name": "Guy Ritchie",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 4,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "comedy",
+        "thriller"
+      ],
+      "birthYear": 1968,
+      "popularity": 78,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/GuyRitchiebyKathyHutchins.jpg/330px-GuyRitchiebyKathyHutchins.jpg"
+    },
+    {
+      "name": "Matthew Vaughn",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 4,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "comedy"
+      ],
+      "birthYear": 1971,
+      "popularity": 76,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Matthew_Vaughn.jpg/300px-Matthew_Vaughn.jpg"
+    },
+    {
+      "name": "David Leitch",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 250000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "comedy"
+      ],
+      "birthYear": 1975,
+      "popularity": 74,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/David_Leitch_by_Gage_Skidmore_2.jpg/330px-David_Leitch_by_Gage_Skidmore_2.jpg"
+    },
+    {
+      "name": "John Lee Hancock",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 3,
+      "boxOfficeAvg": 120000000,
+      "awards": 0,
+      "genres": [
+        "drama"
+      ],
+      "birthYear": 1956,
+      "popularity": 65,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/John_Hancock_and_Dog_%28cropped%29.jpg/330px-John_Hancock_and_Dog_%28cropped%29.jpg"
+    },
+    {
+      "name": "Ruben Fleischer",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 3,
+      "boxOfficeAvg": 250000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "comedy",
+        "horror"
+      ],
+      "birthYear": 1974,
+      "popularity": 68,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Ruben_Fleischer.jpg/300px-Ruben_Fleischer.jpg"
+    },
+    {
+      "name": "Joachim Ronning",
+      "gender": "male",
+      "nationality": "Norwegian",
+      "starRating": 3,
+      "boxOfficeAvg": 350000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "drama"
+      ],
+      "birthYear": 1972,
+      "popularity": 62,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Joachim_Ronning_by_Gage_Skidmore.jpg/300px-Joachim_Ronning_by_Gage_Skidmore.jpg"
+    },
+    {
+      "name": "S.S. Rajamouli",
+      "gender": "male",
+      "nationality": "Indian",
+      "starRating": 5,
+      "boxOfficeAvg": 400000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "drama"
+      ],
+      "birthYear": 1973,
+      "popularity": 88,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/SS_Rajamouli%2C_2021.jpg/300px-SS_Rajamouli%2C_2021.jpg"
+    },
+    {
+      "name": "Alex Garland",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 4,
+      "boxOfficeAvg": 60000000,
+      "awards": 0,
+      "genres": [
+        "scifi",
+        "thriller",
+        "horror"
+      ],
+      "birthYear": 1970,
+      "popularity": 75,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/2024-03-14_SXSW_Civil-War_3_%28cropped%29.jpg/330px-2024-03-14_SXSW_Civil-War_3_%28cropped%29.jpg"
+    },
+    {
+      "name": "Ti West",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 3,
+      "boxOfficeAvg": 30000000,
+      "awards": 0,
+      "genres": [
+        "horror"
+      ],
+      "birthYear": 1980,
+      "popularity": 68,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Ti_West.jpg/300px-Ti_West.jpg"
+    },
+    {
+      "name": "Parker Finn",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 3,
+      "boxOfficeAvg": 100000000,
+      "awards": 0,
+      "genres": [
+        "horror"
+      ],
+      "birthYear": 1987,
+      "popularity": 65,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Parker_Finn_(2023).jpg/300px-Parker_Finn_(2023).jpg"
+    },
+    {
+      "name": "Cord Jefferson",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 30000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "comedy"
+      ],
+      "birthYear": 1982,
+      "popularity": 70,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Cord_Jefferson_at_TIFF.jpg/330px-Cord_Jefferson_at_TIFF.jpg"
+    },
+    {
+      "name": "Sean Baker",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 20000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "comedy"
+      ],
+      "birthYear": 1971,
+      "popularity": 72,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Sean_Baker_at_the_2024_Toronto_International_Film_Festival_2_%28cropped%29.jpg/330px-Sean_Baker_at_the_2024_Toronto_International_Film_Festival_2_%28cropped%29.jpg"
+    },
+    {
+      "name": "Lorcan Finnegan",
+      "gender": "male",
+      "nationality": "Irish",
+      "starRating": 3,
+      "boxOfficeAvg": 15000000,
+      "awards": 0,
+      "genres": [
+        "scifi",
+        "thriller"
+      ],
+      "birthYear": 1979,
+      "popularity": 55,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/Lorcan_Finnegan_at_DIFF_2020.jpg/330px-Lorcan_Finnegan_at_DIFF_2020.jpg"
+    }
+  ],
+  "actors": [
+    {
+      "name": "Leonardo DiCaprio",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 350000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "thriller",
+        "action"
+      ],
+      "birthYear": 1974,
+      "popularity": 98,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Leonardo_Dicaprio_Cannes_2019.jpg?width=300"
+    },
+    {
+      "name": "Robert Downey Jr.",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 600000000,
+      "awards": 2,
+      "genres": [
+        "action",
+        "scifi",
+        "comedy"
+      ],
+      "birthYear": 1965,
+      "popularity": 97,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Robert_Downey_Jr_2014_Comic_Con_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Tom Cruise",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 400000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "thriller",
+        "scifi"
+      ],
+      "birthYear": 1962,
+      "popularity": 96,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Tom_Cruise_by_Gage_Skidmore_2.jpg?width=300"
+    },
+    {
+      "name": "Denzel Washington",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 2,
+      "genres": [
+        "drama",
+        "action",
+        "thriller"
+      ],
+      "birthYear": 1954,
+      "popularity": 94,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Denzel_Washington_2018.jpg?width=300"
+    },
+    {
+      "name": "Brad Pitt",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 250000000,
+      "awards": 2,
+      "genres": [
+        "drama",
+        "action",
+        "comedy"
+      ],
+      "birthYear": 1963,
+      "popularity": 95,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Brad_Pitt_2019_by_Glenn_Francis.jpg?width=300"
+    },
+    {
+      "name": "Ryan Gosling",
+      "gender": "male",
+      "nationality": "Canadian",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "action",
+        "romance"
+      ],
+      "birthYear": 1980,
+      "popularity": 93,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Ryan_Gosling_in_2018.jpg?width=300"
+    },
+    {
+      "name": "Timothee Chalamet",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 300000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "scifi",
+        "romance"
+      ],
+      "birthYear": 1995,
+      "popularity": 94,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Timoth%C3%A9e_Chalamet_2023.jpg?width=300"
+    },
+    {
+      "name": "Cillian Murphy",
+      "gender": "male",
+      "nationality": "Irish",
+      "starRating": 5,
+      "boxOfficeAvg": 350000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "thriller",
+        "action"
+      ],
+      "birthYear": 1976,
+      "popularity": 92,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Cillian_Murphy_at_the_London_premier_of_Steve_in_September_2025_Cropped.jpg?width=300"
+    },
+    {
+      "name": "Matt Damon",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 300000000,
+      "awards": 2,
+      "genres": [
+        "action",
+        "drama",
+        "scifi"
+      ],
+      "birthYear": 1970,
+      "popularity": 90,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Matt_Damon_TIFF_2015.jpg?width=300"
+    },
+    {
+      "name": "Christian Bale",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 5,
+      "boxOfficeAvg": 300000000,
+      "awards": 2,
+      "genres": [
+        "drama",
+        "action",
+        "thriller"
+      ],
+      "birthYear": 1974,
+      "popularity": 89,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Christian_Bale_2014_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Joaquin Phoenix",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1974,
+      "popularity": 88,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Joaquin_Phoenix_at_the_2018_Berlin_Film_Festival.jpg?width=300"
+    },
+    {
+      "name": "Will Smith",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 300000000,
+      "awards": 1,
+      "genres": [
+        "action",
+        "comedy",
+        "drama"
+      ],
+      "birthYear": 1968,
+      "popularity": 85,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/TechCrunch_Disrupt_2019_%2848834434641%29_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Dwayne Johnson",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 400000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "comedy"
+      ],
+      "birthYear": 1972,
+      "popularity": 94,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Dwayne_Johnson_2014_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Tom Hanks",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 250000000,
+      "awards": 2,
+      "genres": [
+        "drama",
+        "comedy"
+      ],
+      "birthYear": 1956,
+      "popularity": 92,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Tom_Hanks_TIFF_2019.jpg?width=300"
+    },
+    {
+      "name": "Samuel L. Jackson",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 400000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "thriller",
+        "scifi"
+      ],
+      "birthYear": 1948,
+      "popularity": 91,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/SamuelLJackson.jpg?width=300"
+    },
+    {
+      "name": "Keanu Reeves",
+      "gender": "male",
+      "nationality": "Canadian",
+      "starRating": 5,
+      "boxOfficeAvg": 300000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "scifi",
+        "thriller"
+      ],
+      "birthYear": 1964,
+      "popularity": 93,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Reuni%C3%A3o_com_o_ator_norte-americano_Keanu_Reeves_%2846806576944%29_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Chris Hemsworth",
+      "gender": "male",
+      "nationality": "Australian",
+      "starRating": 5,
+      "boxOfficeAvg": 450000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "scifi",
+        "comedy"
+      ],
+      "birthYear": 1983,
+      "popularity": 90,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Chris_Hemsworth_by_Gage_Skidmore_2_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Chris Evans",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 500000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "scifi"
+      ],
+      "birthYear": 1981,
+      "popularity": 89,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Chris_Evans_-_Captain_America_2_press_conference_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Chris Pratt",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 500000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "scifi",
+        "comedy"
+      ],
+      "birthYear": 1979,
+      "popularity": 87,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Chris_Pratt_2018.jpg?width=300"
+    },
+    {
+      "name": "Paul Rudd",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 400000000,
+      "awards": 0,
+      "genres": [
+        "comedy",
+        "action",
+        "scifi"
+      ],
+      "birthYear": 1969,
+      "popularity": 85,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Paul_Rudd_%2848386981867%29_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Oscar Isaac",
+      "gender": "male",
+      "nationality": "Guatemalan",
+      "starRating": 5,
+      "boxOfficeAvg": 250000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "scifi",
+        "action"
+      ],
+      "birthYear": 1979,
+      "popularity": 86,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Oscar_Isaac_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Adam Driver",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 350000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "scifi",
+        "action"
+      ],
+      "birthYear": 1983,
+      "popularity": 87,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Adam_Driver.jpg?width=300"
+    },
+    {
+      "name": "Jake Gyllenhaal",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 150000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "thriller",
+        "action"
+      ],
+      "birthYear": 1980,
+      "popularity": 85,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Jake_Gyllenhaal_2019_by_Glenn_Francis.jpg?width=300"
+    },
+    {
+      "name": "Michael B. Jordan",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 400000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "drama"
+      ],
+      "birthYear": 1987,
+      "popularity": 88,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Michael_B._Jordan_Cannes_2018.jpg?width=300"
+    },
+    {
+      "name": "Jason Momoa",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 350000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "scifi"
+      ],
+      "birthYear": 1979,
+      "popularity": 86,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Jason_Momoa_by_Gage_Skidmore_2.jpg?width=300"
+    },
+    {
+      "name": "John Boyega",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 4,
+      "boxOfficeAvg": 500000000,
+      "awards": 0,
+      "genres": [
+        "scifi",
+        "action",
+        "drama"
+      ],
+      "birthYear": 1992,
+      "popularity": 80,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/John_Boyega_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Eddie Redmayne",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "scifi"
+      ],
+      "birthYear": 1982,
+      "popularity": 78,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Eddie_Redmayne_%2830543153622%29_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Andrew Garfield",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 4,
+      "boxOfficeAvg": 350000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "action"
+      ],
+      "birthYear": 1983,
+      "popularity": 84,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Andrew_Garfield_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Tom Holland",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 5,
+      "boxOfficeAvg": 700000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "scifi",
+        "comedy"
+      ],
+      "birthYear": 1996,
+      "popularity": 93,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Tom_Holland_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Zendaya",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 500000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "scifi",
+        "action"
+      ],
+      "birthYear": 1996,
+      "popularity": 95,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Zendaya_-_2019_by_Glenn_Francis.jpg?width=300"
+    },
+    {
+      "name": "Robert Pattinson",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 5,
+      "boxOfficeAvg": 350000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "action",
+        "thriller"
+      ],
+      "birthYear": 1986,
+      "popularity": 88,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Robert_Pattinson_Premiere_of_The_Batman_March_2022_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Benedict Cumberbatch",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 5,
+      "boxOfficeAvg": 450000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "scifi",
+        "action"
+      ],
+      "birthYear": 1976,
+      "popularity": 87,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/BCumberbatchSep2019.jpg?width=300"
+    },
+    {
+      "name": "Tom Hardy",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 5,
+      "boxOfficeAvg": 350000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1977,
+      "popularity": 88,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Tom_Hardy_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Idris Elba",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 5,
+      "boxOfficeAvg": 300000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "thriller",
+        "drama"
+      ],
+      "birthYear": 1972,
+      "popularity": 86,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Idris_Elba-4580_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Morgan Freeman",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 250000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "action",
+        "thriller"
+      ],
+      "birthYear": 1937,
+      "popularity": 90,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Morgan_Freeman_Deauville_2018.jpg?width=300"
+    },
+    {
+      "name": "Anthony Hopkins",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 2,
+      "genres": [
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1937,
+      "popularity": 88,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Sir_Anthony_Hopkins_at_the_2018_San_Diego_Comic-Con_International.jpg?width=300"
+    },
+    {
+      "name": "Al Pacino",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 150000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1940,
+      "popularity": 88,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Al_Pacino_2016_%2830401544240%29.jpg?width=300"
+    },
+    {
+      "name": "Robert De Niro",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 180000000,
+      "awards": 2,
+      "genres": [
+        "drama",
+        "thriller",
+        "comedy"
+      ],
+      "birthYear": 1943,
+      "popularity": 90,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Robert_De_Niro_Cannes_2016.jpg?width=300"
+    },
+    {
+      "name": "Daniel Day-Lewis",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 5,
+      "boxOfficeAvg": 100000000,
+      "awards": 3,
+      "genres": [
+        "drama"
+      ],
+      "birthYear": 1957,
+      "popularity": 85,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Daniel_Day-Lewis_crop.jpg?width=300"
+    },
+    {
+      "name": "Gary Oldman",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 5,
+      "boxOfficeAvg": 300000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "action",
+        "thriller"
+      ],
+      "birthYear": 1958,
+      "popularity": 86,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/GaryOldmanFeb09.jpg?width=300"
+    },
+    {
+      "name": "Jeff Bridges",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 150000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "scifi",
+        "comedy"
+      ],
+      "birthYear": 1949,
+      "popularity": 78,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Jeff_Bridges_by_Gage_Skidmore_3.jpg?width=300"
+    },
+    {
+      "name": "Hugh Jackman",
+      "gender": "male",
+      "nationality": "Australian",
+      "starRating": 5,
+      "boxOfficeAvg": 350000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "drama",
+        "scifi"
+      ],
+      "birthYear": 1968,
+      "popularity": 90,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Hugh_Jackman_October_2018.jpg?width=300"
+    },
+    {
+      "name": "Ryan Reynolds",
+      "gender": "male",
+      "nationality": "Canadian",
+      "starRating": 5,
+      "boxOfficeAvg": 450000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "comedy",
+        "scifi"
+      ],
+      "birthYear": 1976,
+      "popularity": 93,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Deadpool_2_Japan_Premiere_Red_Carpet_Ryan_Reynolds_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Vin Diesel",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 400000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "scifi"
+      ],
+      "birthYear": 1967,
+      "popularity": 84,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Vin_Diesel_2013_NYCC.jpg?width=300"
+    },
+    {
+      "name": "Jason Statham",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 4,
+      "boxOfficeAvg": 300000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "thriller"
+      ],
+      "birthYear": 1967,
+      "popularity": 83,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Jason_Statham_2018.jpg?width=300"
+    },
+    {
+      "name": "Mark Wahlberg",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "comedy",
+        "drama"
+      ],
+      "birthYear": 1971,
+      "popularity": 82,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Mark_Wahlberg_at_the_2022_IFO_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Jared Leto",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 200000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "action"
+      ],
+      "birthYear": 1971,
+      "popularity": 78,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Jared_Leto%2C_Pair_of_Kings.jpg?width=300"
+    },
+    {
+      "name": "Michael Fassbender",
+      "gender": "male",
+      "nationality": "Irish",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "action",
+        "scifi"
+      ],
+      "birthYear": 1977,
+      "popularity": 82,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Michael_Fassbender_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "James McAvoy",
+      "gender": "male",
+      "nationality": "Scottish",
+      "starRating": 4,
+      "boxOfficeAvg": 250000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "action",
+        "scifi"
+      ],
+      "birthYear": 1979,
+      "popularity": 81,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/James_McAvoy_%282006%29.jpg?width=300"
+    },
+    {
+      "name": "Mahershala Ali",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 150000000,
+      "awards": 2,
+      "genres": [
+        "drama",
+        "action"
+      ],
+      "birthYear": 1974,
+      "popularity": 82,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Mahershala_Ali_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Rami Malek",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1981,
+      "popularity": 83,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Rami_Malek_in_2015_%282%29_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Austin Butler",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "action"
+      ],
+      "birthYear": 1991,
+      "popularity": 86,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Austin_Butler_Dune_Part_2_Premiere.jpg?width=300"
+    },
+    {
+      "name": "Paul Mescal",
+      "gender": "male",
+      "nationality": "Irish",
+      "starRating": 5,
+      "boxOfficeAvg": 100000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "action"
+      ],
+      "birthYear": 1996,
+      "popularity": 84,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Paul_Mescal_London_2022_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Pedro Pascal",
+      "gender": "male",
+      "nationality": "Chilean",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "drama",
+        "scifi"
+      ],
+      "birthYear": 1975,
+      "popularity": 92,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Pedro_Pascal_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Barry Keoghan",
+      "gender": "male",
+      "nationality": "Irish",
+      "starRating": 4,
+      "boxOfficeAvg": 150000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "thriller",
+        "action"
+      ],
+      "birthYear": 1992,
+      "popularity": 80,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Barry_Keoghan.jpg?width=300"
+    },
+    {
+      "name": "Glen Powell",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 250000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "comedy",
+        "drama"
+      ],
+      "birthYear": 1988,
+      "popularity": 85,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/GlenPowellHitMan.png?width=300"
+    },
+    {
+      "name": "Jeremy Renner",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 400000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1971,
+      "popularity": 79,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Jeremy_Renner_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Josh Brolin",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 350000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "drama",
+        "scifi"
+      ],
+      "birthYear": 1968,
+      "popularity": 80,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Josh_Brolin_TIFF_2025_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Dave Bautista",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 400000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "scifi",
+        "comedy"
+      ],
+      "birthYear": 1969,
+      "popularity": 81,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Dave_Bautista_Photo_Op_GalaxyCon_Richmond_2023.jpg?width=300"
+    },
+    {
+      "name": "Colman Domingo",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 80000000,
+      "awards": 0,
+      "genres": [
+        "drama"
+      ],
+      "birthYear": 1969,
+      "popularity": 78,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Colman_Domingo_in_2024_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Daniel Kaluuya",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 1,
+      "genres": [
+        "horror",
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1989,
+      "popularity": 83,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Daniel_Kaluuya_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "LaKeith Stanfield",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 80000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "horror",
+        "comedy"
+      ],
+      "birthYear": 1991,
+      "popularity": 76,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Lakeith_Stanfield_%2836120802001%29.jpg?width=300"
+    },
+    {
+      "name": "Jonathan Majors",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 300000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "drama"
+      ],
+      "birthYear": 1989,
+      "popularity": 72,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Jonathan_Majors_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Jonathan Bailey",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 4,
+      "boxOfficeAvg": 150000000,
+      "awards": 0,
+      "genres": [
+        "romance",
+        "drama",
+        "action"
+      ],
+      "birthYear": 1988,
+      "popularity": 80,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Jonathan_Bailey_2024.jpg?width=300"
+    },
+    {
+      "name": "Dev Patel",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 4,
+      "boxOfficeAvg": 100000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "action"
+      ],
+      "birthYear": 1990,
+      "popularity": 78,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Dev_Patel_%2829870604498%29.jpg?width=300"
+    },
+    {
+      "name": "Simu Liu",
+      "gender": "male",
+      "nationality": "Canadian",
+      "starRating": 4,
+      "boxOfficeAvg": 300000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "comedy"
+      ],
+      "birthYear": 1989,
+      "popularity": 80,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Simu_Liu_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Henry Golding",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 4,
+      "boxOfficeAvg": 100000000,
+      "awards": 0,
+      "genres": [
+        "romance",
+        "action",
+        "comedy"
+      ],
+      "birthYear": 1987,
+      "popularity": 76,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Henry_Golding.jpg?width=300"
+    },
+    {
+      "name": "Steven Yeun",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 80000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "action",
+        "horror"
+      ],
+      "birthYear": 1983,
+      "popularity": 78,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Steven_Yeun_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Henry Cavill",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 5,
+      "boxOfficeAvg": 400000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "scifi"
+      ],
+      "birthYear": 1983,
+      "popularity": 90,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Henry_Cavill_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "John David Washington",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "drama",
+        "scifi"
+      ],
+      "birthYear": 1984,
+      "popularity": 78,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/John_David_Washington_at_the_2018_U.S._Open.jpg?width=300"
+    },
+    {
+      "name": "Aaron Taylor-Johnson",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 4,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1990,
+      "popularity": 79,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Aaron_Taylor-Johnson_at_82nd_Venice_International_Film_Festival-1_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Miles Teller",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 300000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "action",
+        "comedy"
+      ],
+      "birthYear": 1987,
+      "popularity": 80,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Miles_Teller_by_Gage_Skidmore_2.jpg?width=300"
+    },
+    {
+      "name": "Javier Bardem",
+      "gender": "male",
+      "nationality": "Spanish",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "thriller",
+        "action"
+      ],
+      "birthYear": 1969,
+      "popularity": 84,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Javier_Bardem_2018.jpg?width=300"
+    },
+    {
+      "name": "Mads Mikkelsen",
+      "gender": "male",
+      "nationality": "Danish",
+      "starRating": 5,
+      "boxOfficeAvg": 250000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "action",
+        "thriller"
+      ],
+      "birthYear": 1965,
+      "popularity": 85,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Mads_Mikkelsen_Cannes_2013.jpg?width=300"
+    },
+    {
+      "name": "Daniel Craig",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 5,
+      "boxOfficeAvg": 500000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "thriller",
+        "drama"
+      ],
+      "birthYear": 1968,
+      "popularity": 88,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Daniel_Craig_in_2021.jpg?width=300"
+    },
+    {
+      "name": "Colin Farrell",
+      "gender": "male",
+      "nationality": "Irish",
+      "starRating": 5,
+      "boxOfficeAvg": 150000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "action",
+        "thriller"
+      ],
+      "birthYear": 1976,
+      "popularity": 83,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Colin_Farrell_%28Berlin_Film_Festival_2011%29.jpg?width=300"
+    },
+    {
+      "name": "Ethan Hawke",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 80000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "thriller",
+        "horror"
+      ],
+      "birthYear": 1970,
+      "popularity": 78,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Ethan_Hawke_2018.jpg?width=300"
+    },
+    {
+      "name": "Willem Dafoe",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "action",
+        "horror"
+      ],
+      "birthYear": 1955,
+      "popularity": 84,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Willem_Dafoe_Cannes_2019.jpg?width=300"
+    },
+    {
+      "name": "Michael Keaton",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "action",
+        "comedy"
+      ],
+      "birthYear": 1951,
+      "popularity": 82,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Michael_Keaton_October_2014.jpg?width=300"
+    },
+    {
+      "name": "Nicolas Cage",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 150000000,
+      "awards": 1,
+      "genres": [
+        "action",
+        "drama",
+        "horror"
+      ],
+      "birthYear": 1964,
+      "popularity": 82,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Nicolas_Cage_Deauville_2013.jpg?width=300"
+    },
+    {
+      "name": "Eddie Murphy",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "comedy",
+        "action"
+      ],
+      "birthYear": 1961,
+      "popularity": 85,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Eddie_Murphy_by_David_Shankbone.jpg?width=300"
+    },
+    {
+      "name": "Adam Sandler",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 150000000,
+      "awards": 0,
+      "genres": [
+        "comedy",
+        "drama"
+      ],
+      "birthYear": 1966,
+      "popularity": 85,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Adam_Sandler_Jay_Kelly-33_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Jim Carrey",
+      "gender": "male",
+      "nationality": "Canadian",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "comedy",
+        "drama"
+      ],
+      "birthYear": 1962,
+      "popularity": 88,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/JimCarrey_Press_Jan2020_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Seth Rogen",
+      "gender": "male",
+      "nationality": "Canadian",
+      "starRating": 4,
+      "boxOfficeAvg": 120000000,
+      "awards": 0,
+      "genres": [
+        "comedy",
+        "animation"
+      ],
+      "birthYear": 1982,
+      "popularity": 80,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Seth_Rogen_2019_by_Glenn_Francis.jpg?width=300"
+    },
+    {
+      "name": "Jonah Hill",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 150000000,
+      "awards": 0,
+      "genres": [
+        "comedy",
+        "drama"
+      ],
+      "birthYear": 1983,
+      "popularity": 78,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Jonah_Hill-4939.jpg?width=300"
+    },
+    {
+      "name": "Jack Black",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "comedy",
+        "animation",
+        "action"
+      ],
+      "birthYear": 1969,
+      "popularity": 85,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Jack_Black_2023_crop.jpg?width=300"
+    },
+    {
+      "name": "Will Ferrell",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 150000000,
+      "awards": 0,
+      "genres": [
+        "comedy"
+      ],
+      "birthYear": 1967,
+      "popularity": 82,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Will_Ferrell_2012.jpg?width=300"
+    },
+    {
+      "name": "Kevin Hart",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "comedy",
+        "action"
+      ],
+      "birthYear": 1979,
+      "popularity": 88,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Kevin_Hart_2014_%28cropped_2%29.jpg?width=300"
+    },
+    {
+      "name": "Steve Carell",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 150000000,
+      "awards": 0,
+      "genres": [
+        "comedy",
+        "drama",
+        "animation"
+      ],
+      "birthYear": 1962,
+      "popularity": 84,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/SteveCarell2018.jpg?width=300"
+    },
+    {
+      "name": "Brendan Fraser",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 150000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "action",
+        "comedy"
+      ],
+      "birthYear": 1968,
+      "popularity": 85,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Brendan_Fraser_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Josh Hartnett",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 150000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "thriller",
+        "horror"
+      ],
+      "birthYear": 1978,
+      "popularity": 74,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Josh_Hartnett_SDCC_2014.jpg?width=300"
+    },
+    {
+      "name": "Regé-Jean Page",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 4,
+      "boxOfficeAvg": 100000000,
+      "awards": 0,
+      "genres": [
+        "romance",
+        "action",
+        "drama"
+      ],
+      "birthYear": 1990,
+      "popularity": 82,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Reg%C3%A9-Jean_Page_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Charles Melton",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 3,
+      "boxOfficeAvg": 50000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "romance"
+      ],
+      "birthYear": 1991,
+      "popularity": 72,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Charles_Melton_2019.jpg?width=300"
+    },
+    {
+      "name": "Jacob Elordi",
+      "gender": "male",
+      "nationality": "Australian",
+      "starRating": 4,
+      "boxOfficeAvg": 80000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "romance",
+        "horror"
+      ],
+      "birthYear": 1997,
+      "popularity": 84,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Jacob_Elordi_2023.jpg?width=300"
+    }
+  ],
+  "actresses": [
+    {
+      "name": "Margot Robbie",
+      "gender": "female",
+      "nationality": "Australian",
+      "starRating": 5,
+      "boxOfficeAvg": 400000000,
+      "awards": 0,
+      "genres": [
+        "comedy",
+        "drama",
+        "action"
+      ],
+      "birthYear": 1990,
+      "popularity": 96,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Margot_Robbie_%2828601016915%29_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Scarlett Johansson",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 500000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "scifi",
+        "drama"
+      ],
+      "birthYear": 1984,
+      "popularity": 94,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Scarlett_Johansson_by_Gage_Skidmore_2_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Jennifer Lawrence",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 300000000,
+      "awards": 1,
+      "genres": [
+        "action",
+        "drama",
+        "scifi"
+      ],
+      "birthYear": 1990,
+      "popularity": 92,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Jennifer_Lawrence_SDCC_2015_X-Men.jpg?width=300"
+    },
+    {
+      "name": "Emma Stone",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 2,
+      "genres": [
+        "comedy",
+        "drama",
+        "romance"
+      ],
+      "birthYear": 1988,
+      "popularity": 93,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Emma_Stone_at_the_39th_Mill_Valley_Film_Festival_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Cate Blanchett",
+      "gender": "female",
+      "nationality": "Australian",
+      "starRating": 5,
+      "boxOfficeAvg": 300000000,
+      "awards": 2,
+      "genres": [
+        "drama",
+        "action",
+        "scifi"
+      ],
+      "birthYear": 1969,
+      "popularity": 90,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Cate_Blanchett_Cannes_2018_2_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Viola Davis",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 150000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "action"
+      ],
+      "birthYear": 1965,
+      "popularity": 88,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Viola_Davis_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Charlize Theron",
+      "gender": "female",
+      "nationality": "South African",
+      "starRating": 5,
+      "boxOfficeAvg": 250000000,
+      "awards": 1,
+      "genres": [
+        "action",
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1975,
+      "popularity": 89,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Charlize-theron-IMG_6045.jpg?width=300"
+    },
+    {
+      "name": "Nicole Kidman",
+      "gender": "female",
+      "nationality": "Australian",
+      "starRating": 5,
+      "boxOfficeAvg": 150000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "thriller",
+        "romance"
+      ],
+      "birthYear": 1967,
+      "popularity": 88,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Nicole_Kidman_Cannes_2017_3.jpg?width=300"
+    },
+    {
+      "name": "Amy Adams",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "scifi",
+        "comedy"
+      ],
+      "birthYear": 1974,
+      "popularity": 86,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Amy_Adams_UK_Nocturnal_Animals_Premiere_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Natalie Portman",
+      "gender": "female",
+      "nationality": "Israeli",
+      "starRating": 5,
+      "boxOfficeAvg": 300000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "action",
+        "scifi"
+      ],
+      "birthYear": 1981,
+      "popularity": 87,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Natalie_Portman_Cannes_2015_5_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Anne Hathaway",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 250000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "comedy",
+        "action"
+      ],
+      "birthYear": 1982,
+      "popularity": 88,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Anne_Hathaway_at_TIFF_2014.jpg?width=300"
+    },
+    {
+      "name": "Sandra Bullock",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 1,
+      "genres": [
+        "comedy",
+        "drama",
+        "action"
+      ],
+      "birthYear": 1964,
+      "popularity": 87,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Sandra_Bullock_%289192365016%29_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Julia Roberts",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 180000000,
+      "awards": 1,
+      "genres": [
+        "romance",
+        "drama",
+        "comedy"
+      ],
+      "birthYear": 1967,
+      "popularity": 88,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Julia_Roberts_2011_Shankbone_3.JPG?width=300"
+    },
+    {
+      "name": "Meryl Streep",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 150000000,
+      "awards": 3,
+      "genres": [
+        "drama",
+        "comedy"
+      ],
+      "birthYear": 1949,
+      "popularity": 90,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Meryl_Streep_December_2018.jpg?width=300"
+    },
+    {
+      "name": "Frances McDormand",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 80000000,
+      "awards": 4,
+      "genres": [
+        "drama",
+        "comedy"
+      ],
+      "birthYear": 1957,
+      "popularity": 85,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Frances_McDormand_Cannes_2015.jpg?width=300"
+    },
+    {
+      "name": "Michelle Yeoh",
+      "gender": "female",
+      "nationality": "Malaysian",
+      "starRating": 5,
+      "boxOfficeAvg": 150000000,
+      "awards": 1,
+      "genres": [
+        "action",
+        "scifi",
+        "drama"
+      ],
+      "birthYear": 1962,
+      "popularity": 88,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Michelle_Yeoh_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Florence Pugh",
+      "gender": "female",
+      "nationality": "British",
+      "starRating": 5,
+      "boxOfficeAvg": 300000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "action",
+        "horror"
+      ],
+      "birthYear": 1996,
+      "popularity": 90,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Florence_Pugh_2021.jpg?width=300"
+    },
+    {
+      "name": "Saoirse Ronan",
+      "gender": "female",
+      "nationality": "Irish",
+      "starRating": 5,
+      "boxOfficeAvg": 80000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "romance"
+      ],
+      "birthYear": 1994,
+      "popularity": 84,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Saoirse_Ronan_at_BAFTA_2016_%285%29_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Sydney Sweeney",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 100000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "romance",
+        "horror"
+      ],
+      "birthYear": 1997,
+      "popularity": 88,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Sydney_Sweeney_2024.png?width=300"
+    },
+    {
+      "name": "Anya Taylor-Joy",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "thriller",
+        "action"
+      ],
+      "birthYear": 1996,
+      "popularity": 91,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Anya_Taylor-Joy_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Gal Gadot",
+      "gender": "female",
+      "nationality": "Israeli",
+      "starRating": 5,
+      "boxOfficeAvg": 400000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "scifi"
+      ],
+      "birthYear": 1985,
+      "popularity": 89,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Gal_Gadot_%2835402074433%29.jpg?width=300"
+    },
+    {
+      "name": "Brie Larson",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 450000000,
+      "awards": 1,
+      "genres": [
+        "action",
+        "scifi",
+        "drama"
+      ],
+      "birthYear": 1989,
+      "popularity": 85,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Brie_Larson_by_Gage_Skidmore_2.jpg?width=300"
+    },
+    {
+      "name": "Lupita Nyong'o",
+      "gender": "female",
+      "nationality": "Kenyan",
+      "starRating": 5,
+      "boxOfficeAvg": 350000000,
+      "awards": 1,
+      "genres": [
+        "action",
+        "drama",
+        "horror"
+      ],
+      "birthYear": 1983,
+      "popularity": 84,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Lupita_Nyong%27o_%2866068086%29_%28cropped_2%29.jpg?width=300"
+    },
+    {
+      "name": "Tessa Thompson",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 350000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "scifi",
+        "drama"
+      ],
+      "birthYear": 1983,
+      "popularity": 82,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Tessa_Thompson_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Letitia Wright",
+      "gender": "female",
+      "nationality": "British",
+      "starRating": 4,
+      "boxOfficeAvg": 500000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "scifi"
+      ],
+      "birthYear": 1993,
+      "popularity": 78,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Letitia_Wright_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Danai Gurira",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 400000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "drama"
+      ],
+      "birthYear": 1978,
+      "popularity": 76,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Danai_Gurira_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Elizabeth Olsen",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 500000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "scifi",
+        "drama"
+      ],
+      "birthYear": 1989,
+      "popularity": 87,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Elizabeth_Olsen_by_Gage_Skidmore_3.jpg?width=300"
+    },
+    {
+      "name": "Karen Gillan",
+      "gender": "female",
+      "nationality": "Scottish",
+      "starRating": 4,
+      "boxOfficeAvg": 400000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "scifi",
+        "comedy"
+      ],
+      "birthYear": 1987,
+      "popularity": 82,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Karen_Gillan_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Emily Blunt",
+      "gender": "female",
+      "nationality": "British",
+      "starRating": 5,
+      "boxOfficeAvg": 250000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "drama",
+        "scifi"
+      ],
+      "birthYear": 1983,
+      "popularity": 88,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Emily_Blunt_SAG_Awards_2019.png?width=300"
+    },
+    {
+      "name": "Jessica Chastain",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 150000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "thriller",
+        "action"
+      ],
+      "birthYear": 1977,
+      "popularity": 84,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Jessica_Chastain_Cannes_2017_3.jpg?width=300"
+    },
+    {
+      "name": "Rachel McAdams",
+      "gender": "female",
+      "nationality": "Canadian",
+      "starRating": 4,
+      "boxOfficeAvg": 150000000,
+      "awards": 0,
+      "genres": [
+        "romance",
+        "drama",
+        "comedy"
+      ],
+      "birthYear": 1978,
+      "popularity": 82,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Rachel_McAdams_at_TIFF_2017_%2837017210382%29_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Blake Lively",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 150000000,
+      "awards": 0,
+      "genres": [
+        "romance",
+        "thriller",
+        "drama"
+      ],
+      "birthYear": 1987,
+      "popularity": 85,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Blake_Lively_%282019%29.png?width=300"
+    },
+    {
+      "name": "Daisy Ridley",
+      "gender": "female",
+      "nationality": "British",
+      "starRating": 4,
+      "boxOfficeAvg": 600000000,
+      "awards": 0,
+      "genres": [
+        "scifi",
+        "action"
+      ],
+      "birthYear": 1992,
+      "popularity": 82,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Daisy_Ridley_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Keira Knightley",
+      "gender": "female",
+      "nationality": "British",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "romance",
+        "action"
+      ],
+      "birthYear": 1985,
+      "popularity": 84,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Keira_Knightley_By_Andrea_Raffin.jpg?width=300"
+    },
+    {
+      "name": "Rebecca Ferguson",
+      "gender": "female",
+      "nationality": "Swedish",
+      "starRating": 5,
+      "boxOfficeAvg": 300000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "scifi",
+        "thriller"
+      ],
+      "birthYear": 1983,
+      "popularity": 83,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Rebecca_Ferguson_Cannes_2015.jpg?width=300"
+    },
+    {
+      "name": "Jenna Ortega",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 150000000,
+      "awards": 0,
+      "genres": [
+        "horror",
+        "comedy",
+        "drama"
+      ],
+      "birthYear": 2002,
+      "popularity": 92,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Jenna_Ortega_2024.jpg?width=300"
+    },
+    {
+      "name": "Mia Goth",
+      "gender": "female",
+      "nationality": "British",
+      "starRating": 4,
+      "boxOfficeAvg": 50000000,
+      "awards": 0,
+      "genres": [
+        "horror",
+        "drama"
+      ],
+      "birthYear": 1993,
+      "popularity": 78,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Mia_Goth.jpg?width=300"
+    },
+    {
+      "name": "Dakota Johnson",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "romance",
+        "horror"
+      ],
+      "birthYear": 1989,
+      "popularity": 82,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Dakota_Johnson_Berlinale_2015_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Rooney Mara",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 80000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1985,
+      "popularity": 78,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Rooney_Mara_at_the_Berlin_premiere_of_Lion_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Kristen Stewart",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "thriller",
+        "action"
+      ],
+      "birthYear": 1990,
+      "popularity": 84,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Kristen_Stewart_%289158199623%29.jpg?width=300"
+    },
+    {
+      "name": "Jodie Comer",
+      "gender": "female",
+      "nationality": "British",
+      "starRating": 5,
+      "boxOfficeAvg": 150000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "thriller",
+        "action"
+      ],
+      "birthYear": 1993,
+      "popularity": 86,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Jodie_Comer_%2848462887137%29_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Kerry Washington",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 100000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1977,
+      "popularity": 80,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Kerry_Washington_%282020%29.jpg?width=300"
+    },
+    {
+      "name": "Taraji P. Henson",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 100000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "action",
+        "comedy"
+      ],
+      "birthYear": 1970,
+      "popularity": 78,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Taraji_P._Henson_2018_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Regina King",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 100000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "action"
+      ],
+      "birthYear": 1971,
+      "popularity": 82,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/ReginaKingJune2019.jpg?width=300"
+    },
+    {
+      "name": "Lady Gaga",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "romance"
+      ],
+      "birthYear": 1986,
+      "popularity": 92,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Lady_Gaga_at_Joe_Biden%27s_inauguration_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Dua Lipa",
+      "gender": "female",
+      "nationality": "British",
+      "starRating": 3,
+      "boxOfficeAvg": 100000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "comedy"
+      ],
+      "birthYear": 1995,
+      "popularity": 88,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Dua_Lipa_%28cropped%29.png?width=300"
+    },
+    {
+      "name": "Awkwafina",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "comedy",
+        "action",
+        "animation"
+      ],
+      "birthYear": 1988,
+      "popularity": 80,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Awkwafina_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Zoe Saldana",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 700000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "scifi"
+      ],
+      "birthYear": 1978,
+      "popularity": 88,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Zoe_Saldana_by_Gage_Skidmore_3.jpg?width=300"
+    },
+    {
+      "name": "Ana de Armas",
+      "gender": "female",
+      "nationality": "Cuban",
+      "starRating": 5,
+      "boxOfficeAvg": 300000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "thriller",
+        "drama"
+      ],
+      "birthYear": 1988,
+      "popularity": 89,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Ana_de_Armas_%2848468394647%29_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Gemma Chan",
+      "gender": "female",
+      "nationality": "British",
+      "starRating": 4,
+      "boxOfficeAvg": 300000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "scifi",
+        "romance"
+      ],
+      "birthYear": 1982,
+      "popularity": 80,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Gemma_Chan_2019_by_Glenn_Francis.jpg?width=300"
+    },
+    {
+      "name": "Constance Wu",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 150000000,
+      "awards": 0,
+      "genres": [
+        "comedy",
+        "drama",
+        "romance"
+      ],
+      "birthYear": 1982,
+      "popularity": 76,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Constance_Wu_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Halle Berry",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 1,
+      "genres": [
+        "action",
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1966,
+      "popularity": 84,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Halle_Berry_in_2023.jpg?width=300"
+    },
+    {
+      "name": "Kate Winslet",
+      "gender": "female",
+      "nationality": "British",
+      "starRating": 5,
+      "boxOfficeAvg": 250000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "romance"
+      ],
+      "birthYear": 1975,
+      "popularity": 88,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Kate_Winslet_at_2017_TIFF_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Kate Beckinsale",
+      "gender": "female",
+      "nationality": "British",
+      "starRating": 4,
+      "boxOfficeAvg": 150000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "horror",
+        "thriller"
+      ],
+      "birthYear": 1973,
+      "popularity": 78,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Kate_Beckinsale_%288124946884%29.jpg?width=300"
+    },
+    {
+      "name": "Reese Witherspoon",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 150000000,
+      "awards": 1,
+      "genres": [
+        "comedy",
+        "drama",
+        "romance"
+      ],
+      "birthYear": 1976,
+      "popularity": 88,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Reese_Witherspoon_at_the_2014_TIFF_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Drew Barrymore",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 100000000,
+      "awards": 0,
+      "genres": [
+        "comedy",
+        "romance",
+        "horror"
+      ],
+      "birthYear": 1975,
+      "popularity": 80,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/DrewBarrymore2023.jpg?width=300"
+    },
+    {
+      "name": "Cameron Diaz",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 150000000,
+      "awards": 0,
+      "genres": [
+        "comedy",
+        "action",
+        "romance"
+      ],
+      "birthYear": 1972,
+      "popularity": 80,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Cameron_Diaz_WE_2012_Shankbone.JPG?width=300"
+    },
+    {
+      "name": "Jennifer Aniston",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 120000000,
+      "awards": 0,
+      "genres": [
+        "comedy",
+        "romance",
+        "drama"
+      ],
+      "birthYear": 1969,
+      "popularity": 88,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/JenniferAnistonHWoFFeb2012.jpg?width=300"
+    },
+    {
+      "name": "Angelina Jolie",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 250000000,
+      "awards": 1,
+      "genres": [
+        "action",
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1975,
+      "popularity": 92,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Angelina_Jolie_2_June_2014_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Salma Hayek",
+      "gender": "female",
+      "nationality": "Mexican",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "drama",
+        "comedy"
+      ],
+      "birthYear": 1966,
+      "popularity": 85,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Salma_Hayek_Cannes_2015.jpg?width=300"
+    },
+    {
+      "name": "Sofia Vergara",
+      "gender": "female",
+      "nationality": "Colombian",
+      "starRating": 4,
+      "boxOfficeAvg": 100000000,
+      "awards": 0,
+      "genres": [
+        "comedy"
+      ],
+      "birthYear": 1972,
+      "popularity": 82,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Sofia_Vergara_2020.jpg?width=300"
+    },
+    {
+      "name": "Penelope Cruz",
+      "gender": "female",
+      "nationality": "Spanish",
+      "starRating": 5,
+      "boxOfficeAvg": 150000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "comedy",
+        "thriller"
+      ],
+      "birthYear": 1974,
+      "popularity": 85,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Pen%C3%A9lope_Cruz_Cannes_2019.jpg?width=300"
+    },
+    {
+      "name": "Marion Cotillard",
+      "gender": "female",
+      "nationality": "French",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "action",
+        "thriller"
+      ],
+      "birthYear": 1975,
+      "popularity": 84,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Marion_Cotillard_Cabourg_2017.jpg?width=300"
+    },
+    {
+      "name": "Lea Seydoux",
+      "gender": "female",
+      "nationality": "French",
+      "starRating": 5,
+      "boxOfficeAvg": 300000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "drama",
+        "scifi"
+      ],
+      "birthYear": 1985,
+      "popularity": 82,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/L%C3%A9a_Seydoux_Cannes_2019.jpg?width=300"
+    },
+    {
+      "name": "Diane Kruger",
+      "gender": "female",
+      "nationality": "German",
+      "starRating": 4,
+      "boxOfficeAvg": 150000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1976,
+      "popularity": 78,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Diane_Kruger_Cannes_2017_2.jpg?width=300"
+    },
+    {
+      "name": "Alicia Vikander",
+      "gender": "female",
+      "nationality": "Swedish",
+      "starRating": 5,
+      "boxOfficeAvg": 150000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "action",
+        "scifi"
+      ],
+      "birthYear": 1988,
+      "popularity": 82,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Alicia_Vikander_Cannes_2015.jpg?width=300"
+    },
+    {
+      "name": "Ruth Negga",
+      "gender": "female",
+      "nationality": "Irish",
+      "starRating": 4,
+      "boxOfficeAvg": 50000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "scifi"
+      ],
+      "birthYear": 1982,
+      "popularity": 72,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Ruth_Negga.jpg?width=300"
+    },
+    {
+      "name": "Cynthia Erivo",
+      "gender": "female",
+      "nationality": "British",
+      "starRating": 5,
+      "boxOfficeAvg": 100000000,
+      "awards": 0,
+      "genres": [
+        "drama"
+      ],
+      "birthYear": 1987,
+      "popularity": 80,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Cynthia_Erivo_2019_by_Glenn_Francis.jpg?width=300"
+    },
+    {
+      "name": "Yara Shahidi",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 3,
+      "boxOfficeAvg": 150000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "animation"
+      ],
+      "birthYear": 2000,
+      "popularity": 75,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Yara_Shahidi_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Halle Bailey",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 300000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "animation"
+      ],
+      "birthYear": 1999,
+      "popularity": 82,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Halle_Bailey_2023.jpg?width=300"
+    },
+    {
+      "name": "Storm Reid",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 150000000,
+      "awards": 0,
+      "genres": [
+        "scifi",
+        "drama",
+        "horror"
+      ],
+      "birthYear": 2003,
+      "popularity": 76,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Storm_Reid_2018.jpg?width=300"
+    },
+    {
+      "name": "Millie Bobby Brown",
+      "gender": "female",
+      "nationality": "British",
+      "starRating": 5,
+      "boxOfficeAvg": 250000000,
+      "awards": 0,
+      "genres": [
+        "scifi",
+        "action",
+        "thriller"
+      ],
+      "birthYear": 2004,
+      "popularity": 90,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Millie_Bobby_Brown_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Hailee Steinfeld",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "comedy",
+        "animation"
+      ],
+      "birthYear": 1996,
+      "popularity": 84,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Hailee_Steinfeld_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Elle Fanning",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 80000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "horror"
+      ],
+      "birthYear": 1998,
+      "popularity": 80,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Elle_Fanning_Cannes_2017.jpg?width=300"
+    },
+    {
+      "name": "Sadie Sink",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 80000000,
+      "awards": 0,
+      "genres": [
+        "horror",
+        "drama"
+      ],
+      "birthYear": 2002,
+      "popularity": 82,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Sadie_Sink_%282022%29.jpg?width=300"
+    },
+    {
+      "name": "Maya Hawke",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 3,
+      "boxOfficeAvg": 60000000,
+      "awards": 0,
+      "genres": [
+        "comedy",
+        "drama"
+      ],
+      "birthYear": 1998,
+      "popularity": 78,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Maya_Hawke_2023.jpg?width=300"
+    },
+    {
+      "name": "Hunter Schafer",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 3,
+      "boxOfficeAvg": 40000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "horror"
+      ],
+      "birthYear": 1998,
+      "popularity": 76,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Hunter_Schafer_2022.jpg?width=300"
+    },
+    {
+      "name": "Thomasin McKenzie",
+      "gender": "female",
+      "nationality": "New Zealand",
+      "starRating": 4,
+      "boxOfficeAvg": 80000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1999,
+      "popularity": 76,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Thomasin_McKenzie_2019.jpg?width=300"
+    },
+    {
+      "name": "Julia Garner",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 80000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1994,
+      "popularity": 82,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Julia_Garner_2018.jpg?width=300"
+    },
+    {
+      "name": "Margaret Qualley",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 100000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "comedy"
+      ],
+      "birthYear": 1994,
+      "popularity": 80,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Margaret_Qualley_Cannes_2022.jpg?width=300"
+    },
+    {
+      "name": "Mikey Madison",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 40000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "comedy",
+        "horror"
+      ],
+      "birthYear": 1999,
+      "popularity": 78,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Mikey_Madison.jpg?width=300"
+    },
+    {
+      "name": "Cailee Spaeny",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 80000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "scifi",
+        "horror"
+      ],
+      "birthYear": 1997,
+      "popularity": 76,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Cailee_Spaeny_2024.jpg?width=300"
+    }
+  ],
+  "writers": [
+    {
+      "name": "Aaron Sorkin",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 150000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1961,
+      "popularity": 88,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Aaron_Sorkin_%2827566400913%29.jpg?width=300"
+    },
+    {
+      "name": "Charlie Kaufman",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 50000000,
+      "awards": 2,
+      "genres": [
+        "drama",
+        "comedy"
+      ],
+      "birthYear": 1958,
+      "popularity": 82,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Charlie_Kaufman_%282015%29.jpg?width=300"
+    },
+    {
+      "name": "Tony Kushner",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "drama"
+      ],
+      "birthYear": 1956,
+      "popularity": 78,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Tony_Kushner_2009.jpg?width=300"
+    },
+    {
+      "name": "Eric Roth",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 250000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "scifi"
+      ],
+      "birthYear": 1945,
+      "popularity": 80,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Eric_Roth.jpg?width=300"
+    },
+    {
+      "name": "Taylor Sheridan",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 120000000,
+      "awards": 0,
+      "genres": [
+        "thriller",
+        "drama",
+        "action"
+      ],
+      "birthYear": 1970,
+      "popularity": 85,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Taylor_Sheridan.jpg?width=300"
+    },
+    {
+      "name": "William Goldman",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 150000000,
+      "awards": 2,
+      "genres": [
+        "drama",
+        "romance",
+        "thriller"
+      ],
+      "birthYear": 1931,
+      "popularity": 85,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/William_Goldman.jpg?width=300"
+    },
+    {
+      "name": "The Coen Brothers",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 100000000,
+      "awards": 4,
+      "genres": [
+        "drama",
+        "thriller",
+        "comedy"
+      ],
+      "birthYear": 1954,
+      "popularity": 88,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Joel_and_Ethan_Coen_Cannes_2015.jpg?width=300"
+    },
+    {
+      "name": "Diablo Cody",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 100000000,
+      "awards": 1,
+      "genres": [
+        "comedy",
+        "drama",
+        "horror"
+      ],
+      "birthYear": 1978,
+      "popularity": 75,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Diablo_Cody_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Phoebe Waller-Bridge",
+      "gender": "female",
+      "nationality": "British",
+      "starRating": 5,
+      "boxOfficeAvg": 350000000,
+      "awards": 0,
+      "genres": [
+        "comedy",
+        "drama",
+        "action"
+      ],
+      "birthYear": 1985,
+      "popularity": 85,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Phoebe_Waller-Bridge_2019.jpg?width=300"
+    },
+    {
+      "name": "John Logan",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 250000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "thriller",
+        "action"
+      ],
+      "birthYear": 1961,
+      "popularity": 78,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/John_Logan_%28screenwriter%29.jpg?width=300"
+    },
+    {
+      "name": "David Koepp",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 300000000,
+      "awards": 0,
+      "genres": [
+        "thriller",
+        "scifi",
+        "action"
+      ],
+      "birthYear": 1963,
+      "popularity": 75,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/David_Koepp.jpg?width=300"
+    },
+    {
+      "name": "Shane Black",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 350000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "comedy",
+        "thriller"
+      ],
+      "birthYear": 1961,
+      "popularity": 78,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Shane_Black_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Scott Frank",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 150000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1960,
+      "popularity": 76,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Scott_Frank.jpg?width=300"
+    },
+    {
+      "name": "Robert Towne",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 100000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1934,
+      "popularity": 72,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Robert_Towne.jpg?width=300"
+    },
+    {
+      "name": "James Ivory",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 60000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "romance"
+      ],
+      "birthYear": 1928,
+      "popularity": 70,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/James_Ivory_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Billy Wilder",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 80000000,
+      "awards": 6,
+      "genres": [
+        "comedy",
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1906,
+      "popularity": 88,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Billy_Wilder_%28cropped%29.jpg?width=300"
+    },
+    {
+      "name": "Wes Anderson",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 100000000,
+      "awards": 0,
+      "genres": [
+        "comedy",
+        "drama"
+      ],
+      "birthYear": 1969,
+      "popularity": 86,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Wes_Anderson-7541.jpg/300px-Wes_Anderson-7541.jpg"
+    },
+    {
+      "name": "Greta Gerwig",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 400000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "comedy",
+        "romance"
+      ],
+      "birthYear": 1983,
+      "popularity": 90,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Greta_Gerwig-7808_(cropped).jpg/300px-Greta_Gerwig-7808_(cropped).jpg"
+    },
+    {
+      "name": "Noah Baumbach",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 40000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "comedy"
+      ],
+      "birthYear": 1969,
+      "popularity": 75,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Noah_Baumbach_2017.jpg?width=300"
+    },
+    {
+      "name": "Richard Curtis",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 5,
+      "boxOfficeAvg": 150000000,
+      "awards": 0,
+      "genres": [
+        "comedy",
+        "romance"
+      ],
+      "birthYear": 1956,
+      "popularity": 80,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Richard_Curtis_2013.jpg?width=300"
+    },
+    {
+      "name": "Nora Ephron",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 120000000,
+      "awards": 0,
+      "genres": [
+        "comedy",
+        "romance",
+        "drama"
+      ],
+      "birthYear": 1941,
+      "popularity": 82,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Nora_Ephron.jpg?width=300"
+    },
+    {
+      "name": "Nancy Meyers",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 150000000,
+      "awards": 0,
+      "genres": [
+        "comedy",
+        "romance"
+      ],
+      "birthYear": 1949,
+      "popularity": 80,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Nancy_Meyers.jpg?width=300"
+    },
+    {
+      "name": "Steve Zaillian",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1953,
+      "popularity": 78,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Steven_Zaillian.jpg?width=300"
+    },
+    {
+      "name": "Michael Arndt",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 300000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "comedy",
+        "scifi"
+      ],
+      "birthYear": 1970,
+      "popularity": 75,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Michael_Arndt.jpg?width=300"
+    },
+    {
+      "name": "Vanessa Taylor",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "scifi"
+      ],
+      "birthYear": 1970,
+      "popularity": 72,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Vanessa_Taylor.jpg?width=300"
+    },
+    {
+      "name": "Josh Singer",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 100000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1975,
+      "popularity": 72,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Josh_Singer.jpg?width=300"
+    },
+    {
+      "name": "Christopher McQuarrie",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 400000000,
+      "awards": 1,
+      "genres": [
+        "action",
+        "thriller"
+      ],
+      "birthYear": 1968,
+      "popularity": 82,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Christopher_McQuarrie_2018.jpg?width=300"
+    },
+    {
+      "name": "Ehren Kruger",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 3,
+      "boxOfficeAvg": 350000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "scifi",
+        "horror"
+      ],
+      "birthYear": 1972,
+      "popularity": 65,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Ehren_Kruger.jpg?width=300"
+    },
+    {
+      "name": "Roberto Orci",
+      "gender": "male",
+      "nationality": "Mexican",
+      "starRating": 3,
+      "boxOfficeAvg": 400000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "scifi"
+      ],
+      "birthYear": 1973,
+      "popularity": 68,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Roberto_Orci_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Alex Kurtzman",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 3,
+      "boxOfficeAvg": 400000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "scifi"
+      ],
+      "birthYear": 1973,
+      "popularity": 68,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Alex_Kurtzman_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Damon Lindelof",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "scifi",
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1973,
+      "popularity": 78,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Damon_Lindelof_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Jonathan Nolan",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 5,
+      "boxOfficeAvg": 500000000,
+      "awards": 0,
+      "genres": [
+        "scifi",
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1976,
+      "popularity": 85,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Jonathan_Nolan_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Lisa Joy",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 150000000,
+      "awards": 0,
+      "genres": [
+        "scifi",
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1978,
+      "popularity": 75,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Lisa_Joy_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Vince Gilligan",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 80000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1967,
+      "popularity": 88,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Vince_Gilligan_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Matthew Weiner",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 50000000,
+      "awards": 0,
+      "genres": [
+        "drama"
+      ],
+      "birthYear": 1965,
+      "popularity": 75,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Matthew_Weiner_2010.jpg?width=300"
+    },
+    {
+      "name": "Craig Mazin",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 150000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "thriller",
+        "comedy"
+      ],
+      "birthYear": 1971,
+      "popularity": 82,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Craig_Mazin.jpg?width=300"
+    },
+    {
+      "name": "Rian Johnson",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 500000000,
+      "awards": 0,
+      "genres": [
+        "thriller",
+        "scifi",
+        "drama"
+      ],
+      "birthYear": 1973,
+      "popularity": 85,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Rian_Johnson_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Lawrence Kasdan",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 400000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "scifi",
+        "drama"
+      ],
+      "birthYear": 1949,
+      "popularity": 82,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Lawrence_Kasdan_2015.jpg?width=300"
+    },
+    {
+      "name": "Dan Gilroy",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 80000000,
+      "awards": 0,
+      "genres": [
+        "thriller",
+        "drama"
+      ],
+      "birthYear": 1959,
+      "popularity": 74,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Dan_Gilroy.jpg?width=300"
+    },
+    {
+      "name": "Bryan Cogman",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 100000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "action"
+      ],
+      "birthYear": 1977,
+      "popularity": 72,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Bryan_Cogman.jpg?width=300"
+    },
+    {
+      "name": "Jez Butterworth",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 5,
+      "boxOfficeAvg": 300000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "action",
+        "thriller"
+      ],
+      "birthYear": 1969,
+      "popularity": 78,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Jez_Butterworth.jpg?width=300"
+    },
+    {
+      "name": "Peter Morgan",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 5,
+      "boxOfficeAvg": 150000000,
+      "awards": 0,
+      "genres": [
+        "drama"
+      ],
+      "birthYear": 1963,
+      "popularity": 80,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Peter_Morgan.jpg?width=300"
+    },
+    {
+      "name": "Drew Goddard",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "scifi",
+        "horror",
+        "thriller"
+      ],
+      "birthYear": 1975,
+      "popularity": 78,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Drew_Goddard_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Joss Whedon",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 700000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "scifi",
+        "comedy"
+      ],
+      "birthYear": 1964,
+      "popularity": 80,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Joss_Whedon_by_Gage_Skidmore_5.jpg?width=300"
+    },
+    {
+      "name": "Derek Cianfrance",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 60000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "romance"
+      ],
+      "birthYear": 1974,
+      "popularity": 72,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Derek_Cianfrance.jpg?width=300"
+    },
+    {
+      "name": "Mike White",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 100000000,
+      "awards": 0,
+      "genres": [
+        "comedy",
+        "drama"
+      ],
+      "birthYear": 1970,
+      "popularity": 82,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Mike_White_%28filmmaker%29.jpg?width=300"
+    },
+    {
+      "name": "Taika Waititi",
+      "gender": "male",
+      "nationality": "New Zealand",
+      "starRating": 5,
+      "boxOfficeAvg": 350000000,
+      "awards": 1,
+      "genres": [
+        "comedy",
+        "action",
+        "drama"
+      ],
+      "birthYear": 1975,
+      "popularity": 88,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Taika_Waititi_photo_by_pouria_afkhami.jpg/330px-Taika_Waititi_photo_by_pouria_afkhami.jpg"
+    },
+    {
+      "name": "Jordan Peele",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 1,
+      "genres": [
+        "horror",
+        "thriller"
+      ],
+      "birthYear": 1979,
+      "popularity": 90,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Jordan_Peele_(2019).jpg/300px-Jordan_Peele_(2019).jpg"
+    },
+    {
+      "name": "Quentin Tarantino",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 2,
+      "genres": [
+        "action",
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1963,
+      "popularity": 94,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Quentin_Tarantino_by_Gage_Skidmore.jpg/300px-Quentin_Tarantino_by_Gage_Skidmore.jpg"
+    },
+    {
+      "name": "Paul Schrader",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 50000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1946,
+      "popularity": 78,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Paul_Schrader_2017.jpg?width=300"
+    },
+    {
+      "name": "Akiva Goldsman",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 250000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "thriller",
+        "scifi"
+      ],
+      "birthYear": 1962,
+      "popularity": 72,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Akiva_Goldsman.jpg?width=300"
+    },
+    {
+      "name": "Mark Bomback",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 300000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "scifi"
+      ],
+      "birthYear": 1971,
+      "popularity": 70,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Mark_Bomback.jpg?width=300"
+    },
+    {
+      "name": "Matt Reeves",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 350000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "thriller",
+        "scifi"
+      ],
+      "birthYear": 1966,
+      "popularity": 81,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Matt_Reeves_%2813948765595%29_%28cropped%29.jpg/330px-Matt_Reeves_%2813948765595%29_%28cropped%29.jpg"
+    },
+    {
+      "name": "Jon Spaihts",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 400000000,
+      "awards": 0,
+      "genres": [
+        "scifi",
+        "action"
+      ],
+      "birthYear": 1970,
+      "popularity": 75,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Jon_Spaihts.jpg?width=300"
+    },
+    {
+      "name": "Alex Ross Perry",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 3,
+      "boxOfficeAvg": 20000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "comedy"
+      ],
+      "birthYear": 1984,
+      "popularity": 62,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Alex_Ross_Perry.jpg?width=300"
+    },
+    {
+      "name": "Kelly Marcel",
+      "gender": "female",
+      "nationality": "British",
+      "starRating": 4,
+      "boxOfficeAvg": 400000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "scifi",
+        "drama"
+      ],
+      "birthYear": 1974,
+      "popularity": 72,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Kelly_Marcel.jpg?width=300"
+    },
+    {
+      "name": "S. Craig Zahler",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 30000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "horror",
+        "thriller"
+      ],
+      "birthYear": 1973,
+      "popularity": 70,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/S_Craig_Zahler.jpg?width=300"
+    },
+    {
+      "name": "Nicole Holofcener",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 30000000,
+      "awards": 0,
+      "genres": [
+        "comedy",
+        "drama"
+      ],
+      "birthYear": 1960,
+      "popularity": 70,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Nicole_Holofcener.jpg?width=300"
+    },
+    {
+      "name": "Richard Linklater",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 50000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "comedy",
+        "romance"
+      ],
+      "birthYear": 1960,
+      "popularity": 82,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Richard_Linklater_2015.jpg?width=300"
+    },
+    {
+      "name": "Jeff Nichols",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 40000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "thriller",
+        "scifi"
+      ],
+      "birthYear": 1978,
+      "popularity": 72,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Jeff_Nichols.jpg?width=300"
+    },
+    {
+      "name": "Kelly Reichardt",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 15000000,
+      "awards": 0,
+      "genres": [
+        "drama"
+      ],
+      "birthYear": 1964,
+      "popularity": 68,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Kelly_Reichardt.jpg?width=300"
+    },
+    {
+      "name": "Celine Sciamma",
+      "gender": "female",
+      "nationality": "French",
+      "starRating": 5,
+      "boxOfficeAvg": 25000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "romance"
+      ],
+      "birthYear": 1978,
+      "popularity": 75,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/C%C3%A9line_Sciamma_Cannes_2019.jpg?width=300"
+    },
+    {
+      "name": "Emerald Fennell",
+      "gender": "female",
+      "nationality": "British",
+      "starRating": 5,
+      "boxOfficeAvg": 80000000,
+      "awards": 1,
+      "genres": [
+        "thriller",
+        "drama"
+      ],
+      "birthYear": 1985,
+      "popularity": 78,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Emerald_Fennell_in_2020.jpg/300px-Emerald_Fennell_in_2020.jpg"
+    },
+    {
+      "name": "Sian Heder",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 60000000,
+      "awards": 2,
+      "genres": [
+        "drama",
+        "comedy"
+      ],
+      "birthYear": 1977,
+      "popularity": 75,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Sian_Heder_2022.jpg?width=300"
+    },
+    {
+      "name": "Rebecca Angelo",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 3,
+      "boxOfficeAvg": 40000000,
+      "awards": 0,
+      "genres": [
+        "comedy",
+        "drama"
+      ],
+      "birthYear": 1982,
+      "popularity": 62,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Rebecca_Angelo.jpg?width=300"
+    },
+    {
+      "name": "Lauren Schuker Blum",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 3,
+      "boxOfficeAvg": 40000000,
+      "awards": 0,
+      "genres": [
+        "comedy",
+        "drama"
+      ],
+      "birthYear": 1982,
+      "popularity": 62,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Lauren_Schuker_Blum.jpg?width=300"
+    },
+    {
+      "name": "Susannah Grant",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 100000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "romance"
+      ],
+      "birthYear": 1963,
+      "popularity": 72,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Susannah_Grant.jpg?width=300"
+    },
+    {
+      "name": "Meg LeFauve",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 450000000,
+      "awards": 0,
+      "genres": [
+        "animation",
+        "drama",
+        "comedy"
+      ],
+      "birthYear": 1963,
+      "popularity": 74,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Meg_LeFauve.jpg?width=300"
+    },
+    {
+      "name": "Jennifer Lee",
+      "gender": "female",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 700000000,
+      "awards": 2,
+      "genres": [
+        "animation",
+        "comedy"
+      ],
+      "birthYear": 1971,
+      "popularity": 82,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Jennifer_Lee_in_2019.jpg/300px-Jennifer_Lee_in_2019.jpg"
+    },
+    {
+      "name": "Phil Lord",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 400000000,
+      "awards": 1,
+      "genres": [
+        "animation",
+        "comedy",
+        "action"
+      ],
+      "birthYear": 1975,
+      "popularity": 82,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Phil_Lord_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Christopher Miller",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 400000000,
+      "awards": 1,
+      "genres": [
+        "animation",
+        "comedy",
+        "action"
+      ],
+      "birthYear": 1975,
+      "popularity": 82,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Christopher_Miller_by_Gage_Skidmore.jpg?width=300"
+    },
+    {
+      "name": "Kemp Powers",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 300000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "animation"
+      ],
+      "birthYear": 1973,
+      "popularity": 74,
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Kemp_Powers.jpg?width=300"
+    },
+    {
+      "name": "Pete Docter",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 500000000,
+      "awards": 2,
+      "genres": [
+        "animation",
+        "comedy",
+        "drama"
+      ],
+      "birthYear": 1968,
+      "popularity": 85,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Pete_Docter_2015.jpg/300px-Pete_Docter_2015.jpg"
+    },
+    {
+      "name": "Andrew Stanton",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 350000000,
+      "awards": 2,
+      "genres": [
+        "animation",
+        "scifi"
+      ],
+      "birthYear": 1965,
+      "popularity": 78,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/5/52/Andrew_Stanton_cropped_2009.jpg"
+    },
+    {
+      "name": "Brad Bird",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 400000000,
+      "awards": 2,
+      "genres": [
+        "animation",
+        "action",
+        "scifi"
+      ],
+      "birthYear": 1957,
+      "popularity": 84,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/3/3a/Brad_bird_cropped_2009.jpg"
+    }
+  ],
+  "composers": [
+    {
+      "name": "Hans Zimmer",
+      "gender": "male",
+      "nationality": "German",
+      "starRating": 5,
+      "boxOfficeAvg": 500000000,
+      "awards": 2,
+      "genres": [
+        "action",
+        "scifi",
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1957,
+      "popularity": 98,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Hans_Zimmer_at_the_2024_Toronto_International_Film_Festival.jpg/300px-Hans_Zimmer_at_the_2024_Toronto_International_Film_Festival.jpg",
+      "performance": 98,
+      "experience": 95,
+      "fame": 99,
+      "skillAction": 98,
+      "skillDrama": 90,
+      "skillScifi": 96,
+      "skillThriller": 95,
+      "skillAnimation": 88,
+      "skillOrchestral": 92,
+      "skillElectronic": 99
+    },
+    {
+      "name": "John Williams",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 400000000,
+      "awards": 5,
+      "genres": [
+        "action",
+        "scifi",
+        "drama",
+        "adventure"
+      ],
+      "birthYear": 1932,
+      "popularity": 99,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/John_Williams_2024.jpg/300px-John_Williams_2024.jpg",
+      "performance": 99,
+      "experience": 99,
+      "fame": 100,
+      "skillAction": 97,
+      "skillDrama": 98,
+      "skillScifi": 99,
+      "skillAnimation": 75,
+      "skillOrchestral": 100,
+      "skillElectronic": 40
+    },
+    {
+      "name": "Michael Giacchino",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 350000000,
+      "awards": 1,
+      "genres": [
+        "action",
+        "animation",
+        "scifi",
+        "thriller"
+      ],
+      "birthYear": 1967,
+      "popularity": 88,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Michael_Giacchino_%2848386660146%29_%28cropped%29.jpg/300px-Michael_Giacchino_%2848386660146%29_%28cropped%29.jpg",
+      "performance": 92,
+      "experience": 85,
+      "fame": 85,
+      "skillAction": 90,
+      "skillDrama": 88,
+      "skillScifi": 91,
+      "skillAnimation": 95,
+      "skillOrchestral": 93,
+      "skillElectronic": 75
+    },
+    {
+      "name": "Alan Silvestri",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 400000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "scifi",
+        "drama",
+        "comedy"
+      ],
+      "birthYear": 1950,
+      "popularity": 85,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Alan_Silvestri_by_Gage_Skidmore.jpg/300px-Alan_Silvestri_by_Gage_Skidmore.jpg",
+      "performance": 90,
+      "experience": 92,
+      "fame": 82,
+      "skillAction": 95,
+      "skillDrama": 88,
+      "skillScifi": 90,
+      "skillComedy": 85,
+      "skillOrchestral": 95,
+      "skillElectronic": 60
+    },
+    {
+      "name": "Danny Elfman",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 300000000,
+      "awards": 0,
+      "genres": [
+        "horror",
+        "comedy",
+        "animation",
+        "thriller"
+      ],
+      "birthYear": 1953,
+      "popularity": 88,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Danny_Elfman_by_Gage_Skidmore.jpg/300px-Danny_Elfman_by_Gage_Skidmore.jpg",
+      "performance": 93,
+      "experience": 90,
+      "fame": 86,
+      "skillHorror": 98,
+      "skillComedy": 90,
+      "skillAnimation": 95,
+      "skillThriller": 88,
+      "skillOrchestral": 90,
+      "skillElectronic": 80
+    },
+    {
+      "name": "Howard Shore",
+      "gender": "male",
+      "nationality": "Canadian",
+      "starRating": 5,
+      "boxOfficeAvg": 350000000,
+      "awards": 3,
+      "genres": [
+        "drama",
+        "thriller",
+        "action",
+        "horror"
+      ],
+      "birthYear": 1946,
+      "popularity": 82,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f4/Howard_Shore_in_May_2023.jpg/300px-Howard_Shore_in_May_2023.jpg",
+      "performance": 95,
+      "experience": 95,
+      "fame": 85,
+      "skillDrama": 96,
+      "skillThriller": 92,
+      "skillAction": 88,
+      "skillHorror": 90,
+      "skillOrchestral": 98,
+      "skillElectronic": 55
+    },
+    {
+      "name": "Alexandre Desplat",
+      "gender": "male",
+      "nationality": "French",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 2,
+      "genres": [
+        "drama",
+        "comedy",
+        "romance",
+        "animation"
+      ],
+      "birthYear": 1961,
+      "popularity": 80,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/Alexandre_Desplat_Cabourg_2011.jpg/300px-Alexandre_Desplat_Cabourg_2011.jpg",
+      "performance": 95,
+      "experience": 88,
+      "fame": 78,
+      "skillDrama": 98,
+      "skillComedy": 90,
+      "skillRomance": 92,
+      "skillAnimation": 88,
+      "skillOrchestral": 97,
+      "skillElectronic": 50
+    },
+    {
+      "name": "Ramin Djawadi",
+      "gender": "male",
+      "nationality": "German",
+      "starRating": 5,
+      "boxOfficeAvg": 250000000,
+      "awards": 2,
+      "genres": [
+        "action",
+        "scifi",
+        "drama",
+        "thriller"
+      ],
+      "birthYear": 1974,
+      "popularity": 90,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/Ramin_Djawadi_by_Gage_Skidmore.jpg/300px-Ramin_Djawadi_by_Gage_Skidmore.jpg",
+      "performance": 92,
+      "experience": 80,
+      "fame": 88,
+      "skillAction": 92,
+      "skillScifi": 90,
+      "skillDrama": 95,
+      "skillThriller": 88,
+      "skillOrchestral": 88,
+      "skillElectronic": 95
+    },
+    {
+      "name": "Thomas Newman",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "animation",
+        "thriller"
+      ],
+      "birthYear": 1955,
+      "popularity": 75,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/ThomasNewmanSept2011.jpg/300px-ThomasNewmanSept2011.jpg",
+      "performance": 93,
+      "experience": 90,
+      "fame": 72,
+      "skillDrama": 98,
+      "skillAnimation": 92,
+      "skillThriller": 85,
+      "skillOrchestral": 95,
+      "skillElectronic": 70
+    },
+    {
+      "name": "James Newton Howard",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "thriller",
+        "action",
+        "romance"
+      ],
+      "birthYear": 1951,
+      "popularity": 72,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/James_Newton_Howard_20070618.jpg/300px-James_Newton_Howard_20070618.jpg",
+      "performance": 91,
+      "experience": 92,
+      "fame": 70,
+      "skillDrama": 95,
+      "skillThriller": 92,
+      "skillAction": 88,
+      "skillRomance": 85,
+      "skillOrchestral": 95,
+      "skillElectronic": 60
+    },
+    {
+      "name": "Ennio Morricone",
+      "gender": "male",
+      "nationality": "Italian",
+      "starRating": 5,
+      "boxOfficeAvg": 150000000,
+      "awards": 2,
+      "genres": [
+        "drama",
+        "thriller",
+        "action"
+      ],
+      "birthYear": 1928,
+      "popularity": 95,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Ennio_Morricone_Cannes_2012.jpg/300px-Ennio_Morricone_Cannes_2012.jpg",
+      "performance": 99,
+      "experience": 99,
+      "fame": 95,
+      "skillDrama": 99,
+      "skillThriller": 95,
+      "skillAction": 92,
+      "skillOrchestral": 100,
+      "skillElectronic": 30
+    },
+    {
+      "name": "John Powell",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 5,
+      "boxOfficeAvg": 300000000,
+      "awards": 0,
+      "genres": [
+        "animation",
+        "action",
+        "comedy"
+      ],
+      "birthYear": 1963,
+      "popularity": 75,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/John_Powell_at_the_premiere_of_How_to_Train_Your_Dragon_2.jpg/300px-John_Powell_at_the_premiere_of_How_to_Train_Your_Dragon_2.jpg",
+      "performance": 90,
+      "experience": 85,
+      "fame": 72,
+      "skillAnimation": 98,
+      "skillAction": 92,
+      "skillComedy": 85,
+      "skillOrchestral": 92,
+      "skillElectronic": 80
+    },
+    {
+      "name": "Brian Tyler",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 250000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "thriller",
+        "scifi"
+      ],
+      "birthYear": 1972,
+      "popularity": 70,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Brian_Tyler_by_Gage_Skidmore_3.jpg/300px-Brian_Tyler_by_Gage_Skidmore_3.jpg",
+      "performance": 85,
+      "experience": 80,
+      "fame": 68,
+      "skillAction": 95,
+      "skillThriller": 90,
+      "skillScifi": 85,
+      "skillOrchestral": 88,
+      "skillElectronic": 85
+    },
+    {
+      "name": "Harry Gregson-Williams",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 4,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "animation",
+        "drama"
+      ],
+      "birthYear": 1961,
+      "popularity": 68,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Harry_Gregson-Williams.jpg/300px-Harry_Gregson-Williams.jpg",
+      "performance": 87,
+      "experience": 85,
+      "fame": 65,
+      "skillAction": 92,
+      "skillAnimation": 95,
+      "skillDrama": 85,
+      "skillOrchestral": 90,
+      "skillElectronic": 82
+    },
+    {
+      "name": "Randy Newman",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 350000000,
+      "awards": 2,
+      "genres": [
+        "animation",
+        "comedy",
+        "drama"
+      ],
+      "birthYear": 1943,
+      "popularity": 78,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Randy_Newman_2_%28cropped%29.jpg/300px-Randy_Newman_2_%28cropped%29.jpg",
+      "performance": 92,
+      "experience": 95,
+      "fame": 80,
+      "skillAnimation": 98,
+      "skillComedy": 95,
+      "skillDrama": 90,
+      "skillOrchestral": 90,
+      "skillElectronic": 35
+    },
+    {
+      "name": "Junkie XL",
+      "gender": "male",
+      "nationality": "Dutch",
+      "starRating": 4,
+      "boxOfficeAvg": 300000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "scifi",
+        "thriller"
+      ],
+      "birthYear": 1967,
+      "popularity": 72,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Junkie_XL_2019_%28cropped%29.jpg/300px-Junkie_XL_2019_%28cropped%29.jpg",
+      "performance": 85,
+      "experience": 78,
+      "fame": 70,
+      "skillAction": 95,
+      "skillScifi": 90,
+      "skillThriller": 88,
+      "skillOrchestral": 75,
+      "skillElectronic": 98
+    },
+    {
+      "name": "Ludwig Goransson",
+      "gender": "male",
+      "nationality": "Swedish",
+      "starRating": 5,
+      "boxOfficeAvg": 400000000,
+      "awards": 2,
+      "genres": [
+        "action",
+        "drama",
+        "scifi"
+      ],
+      "birthYear": 1984,
+      "popularity": 85,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Ludwig_G%C3%B6ransson_2022.jpg/300px-Ludwig_G%C3%B6ransson_2022.jpg",
+      "performance": 94,
+      "experience": 70,
+      "fame": 82,
+      "skillAction": 95,
+      "skillDrama": 90,
+      "skillScifi": 92,
+      "skillOrchestral": 88,
+      "skillElectronic": 95
+    },
+    {
+      "name": "Hildur Guðnadóttir",
+      "gender": "female",
+      "nationality": "Icelandic",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "thriller",
+        "horror"
+      ],
+      "birthYear": 1982,
+      "popularity": 78,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/Hildur_Gu%C3%B0nad%C3%B3ttir%2C_March_2020_%28cropped%29.jpg/300px-Hildur_Gu%C3%B0nad%C3%B3ttir%2C_March_2020_%28cropped%29.jpg",
+      "performance": 95,
+      "experience": 65,
+      "fame": 75,
+      "skillDrama": 98,
+      "skillThriller": 95,
+      "skillHorror": 90,
+      "skillOrchestral": 92,
+      "skillElectronic": 88
+    },
+    {
+      "name": "Trent Reznor",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 150000000,
+      "awards": 1,
+      "genres": [
+        "thriller",
+        "drama",
+        "horror"
+      ],
+      "birthYear": 1965,
+      "popularity": 82,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/NIN_-_Force_Fest_2018_%28102%29_%2829717953277%29.jpg/300px-NIN_-_Force_Fest_2018_%28102%29_%2829717953277%29.jpg",
+      "performance": 92,
+      "experience": 75,
+      "fame": 85,
+      "skillThriller": 98,
+      "skillDrama": 92,
+      "skillHorror": 90,
+      "skillOrchestral": 70,
+      "skillElectronic": 99
+    },
+    {
+      "name": "Atticus Ross",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 5,
+      "boxOfficeAvg": 150000000,
+      "awards": 1,
+      "genres": [
+        "thriller",
+        "drama",
+        "horror"
+      ],
+      "birthYear": 1968,
+      "popularity": 75,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Atticus_Ross.jpg/300px-Atticus_Ross.jpg",
+      "performance": 90,
+      "experience": 72,
+      "fame": 72,
+      "skillThriller": 95,
+      "skillDrama": 90,
+      "skillHorror": 88,
+      "skillOrchestral": 65,
+      "skillElectronic": 98
+    },
+    {
+      "name": "Marco Beltrami",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 150000000,
+      "awards": 0,
+      "genres": [
+        "horror",
+        "thriller",
+        "action"
+      ],
+      "birthYear": 1966,
+      "popularity": 65,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Marco_Beltrami_2013.jpg/300px-Marco_Beltrami_2013.jpg",
+      "performance": 85,
+      "experience": 82,
+      "fame": 62,
+      "skillHorror": 95,
+      "skillThriller": 90,
+      "skillAction": 85,
+      "skillOrchestral": 88,
+      "skillElectronic": 70
+    },
+    {
+      "name": "Bear McCreary",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 200000000,
+      "awards": 1,
+      "genres": [
+        "scifi",
+        "action",
+        "drama"
+      ],
+      "birthYear": 1979,
+      "popularity": 72,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Bear_McCreary_by_Gage_Skidmore.jpg/300px-Bear_McCreary_by_Gage_Skidmore.jpg",
+      "performance": 88,
+      "experience": 75,
+      "fame": 70,
+      "skillScifi": 95,
+      "skillAction": 88,
+      "skillDrama": 85,
+      "skillOrchestral": 90,
+      "skillElectronic": 88
+    },
+    {
+      "name": "Nicholas Britell",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 5,
+      "boxOfficeAvg": 150000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "romance"
+      ],
+      "birthYear": 1980,
+      "popularity": 75,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Nicholas_Britell_in_2018.jpg/300px-Nicholas_Britell_in_2018.jpg",
+      "performance": 94,
+      "experience": 68,
+      "fame": 72,
+      "skillDrama": 98,
+      "skillRomance": 92,
+      "skillOrchestral": 95,
+      "skillElectronic": 75
+    },
+    {
+      "name": "Jonny Greenwood",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 5,
+      "boxOfficeAvg": 100000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "thriller",
+        "horror"
+      ],
+      "birthYear": 1971,
+      "popularity": 78,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Jonny_greenwood_live.jpg/300px-Jonny_greenwood_live.jpg",
+      "performance": 95,
+      "experience": 70,
+      "fame": 80,
+      "skillDrama": 98,
+      "skillThriller": 92,
+      "skillHorror": 88,
+      "skillOrchestral": 88,
+      "skillElectronic": 95
+    },
+    {
+      "name": "Carter Burwell",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 100000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "comedy",
+        "thriller"
+      ],
+      "birthYear": 1954,
+      "popularity": 68,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Carter_Burwell_at_the_World_Soundtrack_Awards_2017_-_DSC_7605_%28cropped%29.jpg/300px-Carter_Burwell_at_the_World_Soundtrack_Awards_2017_-_DSC_7605_%28cropped%29.jpg",
+      "performance": 88,
+      "experience": 90,
+      "fame": 65,
+      "skillDrama": 92,
+      "skillComedy": 88,
+      "skillThriller": 90,
+      "skillOrchestral": 90,
+      "skillElectronic": 60
+    },
+    {
+      "name": "Clint Mansell",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 4,
+      "boxOfficeAvg": 80000000,
+      "awards": 0,
+      "genres": [
+        "thriller",
+        "drama",
+        "horror"
+      ],
+      "birthYear": 1963,
+      "popularity": 72,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Clint_Mansell_by_Gage_Skidmore.jpg/300px-Clint_Mansell_by_Gage_Skidmore.jpg",
+      "performance": 90,
+      "experience": 78,
+      "fame": 70,
+      "skillThriller": 95,
+      "skillDrama": 90,
+      "skillHorror": 88,
+      "skillOrchestral": 85,
+      "skillElectronic": 92
+    },
+    {
+      "name": "Henry Jackman",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 4,
+      "boxOfficeAvg": 250000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "animation",
+        "comedy"
+      ],
+      "birthYear": 1974,
+      "popularity": 68,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Henry_Jackman_on_BalconyTV.jpg/300px-Henry_Jackman_on_BalconyTV.jpg",
+      "performance": 85,
+      "experience": 75,
+      "fame": 65,
+      "skillAction": 92,
+      "skillAnimation": 90,
+      "skillComedy": 85,
+      "skillOrchestral": 85,
+      "skillElectronic": 88
+    },
+    {
+      "name": "Dario Marianelli",
+      "gender": "male",
+      "nationality": "Italian",
+      "starRating": 4,
+      "boxOfficeAvg": 100000000,
+      "awards": 1,
+      "genres": [
+        "drama",
+        "romance"
+      ],
+      "birthYear": 1963,
+      "popularity": 65,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/Dario_Marianelli_in_2023.jpg/300px-Dario_Marianelli_in_2023.jpg",
+      "performance": 90,
+      "experience": 80,
+      "fame": 62,
+      "skillDrama": 95,
+      "skillRomance": 92,
+      "skillOrchestral": 95,
+      "skillElectronic": 45
+    },
+    {
+      "name": "A.R. Rahman",
+      "gender": "male",
+      "nationality": "Indian",
+      "starRating": 5,
+      "boxOfficeAvg": 200000000,
+      "awards": 2,
+      "genres": [
+        "drama",
+        "romance",
+        "action"
+      ],
+      "birthYear": 1967,
+      "popularity": 90,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/A._R._Rahman_at_62nd_Filmfare_Awards_South.jpg/300px-A._R._Rahman_at_62nd_Filmfare_Awards_South.jpg",
+      "performance": 95,
+      "experience": 88,
+      "fame": 88,
+      "skillDrama": 95,
+      "skillRomance": 92,
+      "skillAction": 85,
+      "skillOrchestral": 88,
+      "skillElectronic": 92
+    },
+    {
+      "name": "Joe Hisaishi",
+      "gender": "male",
+      "nationality": "Japanese",
+      "starRating": 5,
+      "boxOfficeAvg": 150000000,
+      "awards": 0,
+      "genres": [
+        "animation",
+        "drama",
+        "romance"
+      ],
+      "birthYear": 1950,
+      "popularity": 85,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Joe_Hisaishi_at_Stockholm_Concert_Hall.jpg/300px-Joe_Hisaishi_at_Stockholm_Concert_Hall.jpg",
+      "performance": 98,
+      "experience": 95,
+      "fame": 85,
+      "skillAnimation": 100,
+      "skillDrama": 95,
+      "skillRomance": 90,
+      "skillOrchestral": 98,
+      "skillElectronic": 55
+    },
+    {
+      "name": "Patrick Doyle",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 4,
+      "boxOfficeAvg": 150000000,
+      "awards": 0,
+      "genres": [
+        "drama",
+        "action",
+        "romance"
+      ],
+      "birthYear": 1953,
+      "popularity": 62,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/Patrick_Doyle_at_the_Brave_premiere_%28cropped%29.jpg/300px-Patrick_Doyle_at_the_Brave_premiere_%28cropped%29.jpg",
+      "performance": 88,
+      "experience": 90,
+      "fame": 60,
+      "skillDrama": 92,
+      "skillAction": 85,
+      "skillRomance": 88,
+      "skillOrchestral": 95,
+      "skillElectronic": 40
+    },
+    {
+      "name": "Nathan Johnson",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "thriller",
+        "scifi",
+        "drama"
+      ],
+      "birthYear": 1976,
+      "popularity": 65,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Nathan_Johnson_%28composer%29.jpg/300px-Nathan_Johnson_%28composer%29.jpg",
+      "performance": 88,
+      "experience": 70,
+      "fame": 62,
+      "skillThriller": 92,
+      "skillScifi": 88,
+      "skillDrama": 85,
+      "skillOrchestral": 80,
+      "skillElectronic": 90
+    },
+    {
+      "name": "Steve Jablonsky",
+      "gender": "male",
+      "nationality": "American",
+      "starRating": 4,
+      "boxOfficeAvg": 300000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "scifi"
+      ],
+      "birthYear": 1970,
+      "popularity": 65,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Steve_Jablonsky.jpg/300px-Steve_Jablonsky.jpg",
+      "performance": 82,
+      "experience": 78,
+      "fame": 62,
+      "skillAction": 92,
+      "skillScifi": 90,
+      "skillOrchestral": 82,
+      "skillElectronic": 90
+    },
+    {
+      "name": "Lorne Balfe",
+      "gender": "male",
+      "nationality": "British",
+      "starRating": 4,
+      "boxOfficeAvg": 200000000,
+      "awards": 0,
+      "genres": [
+        "action",
+        "thriller",
+        "scifi"
+      ],
+      "birthYear": 1976,
+      "popularity": 68,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/Lorne_Balfe_September_2021.jpg/300px-Lorne_Balfe_September_2021.jpg",
+      "performance": 85,
+      "experience": 75,
+      "fame": 65,
+      "skillAction": 92,
+      "skillThriller": 88,
+      "skillScifi": 85,
+      "skillOrchestral": 85,
+      "skillElectronic": 88
+    }
+  ]
+}
