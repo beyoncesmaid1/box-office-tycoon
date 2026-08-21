@@ -10,8 +10,51 @@ let pool: PoolType | null = null;
 let drizzleDb: ReturnType<typeof drizzle> | null = null;
 
 if (hasDatabase) {
-  pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    connectionTimeoutMillis: 10_000,
+    idleTimeoutMillis: 30_000,
+    keepAlive: true,
+    max: 10,
+  });
+  pool.on("error", (error) => {
+    console.error("[DATABASE] Idle connection was dropped; the pool will reconnect:", error.message);
+  });
   drizzleDb = drizzle({ client: pool, schema });
+}
+
+const transientDatabaseCodes = new Set([
+  "ECONNRESET",
+  "ECONNREFUSED",
+  "ETIMEDOUT",
+  "EPIPE",
+  "57P01",
+  "57P02",
+  "57P03",
+  "08000",
+  "08003",
+  "08006",
+]);
+
+export async function withDatabaseRetry<T>(
+  label: string,
+  operation: () => Promise<T>,
+  maxAttempts = 6,
+): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error: any) {
+      lastError = error;
+      const code = String(error?.code || error?.cause?.code || "");
+      if (!transientDatabaseCodes.has(code) || attempt === maxAttempts) throw error;
+      const delayMs = Math.min(4_000, 500 * 2 ** (attempt - 1));
+      console.warn(`[DATABASE] ${label} lost its connection (${code}); retrying ${attempt}/${maxAttempts} in ${delayMs}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+  }
+  throw lastError;
 }
 
 // Run manual migrations for new columns
@@ -19,6 +62,11 @@ export async function runMigrations(): Promise<void> {
   if (!pool) return;
   
   try {
+    await pool.query(`
+      ALTER TABLE films ADD COLUMN IF NOT EXISTS territory_percentages jsonb NOT NULL DEFAULT '{}'::jsonb;
+    `);
+    console.log('[MIGRATION] Added territory_percentages column');
+
     // Add skill_fantasy column if it doesn't exist
     await pool.query(`
       ALTER TABLE talent ADD COLUMN IF NOT EXISTS skill_fantasy INTEGER NOT NULL DEFAULT 50;
@@ -95,6 +143,7 @@ export async function runMigrations(): Promise<void> {
     
   } catch (error) {
     console.error('[MIGRATION] Error running migrations:', error);
+    throw error;
   }
 }
 

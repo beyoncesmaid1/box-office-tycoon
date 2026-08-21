@@ -3021,14 +3021,14 @@ export async function registerRoutes(
   registerMultiplayerRoutes(app);
   
   // Run database migrations before seeding
-  const { runMigrations } = await import("./db");
-  await runMigrations();
+  const { runMigrations, withDatabaseRetry } = await import("./db");
+  await withDatabaseRetry("startup migrations", runMigrations);
   
   // Seed talent data on startup
-  await storage.seedTalent();
+  await withDatabaseRetry("talent initialization", () => storage.seedTalent());
 
   // Initialize AI studios on first run
-  const allStudios = await storage.getAllStudios();
+  const allStudios = await withDatabaseRetry("studio initialization", () => storage.getAllStudios());
   if (allStudios.length === 0) {
     const defaultDeviceId = "default-device";
     const newStudio = await storage.createStudio({
