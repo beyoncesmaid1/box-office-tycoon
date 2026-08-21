@@ -120,6 +120,7 @@ export interface ExhibitionBalanceConfig {
   eventThreshold: number;
   eventRange: number;
   eventCurveExponent: number;
+  eventMaximumIntensity: number;
   eventDemandBoost: number;
   eventCapacityBoost: number;
   eventPremiumTurnoverBoost: number;
@@ -282,9 +283,10 @@ export const DEFAULT_SIMULATION_CONFIG: SimulationBalanceConfig = {
     openingAddressableAdmissionsDomestic: 54_000_000,
     productionDemandFloor: 0.62,
     retentionBase: 0.51,
-    eventThreshold: 73,
+    eventThreshold: 67,
     eventRange: 18,
     eventCurveExponent: 2.2,
+    eventMaximumIntensity: 0.3,
     eventDemandBoost: 3.4,
     eventCapacityBoost: 6,
     eventPremiumTurnoverBoost: 0.65,

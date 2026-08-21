@@ -27,6 +27,99 @@ export interface AIStudioDecisionProfile {
   preferredGenres: string[];
 }
 
+export interface AIProductionBudgetPlan {
+  productionBudget: number;
+  isTentpole: boolean;
+}
+
+const TENTPOLE_GENRES = new Set(["action", "scifi", "fantasy", "animation"]);
+const TENTPOLE_BUDGET_FLOOR = 170_000_000;
+
+/**
+ * Choose the physical scale of an AI film. Most projects retain the existing
+ * genre ranges. A small share of globally accessible projects can become real
+ * tentpoles when the studio can afford the production, departments, talent,
+ * and VFX that come with one.
+ */
+export function selectAIProductionBudget(
+  genre: string,
+  availableBudget: number,
+  profile: AIStudioDecisionProfile,
+  rng: RandomSource = Math.random,
+  allowTentpole = true,
+): AIProductionBudgetPlan {
+  const safeAvailableBudget = Math.max(0, availableBudget);
+  const affordableTentpoleCeiling = Math.min(300_000_000, safeAvailableBudget * 0.58);
+  // Seven major studios should collectively mount a real event slate, not one
+  // oversized production every few years. The two-project concurrency guard in
+  // routes.ts prevents this high eligible-project rate from becoming unlimited.
+  const tentpoleChance = 0.68 + profile.riskTolerance * 0.12;
+  const canAttemptTentpole = allowTentpole &&
+    TENTPOLE_GENRES.has(genre) &&
+    affordableTentpoleCeiling >= TENTPOLE_BUDGET_FLOOR;
+
+  if (canAttemptTentpole && rng() < tentpoleChance) {
+    return {
+      productionBudget: TENTPOLE_BUDGET_FLOOR +
+        rng() * (affordableTentpoleCeiling - TENTPOLE_BUDGET_FLOOR),
+      isTentpole: true,
+    };
+  }
+
+  let productionBudget: number;
+  if (genre === "action" || genre === "scifi") {
+    productionBudget = 40_000_000 + rng() * 90_000_000;
+  } else if (genre === "animation") {
+    productionBudget = 30_000_000 + rng() * 90_000_000;
+  } else if (genre === "fantasy") {
+    productionBudget = 50_000_000 + rng() * 80_000_000;
+  } else if (genre === "thriller") {
+    productionBudget = 15_000_000 + rng() * 65_000_000;
+  } else if (genre === "comedy" || genre === "romance") {
+    productionBudget = 8_000_000 + rng() * 52_000_000;
+  } else if (genre === "musicals") {
+    productionBudget = 25_000_000 + rng() * 95_000_000;
+  } else if (genre === "horror") {
+    productionBudget = rng() < 0.8
+      ? 1_000_000 + rng() * 14_000_000
+      : 40_000_000 + rng() * 40_000_000;
+  } else if (genre === "drama") {
+    productionBudget = 4_000_000 + rng() * 36_000_000;
+  } else {
+    productionBudget = 8_000_000 + rng() * 52_000_000;
+  }
+
+  return { productionBudget, isTentpole: false };
+}
+
+export function createTentpoleDecisionProfile(
+  profile: AIStudioDecisionProfile,
+): AIStudioDecisionProfile {
+  return {
+    ...profile,
+    decisionQuality: Math.max(0.76, profile.decisionQuality),
+    explorationRate: Math.min(0.1, profile.explorationRate),
+    riskTolerance: Math.max(0.8, profile.riskTolerance),
+    valueDiscipline: Math.min(0.55, profile.valueDiscipline),
+  };
+}
+
+export function calculateAIMarketingRatio(
+  profile: AIStudioDecisionProfile,
+  isTentpole: boolean,
+  rng: RandomSource = Math.random,
+): number {
+  if (isTentpole) {
+    return 0.72 + profile.riskTolerance * 0.12 + rng() * 0.16;
+  }
+  return 0.38 + profile.riskTolerance * 0.30 +
+    rng() * (0.30 - profile.valueDiscipline * 0.10);
+}
+
+export function isAITentpoleBudget(genre: string, productionBudget: number): boolean {
+  return TENTPOLE_GENRES.has(genre) && productionBudget >= TENTPOLE_BUDGET_FLOOR;
+}
+
 export interface TalentSelectionContext {
   genre: string;
   role: "director" | "writer" | "actor" | "composer";

@@ -39,8 +39,12 @@ import {
 import { generateFilmDescription } from "@shared/descriptionTemplates";
 import { getGenreHolidayModifier, getHolidayForWeek } from "@shared/holidays";
 import {
+  calculateAIMarketingRatio,
   createStudioDecisionProfile,
+  createTentpoleDecisionProfile,
+  isAITentpoleBudget,
   selectAIGenre,
+  selectAIProductionBudget,
   selectTalentCandidate,
   selectVFXStudio,
 } from "./simulation/aiDecision";
@@ -410,7 +414,11 @@ async function hireAITalent(
     const allTalent = cachedTalent ?? await storage.getAllTalent();
     const talentUpdatePromises: Promise<unknown>[] = [];
     const roleUpdatePromises: Promise<unknown>[] = [];
-    const profile = createStudioDecisionProfile(aiStudio);
+    const baseProfile = createStudioDecisionProfile(aiStudio);
+    const isTentpole = isAITentpoleBudget(genre, film.productionBudget || 0);
+    const profile = isTentpole
+      ? createTentpoleDecisionProfile(baseProfile)
+      : baseProfile;
     const currentWeek = aiStudio.currentWeek || film.createdAtWeek || 1;
     const currentYear = aiStudio.currentYear || film.createdAtYear || 2025;
     const talentBudgetLimit = Math.max(
@@ -588,8 +596,10 @@ async function hireAITalent(
     // by the box-office model. Value-focused studios avoid habitual overspending.
     const filmStudio = aiStudio ?? await storage.getStudio(film.studioId);
     if (filmStudio?.isAI) {
-      const marketingRatio = 0.38 + profile.riskTolerance * 0.30 +
-        Math.random() * (0.30 - profile.valueDiscipline * 0.10);
+      const marketingRatio = calculateAIMarketingRatio(
+        profile,
+        isTentpole,
+      );
       const newMarketingBudget = Math.floor(investmentBudget * marketingRatio);
       filmUpdateData.marketingBudget = newMarketingBudget;
       filmUpdateData.totalBudget = investmentBudget + newMarketingBudget;
@@ -2898,7 +2908,10 @@ async function runAutomatedCampaignForFilm(
   if (!action || actions.some(previous => previous.actionKind === action)) return 0;
 
   const remaining = Math.max(0, (film.campaignLimit || 0) - (film.campaignSpent || 0));
-  const profile = createStudioDecisionProfile(filmStudio);
+  const baseProfile = createStudioDecisionProfile(filmStudio);
+  const profile = isAITentpoleBudget(film.genre, film.productionBudget || 0)
+    ? createTentpoleDecisionProfile(baseProfile)
+    : baseProfile;
   const noisyShare = budgetShare * (
     0.78 + profile.riskTolerance * 0.42 +
     (createSeededRng(`auto-campaign-spend:${film.id}:${currentYear}:${currentWeek}`).next() - 0.5) *
@@ -3004,7 +3017,10 @@ async function runAIPremiumBookingForFilm(
     imaxSuitability: profile.imaxSuitability,
     dolbySuitability: profile.dolbySuitability,
   });
-  const decision = createStudioDecisionProfile(filmStudio);
+  const baseDecision = createStudioDecisionProfile(filmStudio);
+  const decision = isAITentpoleBudget(film.genre, film.productionBudget || 0)
+    ? createTentpoleDecisionProfile(baseDecision)
+    : baseDecision;
   const launchHook = talentLaunchHook(film, talentPool);
   const preferredTerritories = [...releases]
     .sort((left, right) =>
@@ -3134,6 +3150,156 @@ async function calculateCanonicalBoxOfficeRun(
     releaseTiming,
     competition,
   }, createSeededRng(`box-office:${film.id}:${releaseYear}:${releaseWeek}`));
+}
+
+async function calculateHistoricalTerritoryRun(
+  film: Film,
+  calendarFilms: Film[],
+  talentPool: Awaited<ReturnType<typeof storage.getAllTalent>>,
+) {
+  const releaseWeek = film.releaseWeek || 1;
+  const releaseYear = film.releaseYear || 2025;
+  const sameWeekReleases = calendarFilms.filter(other =>
+    other.id !== film.id &&
+    other.releaseWeek === releaseWeek &&
+    other.releaseYear === releaseYear
+  );
+  const directCompetitors = sameWeekReleases.filter(other => other.genre === film.genre).length;
+  const competition = Math.min(100, 10 + sameWeekReleases.length * 10 + directCompetitors * 16);
+  const holidayFit = getGenreHolidayModifier(releaseWeek, film.genre);
+  const releaseTiming = Math.max(0, Math.min(100, 52 + (holidayFit - 1) * 62));
+  const genreBalance = resolveGenre(film.genre);
+  const productionScale = Math.min(100,
+    100 * (1 - Math.exp(-(film.productionBudget || 0) /
+      Math.max(1, genreBalance.viableBudget *
+        DEFAULT_SIMULATION_CONFIG.exhibition.productionScaleHalfSaturation))));
+  const launchHook = talentLaunchHook(film, talentPool);
+  const premiumProfile = await calculateFilmPremiumProfile(film, talentPool);
+
+  const campaigns = new Map<string, TerritoryCampaignState>();
+  const openingExpectations = new Map<string, number>();
+  const schedule: Array<{ weeksFromRelease: number; action: CampaignActionKind; share: number }> = [
+    { weeksFromRelease: 14, action: "teaser", share: 0.12 },
+    { weeksFromRelease: 8, action: "broad-awareness", share: 0.28 },
+    { weeksFromRelease: 3, action: "publicity", share: 0.18 },
+    { weeksFromRelease: 1, action: "opening-blitz", share: 0.32 },
+  ];
+  for (const territory of BOX_OFFICE_COUNTRIES) {
+    let campaign = createInitialCampaignState(
+      Math.max(6, genreBalance.baseCommercialAppeal * 0.2),
+      Math.max(8, genreBalance.baseCommercialAppeal * 0.17),
+      52,
+    );
+    const countryName = getCountryName(territory.code) || territory.code;
+    const territoryFit = GENRE_TERRITORY_FACTORS[film.genre.toLowerCase()]?.[countryName] ?? 1;
+    let previousWeeksFromRelease = 16;
+    for (const scheduled of schedule) {
+      for (let week = previousWeeksFromRelease; week > scheduled.weeksFromRelease; week -= 1) {
+        campaign = advanceCampaignWeek(campaign, { isReleased: false });
+      }
+      campaign = applyCampaignAction({
+        state: campaign,
+        action: scheduled.action,
+        spend: (film.marketingBudget || 0) * scheduled.share * territory.percentage,
+        territoryMarketShare: territory.percentage,
+        territoryFit,
+        targetingFit: 0.92,
+        weeksFromRelease: scheduled.weeksFromRelease,
+        creativeStrength: Math.max(20, Math.min(100,
+          ((film.scriptQuality || 50) + (film.cinematographyQuality || 50)) / 2)),
+      }, createSeededRng(
+        `historical-campaign:${film.id}:${territory.code}:${scheduled.action}`,
+      )).state;
+      previousWeeksFromRelease = scheduled.weeksFromRelease;
+    }
+    campaigns.set(territory.code, campaign);
+    openingExpectations.set(territory.code, campaign.expectation);
+  }
+
+  const weeklyGrosses: number[] = [];
+  const previousGrosses = new Map<string, number>();
+  let peakEventPotential = 0;
+  let peakEventIntensity = 0;
+  let peakPhenomenonPotential = 0;
+  let peakPhenomenonIntensity = 0;
+  for (let weekNumber = 0; weekNumber < 16; weekNumber += 1) {
+    let worldwideGross = 0;
+    for (const territory of BOX_OFFICE_COUNTRIES) {
+      const exhibition = getTerritoryExhibitionProfile(territory.code);
+      const campaign = campaigns.get(territory.code)!;
+      const commonInput = {
+        territoryCode: territory.code,
+        territoryMarketShare: territory.percentage,
+        genre: film.genre,
+        productionScale,
+        commercialAppeal: genreBalance.baseCommercialAppeal,
+        launchHook,
+        releaseTiming,
+        competition,
+        audienceExperience: intrinsicAudienceExperience(film),
+        campaign,
+        openingExpectation: openingExpectations.get(territory.code) ?? campaign.expectation,
+        weekNumber,
+        previousWeekGross: previousGrosses.get(territory.code) || 0,
+        baseTicketPrice: exhibition.baseTicketPrice,
+        imaxTicketPrice: exhibition.imaxTicketPrice,
+        dolbyTicketPrice: exhibition.dolbyTicketPrice,
+        regularCapacityAdmissions: exhibition.regularOpeningAdmissions,
+        imaxSuitability: premiumProfile.imaxSuitability,
+        dolbySuitability: premiumProfile.dolbySuitability,
+        demandVariance: Math.exp(
+          0.16 * normal(createSeededRng(
+            `historical-demand:${film.id}:${territory.code}:${weekNumber}`,
+          )) - (0.16 ** 2) / 2,
+        ),
+      };
+      const preliminary = simulateTerritoryWeek({
+        ...commonInput,
+        imaxAllocationAdmissions: Number.MAX_SAFE_INTEGER,
+        dolbyAllocationAdmissions: Number.MAX_SAFE_INTEGER,
+      });
+      const result = simulateTerritoryWeek({
+        ...commonInput,
+        imaxAllocationAdmissions: Math.min(preliminary.imaxDemandAdmissions, exhibition.imaxAdmissions),
+        dolbyAllocationAdmissions: Math.min(preliminary.dolbyDemandAdmissions, exhibition.dolbyAdmissions),
+      });
+      worldwideGross += result.gross;
+      peakEventPotential = Math.max(peakEventPotential, result.eventPotential);
+      peakEventIntensity = Math.max(peakEventIntensity, result.eventIntensity);
+      peakPhenomenonPotential = Math.max(peakPhenomenonPotential, result.phenomenonPotential);
+      peakPhenomenonIntensity = Math.max(peakPhenomenonIntensity, result.phenomenonIntensity);
+      previousGrosses.set(territory.code, result.gross);
+      campaigns.set(territory.code, advanceCampaignWeek(campaign, {
+        isReleased: true,
+        audienceExperience: intrinsicAudienceExperience(film),
+        openingExpectation: openingExpectations.get(territory.code) ?? campaign.expectation,
+        criticScore: film.criticScore || 0,
+      }));
+    }
+    weeklyGrosses.push(worldwideGross);
+    if (weekNumber >= 3 && worldwideGross < 90_000) break;
+  }
+  const totalGross = weeklyGrosses.reduce((sum, gross) => sum + gross, 0);
+  const openingWeekend = weeklyGrosses[0] || 0;
+  return {
+    openingWeekend,
+    totalGross,
+    weeklyGrosses,
+    theaterCount: Math.round(2_500 + productionScale * 26),
+    legsMultiplier: openingWeekend > 0 ? totalGross / openingWeekend : 0,
+    breakdown: {
+      modelVersion: 3,
+      commercialAppeal: genreBalance.baseCommercialAppeal,
+      productionScale,
+      launchHook,
+      releaseTiming,
+      competition,
+      peakEventPotential,
+      peakEventIntensity,
+      peakPhenomenonPotential,
+      peakPhenomenonIntensity,
+    },
+  };
 }
 
 // Genre-based review patterns from Rotten Tomatoes analysis
@@ -3447,19 +3613,27 @@ export async function registerRoutes(
           while (usedTitles.has(title)) title = `${titleList[Math.floor(Math.random() * titleList.length)]} ${duplicateNumber++}`;
           usedTitles.add(title);
 
-          let prodBudget: number;
-          if (genre === "action" || genre === "scifi") prodBudget = 40_000_000 + Math.random() * 90_000_000;
-          else if (genre === "animation") prodBudget = 30_000_000 + Math.random() * 90_000_000;
-          else if (genre === "fantasy") prodBudget = 50_000_000 + Math.random() * 80_000_000;
-          else if (genre === "thriller") prodBudget = 15_000_000 + Math.random() * 65_000_000;
-          else if (genre === "comedy" || genre === "romance") prodBudget = 8_000_000 + Math.random() * 52_000_000;
-          else if (genre === "musicals") prodBudget = 25_000_000 + Math.random() * 95_000_000;
-          else if (genre === "horror") prodBudget = Math.random() < 0.8
-            ? 1_000_000 + Math.random() * 14_000_000
-            : 40_000_000 + Math.random() * 40_000_000;
-          else if (genre === "drama") prodBudget = 4_000_000 + Math.random() * 36_000_000;
-          else prodBudget = 8_000_000 + Math.random() * 52_000_000;
-          prodBudget = Math.floor(Math.min(prodBudget, Math.max(5_000_000, availableBudget * 0.55)));
+          const unreleasedTentpoleCount = plans.filter(plan =>
+            plan.studio.id === aiStudio.id &&
+            plan.releaseAbsolute > creationAbsolute &&
+            isAITentpoleBudget(plan.filmData.genre, plan.filmData.productionBudget)
+          ).length;
+          const productionPlan = selectAIProductionBudget(
+            genre,
+            availableBudget,
+            profile,
+            Math.random,
+            unreleasedTentpoleCount < 2,
+          );
+          const projectProfile = productionPlan.isTentpole
+            ? createTentpoleDecisionProfile(profile)
+            : profile;
+          let prodBudget = productionPlan.productionBudget;
+          const productionBudgetShare = productionPlan.isTentpole ? 0.58 : 0.55;
+          prodBudget = Math.floor(Math.min(
+            prodBudget,
+            Math.max(5_000_000, availableBudget * productionBudgetShare),
+          ));
 
           const setsBudget = Math.floor(prodBudget * (0.08 + Math.random() * 0.12));
           const costumesBudget = Math.floor(prodBudget * (0.02 + Math.random() * 0.03));
@@ -3482,34 +3656,33 @@ export async function registerRoutes(
             Math.min(availableBudget * 0.22, Math.max(30_000_000, prodBudget * 0.65)),
           );
           let remainingTalentBudget = Math.min(availableAfterProduction, plannedTalentBudget);
-          const director = chooseTalent("director", "director", genre, profile, remainingTalentBudget * 0.32, usedTalent, creationAbsolute);
+          const director = chooseTalent("director", "director", genre, projectProfile, remainingTalentBudget * 0.32, usedTalent, creationAbsolute);
           if (director) { usedTalent.add(director.id); remainingTalentBudget -= Number(director.askingPrice || 5_000_000); }
-          const writer = chooseTalent("writer", "writer", genre, profile, remainingTalentBudget * 0.20, usedTalent, creationAbsolute);
+          const writer = chooseTalent("writer", "writer", genre, projectProfile, remainingTalentBudget * 0.20, usedTalent, creationAbsolute);
           if (writer) { usedTalent.add(writer.id); remainingTalentBudget -= Number(writer.askingPrice || 5_000_000); }
           const cast: typeof talentPool = [];
           for (let castIndex = 0; castIndex < castCount; castIndex += 1) {
             const remainingRoles = castCount - castIndex;
             const actorBudget = remainingTalentBudget / Math.max(1, remainingRoles + 1);
-            const actor = chooseTalent("actor", "actor", genre, profile, actorBudget, usedTalent, creationAbsolute);
+            const actor = chooseTalent("actor", "actor", genre, projectProfile, actorBudget, usedTalent, creationAbsolute);
             if (!actor) break;
             cast.push(actor);
             usedTalent.add(actor.id);
             remainingTalentBudget -= Number(actor.askingPrice || 5_000_000);
           }
-          const composer = chooseTalent("composer", "composer", genre, profile, remainingTalentBudget, usedTalent, creationAbsolute);
+          const composer = chooseTalent("composer", "composer", genre, projectProfile, remainingTalentBudget, usedTalent, creationAbsolute);
           if (composer) { usedTalent.add(composer.id); remainingTalentBudget -= Number(composer.askingPrice || 3_000_000); }
           const hiredTalent = [director, writer, composer, ...cast].filter(Boolean) as typeof talentPool;
           const talentBudget = Math.max(0, Math.floor(hiredTalent.reduce(
             (sum, candidate) => sum + Number(candidate.askingPrice || 0), 0,
           )));
           const investmentBudget = prodBudget + departmentBudget + talentBudget;
-          const marketingRatio = 0.38 + profile.riskTolerance * 0.30 +
-            Math.random() * (0.30 - profile.valueDiscipline * 0.10);
+          const marketingRatio = calculateAIMarketingRatio(projectProfile, productionPlan.isTentpole);
           const marketingBudget = Math.floor(investmentBudget * marketingRatio);
 
           const vfxRequired = ["action", "scifi", "fantasy", "animation", "horror"].includes(genre);
           const selectedVFX = vfxRequired
-            ? selectVFXStudio(vfxStudios, genre, Math.max(0, availableBudget - investmentBudget), profile)
+            ? selectVFXStudio(vfxStudios, genre, Math.max(0, availableBudget - investmentBudget), projectProfile)
             : undefined;
           const vfxCost = Number(selectedVFX?.cost || 0);
           const projectCost = investmentBudget + vfxCost;
@@ -3527,7 +3700,7 @@ export async function registerRoutes(
             releaseDate.releaseYear,
             genre,
             plans.map(plan => plan.filmData as Film),
-            profile,
+            projectProfile,
             premiumBookings,
           );
           const releaseAbsolute = absoluteWeek(releaseDate.releaseWeek, releaseDate.releaseYear);
@@ -3601,7 +3774,9 @@ export async function registerRoutes(
               marketingBudget,
               campaignLimit: marketingBudget,
               campaignSpent: marketingBudget,
-              campaignStrategy: profile.riskTolerance > 0.68
+              campaignStrategy: productionPlan.isTentpole
+                ? "blockbuster"
+                : profile.riskTolerance > 0.68
                 ? "blockbuster"
                 : profile.valueDiscipline > 0.68 ? "targeted" : "balanced",
               autoManageMarketing: true,
@@ -3686,7 +3861,7 @@ export async function registerRoutes(
           criticScoreBreakdown: scores.criticBreakdown,
           audienceScoreBreakdown: scores.audienceBreakdown,
         });
-        const run = await calculateCanonicalBoxOfficeRun(film, createdFilms, talentPool);
+        const run = await calculateHistoricalTerritoryRun(film, createdFilms, talentPool);
         const historyLength = Math.max(1, Math.min(
           run.weeklyGrosses.length,
           finalAbsolute - plan.releaseAbsolute + 1,
@@ -6082,34 +6257,22 @@ export async function registerRoutes(
           const titleList = filmTitles[genre];
           const title = titleList[Math.floor(Math.random() * titleList.length)];
           
-          // Genre-based budget allocation (based on real-world industry data)
-          let prodBudget: number;
-          if (genre === 'action' || genre === 'scifi') {
-            prodBudget = 40000000 + Math.random() * 90000000; // 40M-130M
-          } else if (genre === 'animation') {
-            prodBudget = 30000000 + Math.random() * 90000000; // 30M-120M
-          } else if (genre === 'fantasy') {
-            prodBudget = 50000000 + Math.random() * 80000000; // 50M-130M
-          } else if (genre === 'thriller') {
-            prodBudget = 15000000 + Math.random() * 65000000; // 15M-80M
-          } else if (genre === 'comedy' || genre === 'romance') {
-            prodBudget = 8000000 + Math.random() * 52000000; // 8M-60M
-          } else if (genre === 'musicals') {
-            prodBudget = 25000000 + Math.random() * 95000000; // 25M-120M (musicals need budget for choreography/music)
-          } else if (genre === 'horror') {
-            // Horror is the most profitable genre per dollar (avg $4-5M, range $1M-$15M for indie, $50M+ for franchises)
-            // 80% indie horror, 20% big franchise horror
-            if (Math.random() < 0.8) {
-              prodBudget = 1000000 + Math.random() * 14000000; // 1M-15M (indie horror)
-            } else {
-              prodBudget = 40000000 + Math.random() * 40000000; // 40M-80M (major franchise)
-            }
-          } else if (genre === 'drama') {
-            prodBudget = 4000000 + Math.random() * 36000000; // 4M-40M
-            prodBudget = 3000000 + Math.random() * 17000000; // 3M-20M
-          } else {
-            prodBudget = 8000000 + Math.random() * 52000000; // 8M-60M (default)
-          }
+          const unreleasedTentpoleCount = previousStudioFilms.filter(film =>
+            film.phase !== "released" &&
+            film.status !== "archived" &&
+            isAITentpoleBudget(film.genre, film.productionBudget || 0)
+          ).length;
+          const productionPlan = selectAIProductionBudget(
+            genre,
+            updatedBudget,
+            decisionProfile,
+            Math.random,
+            unreleasedTentpoleCount < 2,
+          );
+          const prodBudget = productionPlan.productionBudget;
+          const projectProfile = productionPlan.isTentpole
+            ? createTentpoleDecisionProfile(decisionProfile)
+            : decisionProfile;
           
           // Roll department budgets based on genre and production budget
           const setsBudget = prodBudget * (0.08 + Math.random() * 0.12); // 8-20%
@@ -6126,8 +6289,10 @@ export async function registerRoutes(
           // Calculate marketing budget based on total investment (production + departments)
           // Studio-specific, imperfect marketing plan; high spend no longer scales linearly.
           const investmentBudget = prodBudget + departmentBudgetTotal;
-          const marketingRatio = 0.38 + decisionProfile.riskTolerance * 0.30 +
-            Math.random() * (0.30 - decisionProfile.valueDiscipline * 0.10);
+          const marketingRatio = calculateAIMarketingRatio(
+            projectProfile,
+            productionPlan.isTentpole,
+          );
           const marketBudget = investmentBudget * marketingRatio;
           
           // Marketing is now a campaign ceiling; cash is charged as actions run.
@@ -6156,7 +6321,7 @@ export async function registerRoutes(
               releaseYear,
               genre,
               allFilms,
-              decisionProfile,
+              projectProfile,
               initialPremiumBookings,
             ));
 
@@ -6170,7 +6335,9 @@ export async function registerRoutes(
                 marketingBudget: 0,
                 campaignLimit: Math.floor(marketBudget),
                 campaignSpent: 0,
-                campaignStrategy: decisionProfile.riskTolerance > 0.68
+                campaignStrategy: productionPlan.isTentpole
+                  ? "blockbuster"
+                  : decisionProfile.riskTolerance > 0.68
                   ? "blockbuster"
                   : decisionProfile.valueDiscipline > 0.68 ? "targeted" : "balanced",
                 autoManageMarketing: true,
@@ -6232,7 +6399,7 @@ export async function registerRoutes(
                   vfxStudios,
                   genre,
                   Math.max(0, aiStudio.budget - totalCost),
-                  decisionProfile,
+                  projectProfile,
                 );
                 if (selectedVFXStudio) {
                   const vfxCost = selectedVFXStudio.cost || 0;

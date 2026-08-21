@@ -262,13 +262,16 @@ export function simulateTerritoryWeek(input: TerritoryWeekInput): TerritoryWeekR
     premiumReadiness,
     globalAccessibility,
   ]) * 100);
-  const eventIntensity = Math.pow(
-    clamp(
-      (eventPotential - BALANCE.eventThreshold) / BALANCE.eventRange,
-      0,
-      1,
+  const eventIntensity = Math.min(
+    BALANCE.eventMaximumIntensity,
+    Math.pow(
+      clamp(
+        (eventPotential - BALANCE.eventThreshold) / BALANCE.eventRange,
+        0,
+        1,
+      ),
+      BALANCE.eventCurveExponent,
     ),
-    BALANCE.eventCurveExponent,
   );
   const eventDemandMultiplier = 1 + BALANCE.eventDemandBoost * eventIntensity;
 

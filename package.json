@@ -15,6 +15,7 @@
     "test:local-runtime": "npm run build && tsx script/local-runtime-integration-test.ts",
     "test:deletion": "tsx script/save-deletion-test.ts",
     "test:preload-handoff": "tsx script/preload-handoff-test.ts",
+    "test:five-year-market": "npm run build && tsx script/five-year-market-simulation.ts",
     "balance": "tsx script/balance-simulation.ts",
     "db:push": "drizzle-kit push"
   },
