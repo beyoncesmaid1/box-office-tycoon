@@ -123,6 +123,7 @@ export interface IStorage {
   createAwardNomination(nomination: InsertAwardNomination): Promise<AwardNomination>;
   createAwardNominations(nominations: InsertAwardNomination[]): Promise<AwardNomination[]>;
   updateAwardNomination(id: string, updates: Partial<InsertAwardNomination>): Promise<AwardNomination | undefined>;
+  markAwardNominationsWinners(ids: string[]): Promise<void>;
   deleteAwardNomination(id: string): Promise<void>;
   
   // Award Ceremonies
@@ -137,6 +138,7 @@ export interface IStorage {
   getAllFilmReleases(): Promise<FilmRelease[]>;
   getFilmReleasesByFilm(filmId: string): Promise<FilmRelease[]>;
   getFilmReleasesByFilms(filmIds: string[]): Promise<FilmRelease[]>;
+  getFilmReleasesByStudioIds(studioIds: string[]): Promise<FilmRelease[]>;
   getFilmReleaseByTerritory(filmId: string, territoryCode: string): Promise<FilmRelease | undefined>;
   createFilmRelease(release: InsertFilmRelease): Promise<FilmRelease>;
   createFilmReleases(releases: InsertFilmRelease[]): Promise<FilmRelease[]>;
@@ -151,6 +153,8 @@ export interface IStorage {
   createMarketingActions(actions: InsertMarketingAction[]): Promise<MarketingAction[]>;
   getPremiumBooking(id: string): Promise<PremiumBooking | undefined>;
   getPremiumBookingsByFilm(filmId: string): Promise<PremiumBooking[]>;
+  getPremiumBookingsByFilms(filmIds: string[]): Promise<PremiumBooking[]>;
+  getPremiumBookingsByStudioIds(studioIds: string[]): Promise<PremiumBooking[]>;
   getAllPremiumBookings(): Promise<PremiumBooking[]>;
   createPremiumBooking(booking: InsertPremiumBooking): Promise<PremiumBooking>;
   createPremiumBookings(bookings: InsertPremiumBooking[]): Promise<PremiumBooking[]>;
@@ -1142,6 +1146,11 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
+  async markAwardNominationsWinners(ids: string[]): Promise<void> {
+    if (ids.length === 0) return;
+    await db.update(awardNominations).set({ isWinner: true }).where(inArray(awardNominations.id, ids));
+  }
+
   async deleteAwardNomination(id: string): Promise<void> {
     await db.delete(awardNominations).where(eq(awardNominations.id, id));
   }
@@ -1194,6 +1203,15 @@ export class DatabaseStorage implements IStorage {
   async getFilmReleasesByFilms(filmIds: string[]): Promise<FilmRelease[]> {
     if (filmIds.length === 0) return [];
     return await db.select().from(filmReleases).where(inArray(filmReleases.filmId, filmIds));
+  }
+
+  async getFilmReleasesByStudioIds(studioIds: string[]): Promise<FilmRelease[]> {
+    if (studioIds.length === 0) return [];
+    const rows = await db.select({ release: filmReleases })
+      .from(filmReleases)
+      .innerJoin(films, eq(filmReleases.filmId, films.id))
+      .where(inArray(films.studioId, studioIds));
+    return rows.map(row => row.release);
   }
 
   async getFilmReleaseByTerritory(filmId: string, territoryCode: string): Promise<FilmRelease | undefined> {
@@ -1303,6 +1321,20 @@ export class DatabaseStorage implements IStorage {
 
   async getPremiumBookingsByFilm(filmId: string): Promise<PremiumBooking[]> {
     return await db.select().from(premiumBookings).where(eq(premiumBookings.filmId, filmId));
+  }
+
+  async getPremiumBookingsByFilms(filmIds: string[]): Promise<PremiumBooking[]> {
+    if (filmIds.length === 0) return [];
+    return await db.select().from(premiumBookings).where(inArray(premiumBookings.filmId, filmIds));
+  }
+
+  async getPremiumBookingsByStudioIds(studioIds: string[]): Promise<PremiumBooking[]> {
+    if (studioIds.length === 0) return [];
+    const rows = await db.select({ booking: premiumBookings })
+      .from(premiumBookings)
+      .innerJoin(films, eq(premiumBookings.filmId, films.id))
+      .where(inArray(films.studioId, studioIds));
+    return rows.map(row => row.booking);
   }
 
   async getAllPremiumBookings(): Promise<PremiumBooking[]> {

@@ -724,6 +724,10 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
+  async markAwardNominationsWinners(ids: string[]): Promise<void> {
+    await Promise.all(ids.map(id => this.updateAwardNomination(id, { isWinner: true })));
+  }
+
   async deleteAwardNomination(id: string): Promise<void> {
     this.awardNominations.delete(id);
   }
@@ -780,6 +784,13 @@ export class MemStorage implements IStorage {
   async getFilmReleasesByFilms(filmIds: string[]): Promise<FilmRelease[]> {
     const ids = new Set(filmIds);
     return Array.from(this.filmReleases.values()).filter(release => ids.has(release.filmId));
+  }
+
+  async getFilmReleasesByStudioIds(studioIds: string[]): Promise<FilmRelease[]> {
+    const ids = new Set(studioIds);
+    const filmIds = new Set(Array.from(this.films.values())
+      .filter(film => ids.has(film.studioId)).map(film => film.id));
+    return Array.from(this.filmReleases.values()).filter(release => filmIds.has(release.filmId));
   }
 
   async getFilmReleaseByTerritory(filmId: string, territoryCode: string): Promise<FilmRelease | undefined> {
@@ -858,6 +869,18 @@ export class MemStorage implements IStorage {
 
   async getPremiumBookingsByFilm(filmId: string): Promise<PremiumBooking[]> {
     return Array.from(this.premiumBookings.values()).filter(booking => booking.filmId === filmId);
+  }
+
+  async getPremiumBookingsByFilms(filmIds: string[]): Promise<PremiumBooking[]> {
+    const ids = new Set(filmIds);
+    return Array.from(this.premiumBookings.values()).filter(booking => ids.has(booking.filmId));
+  }
+
+  async getPremiumBookingsByStudioIds(studioIds: string[]): Promise<PremiumBooking[]> {
+    const ids = new Set(studioIds);
+    const filmIds = new Set(Array.from(this.films.values())
+      .filter(film => ids.has(film.studioId)).map(film => film.id));
+    return Array.from(this.premiumBookings.values()).filter(booking => filmIds.has(booking.filmId));
   }
 
   async getAllPremiumBookings(): Promise<PremiumBooking[]> {

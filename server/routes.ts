@@ -289,14 +289,24 @@ const genreStoryElements: Record<string, { stakes: string[]; antagonists: string
   }
 };
 
-async function generateAIFilmSynopsis(filmId: string, title: string, genre: string): Promise<string> {
+async function generateAIFilmSynopsis(
+  filmId: string,
+  title: string,
+  genre: string,
+  cachedFilm?: Film,
+  cachedRoles?: Awaited<ReturnType<typeof storage.getFilmRolesByFilm>>,
+  cachedTalent?: Awaited<ReturnType<typeof storage.getAllTalent>>,
+): Promise<string> {
   const elements = genreStoryElements[genre] || genreStoryElements.drama;
   const stakes = elements.stakes[Math.floor(Math.random() * elements.stakes.length)];
   const antagonist = elements.antagonists[Math.floor(Math.random() * elements.antagonists.length)];
   const role = elements.roles[Math.floor(Math.random() * elements.roles.length)];
   
-  const filmRoles = await storage.getFilmRolesByFilm(filmId);
-  const film = await storage.getFilm(filmId);
+  const filmRoles = cachedRoles ?? await storage.getFilmRolesByFilm(filmId);
+  const film = cachedFilm ?? await storage.getFilm(filmId);
+  const getTalent = (talentId: string) => cachedTalent
+    ? Promise.resolve(cachedTalent.find(talent => talent.id === talentId))
+    : storage.getTalent(talentId);
   
   let protagonist = "An unlikely hero";
   let directorName = "a visionary director";
@@ -305,7 +315,7 @@ async function generateAIFilmSynopsis(filmId: string, title: string, genre: stri
   if (filmRoles && filmRoles.length > 0) {
     const leadRole = filmRoles.find(r => r.importance === 'lead');
     if (leadRole && leadRole.castMemberId) {
-      const castMember = await storage.getTalent(leadRole.castMemberId);
+      const castMember = await getTalent(leadRole.castMemberId);
       if (castMember) {
         protagonist = leadRole.roleName || castMember.name;
         talentNames.push(castMember.name);
@@ -313,7 +323,7 @@ async function generateAIFilmSynopsis(filmId: string, title: string, genre: stri
     }
     for (const r of filmRoles.slice(0, 3)) {
       if (r.castMemberId && !talentNames.includes(r.castMemberId)) {
-        const talent = await storage.getTalent(r.castMemberId);
+        const talent = await getTalent(r.castMemberId);
         if (talent && !talentNames.includes(talent.name)) {
           talentNames.push(talent.name);
         }
@@ -322,7 +332,7 @@ async function generateAIFilmSynopsis(filmId: string, title: string, genre: stri
   }
   
   if (film?.directorId) {
-    const director = await storage.getTalent(film.directorId);
+    const director = await getTalent(film.directorId);
     if (director) {
       directorName = director.name;
     }
@@ -365,20 +375,29 @@ async function generateFilmRoles(filmId: string, genre: string, prodBudget: numb
   }
   
   // Create all roles in parallel
-  const createdRoles = await Promise.all(roles.map(role => storage.createFilmRole(role)));
+  const createdRoles = await storage.createFilmRoles(roles);
   console.log(`[GENERATE-ROLES] Created ${createdRoles.length} roles for film ${filmId}`);
   return createdRoles;
 }
 
-async function hireAITalent(filmId: string, genre: string, aiStudio: any): Promise<number> {
+async function hireAITalent(
+  filmId: string,
+  genre: string,
+  aiStudio: any,
+  cachedFilm?: Film,
+  cachedTalent?: Awaited<ReturnType<typeof storage.getAllTalent>>,
+  cachedRoles?: Awaited<ReturnType<typeof storage.getFilmRolesByFilm>>,
+): Promise<number> {
   let totalTalentCost = 0;
   try {
-    const film = await storage.getFilm(filmId);
+    const film = cachedFilm ?? await storage.getFilm(filmId);
     if (!film) {
       return 0;
     }
     
-    const allTalent = await storage.getAllTalent();
+    const allTalent = cachedTalent ?? await storage.getAllTalent();
+    const talentUpdatePromises: Promise<unknown>[] = [];
+    const roleUpdatePromises: Promise<unknown>[] = [];
     const profile = createStudioDecisionProfile(aiStudio);
     const currentWeek = aiStudio.currentWeek || film.createdAtWeek || 1;
     const currentYear = aiStudio.currentYear || film.createdAtYear || 2025;
@@ -427,7 +446,8 @@ async function hireAITalent(filmId: string, genre: string, aiStudio: any): Promi
         directorCost = director.askingPrice || 5000000;
         totalTalentCost += directorCost;
         remainingTalentBudget = Math.max(0, remainingTalentBudget - directorCost);
-        await storage.updateTalent(director.id, { currentFilmId: filmId, busyUntilWeek, busyUntilYear });
+        Object.assign(director, { currentFilmId: filmId, busyUntilWeek, busyUntilYear });
+        talentUpdatePromises.push(storage.updateTalent(director.id, { currentFilmId: filmId, busyUntilWeek, busyUntilYear }));
       }
     }
     
@@ -447,7 +467,8 @@ async function hireAITalent(filmId: string, genre: string, aiStudio: any): Promi
         totalTalentCost += writerCost;
         remainingTalentBudget = Math.max(0, remainingTalentBudget - writerCost);
         scriptQuality = calculateScriptQualityFromWriter(writer);
-        await storage.updateTalent(writer.id, { currentFilmId: filmId, busyUntilWeek, busyUntilYear });
+        Object.assign(writer, { currentFilmId: filmId, busyUntilWeek, busyUntilYear });
+        talentUpdatePromises.push(storage.updateTalent(writer.id, { currentFilmId: filmId, busyUntilWeek, busyUntilYear }));
       }
     }
     
@@ -457,7 +478,7 @@ async function hireAITalent(filmId: string, genre: string, aiStudio: any): Promi
     };
     
     const actorCandidates = allTalent.filter(t => t.type === 'actor');
-    let roles = await storage.getFilmRolesByFilm(filmId);
+    let roles = cachedRoles ?? await storage.getFilmRolesByFilm(filmId);
     
     if (!roles || roles.length === 0) {
       await generateFilmRoles(filmId, genre, film.productionBudget || 0);
@@ -499,8 +520,10 @@ async function hireAITalent(filmId: string, genre: string, aiStudio: any): Promi
           const actorCost = actor.askingPrice || 5000000;
           actorsCost += actorCost;
           remainingTalentBudget = Math.max(0, remainingTalentBudget - actorCost);
-          await storage.updateFilmRole(role.id, { actorId: actor.id, isCast: true });
-          await storage.updateTalent(actor.id, { currentFilmId: filmId, busyUntilWeek, busyUntilYear });
+          Object.assign(role, { actorId: actor.id, isCast: true });
+          Object.assign(actor, { currentFilmId: filmId, busyUntilWeek, busyUntilYear });
+          roleUpdatePromises.push(storage.updateFilmRole(role.id, { actorId: actor.id, isCast: true }));
+          talentUpdatePromises.push(storage.updateTalent(actor.id, { currentFilmId: filmId, busyUntilWeek, busyUntilYear }));
           castActorIds.push(actor.id);
           usedActorIds.add(actor.id);
         }
@@ -528,7 +551,8 @@ async function hireAITalent(filmId: string, genre: string, aiStudio: any): Promi
         composerCost = composer.askingPrice || 3000000;
         totalTalentCost += composerCost;
         remainingTalentBudget = Math.max(0, remainingTalentBudget - composerCost);
-        await storage.updateTalent(composer.id, { currentFilmId: filmId, busyUntilWeek, busyUntilYear });
+        Object.assign(composer, { currentFilmId: filmId, busyUntilWeek, busyUntilYear });
+        talentUpdatePromises.push(storage.updateTalent(composer.id, { currentFilmId: filmId, busyUntilWeek, busyUntilYear }));
       }
     }
     
@@ -550,7 +574,7 @@ async function hireAITalent(filmId: string, genre: string, aiStudio: any): Promi
     
     // Marketing follows commercial risk appetite, with diminishing returns handled
     // by the box-office model. Value-focused studios avoid habitual overspending.
-    const filmStudio = await storage.getStudio(film.studioId);
+    const filmStudio = aiStudio ?? await storage.getStudio(film.studioId);
     if (filmStudio?.isAI) {
       const marketingRatio = 0.38 + profile.riskTolerance * 0.30 +
         Math.random() * (0.30 - profile.valueDiscipline * 0.10);
@@ -563,7 +587,12 @@ async function hireAITalent(filmId: string, genre: string, aiStudio: any): Promi
       filmUpdateData.totalBudget = (film.totalBudget || 0) + totalTalentCost;
     }
     
-    await storage.updateFilm(filmId, filmUpdateData);
+    Object.assign(film, filmUpdateData);
+    await Promise.all([
+      ...talentUpdatePromises,
+      ...roleUpdatePromises,
+      storage.updateFilm(filmId, filmUpdateData),
+    ]);
     return totalTalentCost;
   } catch (error) {
     return 0;
@@ -2004,6 +2033,9 @@ async function processAwardCeremonies(
         }
         
         // Pick a winner for each category
+        const winnerNominationIds: string[] = [];
+        const awardsByFilm = new Map<string, string[]>();
+        const winsByStudio = new Map<string, number>();
         for (const [categoryId, categoryNoms] of Array.from(byCategory.entries())) {
           if (categoryNoms.length === 0) continue;
           
@@ -2045,8 +2077,7 @@ async function processAwardCeremonies(
             }
           }
           
-          // Mark as winner
-          await storage.updateAwardNomination(bestNom.id, { isWinner: true });
+          winnerNominationIds.push(bestNom.id);
           
           // Add award to film's awards array
           const film = allFilms.find(f => f.id === bestNom.filmId);
@@ -2056,22 +2087,33 @@ async function processAwardCeremonies(
             const currentAwards = [...(film.awards || [])];
             if (!currentAwards.includes(awardName)) {
               currentAwards.push(awardName);
-              await storage.updateFilm(film.id, { awards: currentAwards });
+              film.awards = currentAwards;
+              awardsByFilm.set(film.id, currentAwards);
               
               // Update studio awards count and add prestige bonus
               const studio = awardStudiosById.get(film.studioId);
               if (studio) {
-                const prestigeBonus = show.prestigeLevel * 100000; // Prestige bonus for winning
-                await storage.updateStudio(film.studioId, {
-                  totalAwards: (studio.totalAwards || 0) + 1,
-                  budget: studio.budget + prestigeBonus,
-                });
-                studio.totalAwards = (studio.totalAwards || 0) + 1;
-                studio.budget += prestigeBonus;
+                winsByStudio.set(film.studioId, (winsByStudio.get(film.studioId) || 0) + 1);
               }
             }
           }
         }
+
+        await Promise.all([
+          storage.markAwardNominationsWinners(winnerNominationIds),
+          ...Array.from(awardsByFilm.entries()).map(([filmId, awards]) =>
+            storage.updateFilm(filmId, { awards })),
+          ...Array.from(winsByStudio.entries()).map(([studioId, wins]) => {
+            const studio = awardStudiosById.get(studioId)!;
+            const prestigeBonus = show.prestigeLevel * 100000 * wins;
+            studio.totalAwards = (studio.totalAwards || 0) + wins;
+            studio.budget += prestigeBonus;
+            return storage.updateStudio(studioId, {
+              totalAwards: studio.totalAwards,
+              budget: studio.budget,
+            });
+          }),
+        ]);
         
         // Mark ceremony as complete
         await storage.updateAwardCeremony(ceremony.id, { 
@@ -2412,11 +2454,18 @@ const vfxStudios = [
   { id: 'base-fx', name: 'BaseFX', cost: 18000000, quality: 35, specialization: ['action', 'horror'] },
 ];
 
-async function calculateCanonicalFilmScores(film: Film, talentPool?: Awaited<ReturnType<typeof storage.getAllTalent>>) {
+async function calculateCanonicalFilmScores(
+  film: Film,
+  talentPool?: Awaited<ReturnType<typeof storage.getAllTalent>>,
+  cachedReleases?: FilmRelease[],
+  cachedPrequel?: Film,
+) {
   const [availableTalent, releases, prequel] = await Promise.all([
     talentPool ? Promise.resolve(talentPool) : storage.getAllTalent(),
-    storage.getFilmReleasesByFilm(film.id),
-    film.prequelFilmId ? storage.getFilm(film.prequelFilmId) : Promise.resolve(undefined),
+    cachedReleases ? Promise.resolve(cachedReleases) : storage.getFilmReleasesByFilm(film.id),
+    cachedPrequel || !film.prequelFilmId
+      ? Promise.resolve(cachedPrequel)
+      : storage.getFilm(film.prequelFilmId),
   ]);
   const getTalent = (talentId?: string | null) =>
     talentId ? availableTalent.find(talent => talent.id === talentId) || null : null;
@@ -2635,6 +2684,7 @@ async function runAutomatedCampaignForFilm(
   currentYear: number,
   cachedReleases?: FilmRelease[],
   cachedActions?: Awaited<ReturnType<typeof storage.getMarketingActionsByFilm>>,
+  pendingWrites?: Promise<unknown>[],
 ): Promise<number> {
   if (!film.autoManageMarketing || (film.campaignLimit || 0) <= (film.campaignSpent || 0)) {
     return 0;
@@ -2731,6 +2781,7 @@ async function runAutomatedCampaignForFilm(
     }, createSeededRng(
       `auto-campaign:${film.id}:${release.territoryCode}:${action}:${currentYear}:${currentWeek}`,
     ));
+    Object.assign(release, result.state);
     releaseUpdates.push(storage.updateFilmRelease(release.id, result.state));
     newActions.push({
       filmId: film.id,
@@ -2744,14 +2795,16 @@ async function runAutomatedCampaignForFilm(
       stateAfter: result.state,
     });
   }
-  await Promise.all([
+  const writes: Promise<unknown>[] = [
     ...releaseUpdates,
     storage.createMarketingActions(newActions),
     storage.updateFilm(film.id, {
       campaignSpent: (film.campaignSpent || 0) + spend,
       marketingBudget: (film.campaignSpent || 0) + spend,
     }),
-  ]);
+  ];
+  if (pendingWrites) pendingWrites.push(...writes);
+  else await Promise.all(writes);
   return spend;
 }
 
@@ -2761,6 +2814,7 @@ async function runAIPremiumBookingForFilm(
   talentPool: Awaited<ReturnType<typeof storage.getAllTalent>>,
   cachedReleases?: FilmRelease[],
   cachedAllBookings?: PremiumBooking[],
+  pendingWrites?: Promise<unknown>[],
 ): Promise<number> {
   if (!filmStudio.isAI) return 0;
   const releases = cachedReleases ?? await storage.getFilmReleasesByFilm(film.id);
@@ -2768,7 +2822,7 @@ async function runAIPremiumBookingForFilm(
   const allBookings = cachedAllBookings ?? await storage.getAllPremiumBookings();
   const existingBookings = allBookings.filter(booking => booking.filmId === film.id);
   const profile = await calculateFilmPremiumProfile(film, talentPool);
-  await storage.updateFilm(film.id, {
+  const profileWrite = storage.updateFilm(film.id, {
     imaxSuitability: profile.imaxSuitability,
     dolbySuitability: profile.dolbySuitability,
   });
@@ -2839,8 +2893,24 @@ async function runAIPremiumBookingForFilm(
       totalFee += fee;
     }
   }
-  const createdBookings = await storage.createPremiumBookings(newBookings);
-  if (cachedAllBookings) cachedAllBookings.push(...createdBookings);
+  const bookingWrite = storage.createPremiumBookings(newBookings);
+  if (cachedAllBookings) {
+    cachedAllBookings.push(...newBookings.map((booking, index) => ({
+      id: `pending:${film.id}:${index}`,
+      ...booking,
+    } as PremiumBooking)));
+  }
+  if (pendingWrites) pendingWrites.push(profileWrite, bookingWrite);
+  else {
+    const [, createdBookings] = await Promise.all([profileWrite, bookingWrite]);
+    if (cachedAllBookings) {
+      cachedAllBookings.splice(
+        cachedAllBookings.length - newBookings.length,
+        newBookings.length,
+        ...createdBookings,
+      );
+    }
+  }
   return totalFee;
 }
 
@@ -4312,13 +4382,12 @@ export async function registerRoutes(
   app.post("/api/studio/:id/advance-week", async (req, res) => {
     try {
       const { id } = req.params;
-      // OPTIMIZATION: Parallelize initial data fetches
-      const [studio, initialStudios, initialFilms, allTalent, initialPremiumBookings] = await Promise.all([
+      // Load the small shared tables first. Films are fetched only for this save;
+      // the global film table can be tens of megabytes in long-running databases.
+      const [studio, initialStudios, allTalent] = await Promise.all([
         storage.getStudio(id),
         storage.getAllStudios(),
-        storage.getAllFilms(),
         storage.getAllTalent(),
-        storage.getAllPremiumBookings(),
       ]);
       
       if (!studio) {
@@ -4332,7 +4401,6 @@ export async function registerRoutes(
         newYear += 1;
       }
 
-      const studioFilms = initialFilms.filter(f => f.studioId === id);
       let budgetChange = 0;
 
       // Get all studios and films, filter to only this game
@@ -4373,10 +4441,22 @@ export async function registerRoutes(
             : s.playerGameId === id
         ));
       }
-      
-      // OPTIMIZATION: Reuse cached allFilms instead of fetching again
-      const allFilms = initialFilms;
+
       const simulationStudioIds = new Set([id, ...aiStudios.map(aiStudio => aiStudio.id)]);
+      const simulationStudioIdList = Array.from(simulationStudioIds);
+      const [initialFilms, initialPremiumBookings, initialFilmReleases] = await Promise.all([
+        storage.getFilmsByStudioIds(simulationStudioIdList),
+        storage.getPremiumBookingsByStudioIds(simulationStudioIdList),
+        storage.getFilmReleasesByStudioIds(simulationStudioIdList),
+      ]);
+      const initialReleasesByFilm = new Map<string, FilmRelease[]>();
+      for (const release of initialFilmReleases) {
+        const releases = initialReleasesByFilm.get(release.filmId) || [];
+        releases.push(release);
+        initialReleasesByFilm.set(release.filmId, releases);
+      }
+      const studioFilms = initialFilms.filter(f => f.studioId === id);
+      const allFilms = initialFilms;
       // Advance only this save/session. The previous global filter could progress
       // unrelated games and contaminate release competition.
       const saveFilms = allFilms.filter(f =>
@@ -4388,11 +4468,16 @@ export async function registerRoutes(
       // PARALLEL: Update all films' production progress (only this save)
       // Collect all film updates and AI studio budget changes, then execute in parallel
       const filmUpdatePromises: Promise<any>[] = [];
+      const queueFilmUpdate = (film: Film, updates: Record<string, unknown>) => {
+        Object.assign(film, updates);
+        filmUpdatePromises.push(storage.updateFilm(film.id, updates as any));
+      };
       const aiStudioBudgetChanges: Map<string, number> = new Map();
 
       // Campaign automation uses the same named actions and state transition as
       // manual play. It acts at milestone windows and pays from studio cash.
       const campaignCostsByStudio = new Map<string, number>();
+      const campaignPersistencePromises: Promise<unknown>[] = [];
       const campaignWeek = absoluteWeek(newWeek, newYear);
       const campaignCandidates = allFilms.filter(film =>
         simulationStudioIds.has(film.studioId) &&
@@ -4403,10 +4488,10 @@ export async function registerRoutes(
         (film.autoManageMarketing || allStudios.some(owner => owner.id === film.studioId && owner.isAI))
       );
       const campaignFilmIds = campaignCandidates.map(film => film.id);
-      const [campaignReleaseRows, campaignActionRows] = await Promise.all([
-        storage.getFilmReleasesByFilms(campaignFilmIds),
-        storage.getMarketingActionsByFilms(campaignFilmIds),
-      ]);
+      const campaignFilmIdSet = new Set(campaignFilmIds);
+      const campaignReleaseRows = initialFilmReleases.filter(release =>
+        campaignFilmIdSet.has(release.filmId));
+      const campaignActionRows = await storage.getMarketingActionsByFilms(campaignFilmIds);
       const campaignReleasesByFilm = new Map<string, FilmRelease[]>();
       for (const release of campaignReleaseRows) {
         const rows = campaignReleasesByFilm.get(release.filmId) || [];
@@ -4440,6 +4525,7 @@ export async function registerRoutes(
             newYear,
             releases,
             campaignActionsByFilm.get(campaignFilm.id) || [],
+            campaignPersistencePromises,
           );
           const premiumFee = await runAIPremiumBookingForFilm(
             campaignFilm,
@@ -4447,6 +4533,7 @@ export async function registerRoutes(
             allTalent,
             releases,
             initialPremiumBookings,
+            campaignPersistencePromises,
           );
           const totalCampaignCost = spend + premiumFee;
           if (totalCampaignCost <= 0) continue;
@@ -4468,15 +4555,19 @@ export async function registerRoutes(
         film.releaseWeek != null && film.releaseYear != null &&
         absoluteWeek(film.releaseWeek, film.releaseYear) - campaignWeek > 0 &&
         absoluteWeek(film.releaseWeek, film.releaseYear) - campaignWeek <= 16);
-      const scheduledReleases = await storage.getFilmReleasesByFilms(
-        scheduledCampaignFilms.map(film => film.id),
-      );
-      await Promise.all(scheduledReleases
+      const scheduledCampaignFilmIds = new Set(scheduledCampaignFilms.map(film => film.id));
+      const scheduledReleases = initialFilmReleases.filter(release =>
+        scheduledCampaignFilmIds.has(release.filmId));
+      const scheduledCampaignUpdatePromises = scheduledReleases
         .filter(release => absoluteWeek(release.releaseWeek, release.releaseYear) > campaignWeek)
-        .map(release => storage.updateFilmRelease(release.id, advanceCampaignWeek(
+        .map(release => {
+          const nextState = advanceCampaignWeek(
             campaignStateFromRelease(release),
             { isReleased: false },
-          ))));
+          );
+          Object.assign(release, nextState);
+          return storage.updateFilmRelease(release.id, nextState);
+        });
       
       // Helper to calculate genre multiplier
       const getGenreMultiplier = (genre: string) => {
@@ -4655,7 +4746,12 @@ export async function registerRoutes(
       };
       
       const calculateScores = async (film: typeof saveFilms[0]) => {
-        return calculateCanonicalFilmScores(film, allTalent);
+        return calculateCanonicalFilmScores(
+          film,
+          allTalent,
+          initialReleasesByFilm.get(film.id) || [],
+          film.prequelFilmId ? allFilms.find(candidate => candidate.id === film.prequelFilmId) : undefined,
+        );
         /*
          * Retained temporarily below as a reference while save compatibility is
          * verified. This code is unreachable; every live release now uses the
@@ -4772,10 +4868,10 @@ export async function registerRoutes(
               if (isAIFilm) {
                 // AI films finish production, then wait for their deliberately
                 // scheduled release date just like the rest of the market.
-                filmUpdatePromises.push(storage.updateFilm(film.id, {
+                queueFilmUpdate(film, {
                   phase: 'production-complete',
                   weeksInCurrentPhase: 0,
-                }));
+                });
                 continue;
                 // Legacy immediate-release path retained below but unreachable.
                 currentPhase = 'released';
@@ -4787,7 +4883,7 @@ export async function registerRoutes(
                 
                 // Create territory releases for AI film so box office simulation works
                 // SAFETY: Only create releases for AI films, never for player films
-                const existingReleases = await storage.getFilmReleasesByFilm(film.id);
+                const existingReleases = initialReleasesByFilm.get(film.id) || [];
                 if (existingReleases.length === 0 && filmStudio?.isAI === true) {
                   const allTerritories = BOX_OFFICE_COUNTRIES.map(c => c.code);
                   const firstTerritory = allTerritories[0];
@@ -4811,7 +4907,7 @@ export async function registerRoutes(
                   ));
                 }
                 
-                filmUpdatePromises.push(storage.updateFilm(film.id, {
+                queueFilmUpdate(film, {
                   phase: 'released',
                   releaseWeek: newWeek,
                   releaseYear: newYear,
@@ -4825,7 +4921,7 @@ export async function registerRoutes(
                   audienceScoreBreakdown: audienceBreakdown,
                   theaterCount,
                   awards: [],
-                } as any));
+                });
                 continue;
               } else {
                 // Player films go to production-complete (waiting for release scheduling)
@@ -4836,7 +4932,7 @@ export async function registerRoutes(
             
             // Check if production-complete film has territory releases scheduled (player films only)
             if (currentPhase === 'production-complete') {
-              const releases = await storage.getFilmReleasesByFilm(film.id);
+              const releases = initialReleasesByFilm.get(film.id) || [];
               if (releases && releases.length > 0) {
                 currentPhase = 'awaiting-release';
                 weeksInPhase = 0;
@@ -4845,7 +4941,7 @@ export async function registerRoutes(
             
             // Check if awaiting-release film has reached its earliest release date
             if (currentPhase === 'awaiting-release') {
-              const releases = await storage.getFilmReleasesByFilm(film.id);
+              const releases = initialReleasesByFilm.get(film.id) || [];
               if (releases && releases.length > 0) {
                 // Find earliest release date
                 let earliestWeek = releases[0].releaseWeek;
@@ -4869,7 +4965,7 @@ export async function registerRoutes(
                   const premiumProfile = await calculateFilmPremiumProfile(film, allTalent);
                   const theaterCount = Math.floor(3500 + (film.productionBudget / 40000000) * 3000);
                   
-                  filmUpdatePromises.push(storage.updateFilm(film.id, {
+                  queueFilmUpdate(film, {
                     phase: 'released',
                     weeklyBoxOffice: [],
                     weeklyBoxOfficeByCountry: [],
@@ -4884,26 +4980,29 @@ export async function registerRoutes(
                     boxOfficeModelVersion: 2,
                     theaterCount,
                     awards: [],
-                  } as any));
+                  });
                   continue;
                 }
               }
             }
             
             // Update phase and weeks normally
-            filmUpdatePromises.push(storage.updateFilm(film.id, {
+            queueFilmUpdate(film, {
               phase: currentPhase,
               weeksInCurrentPhase: weeksInPhase,
-            } as any));
+            });
         }
       }
       
       // Execute all film phase updates in parallel
-      await Promise.all(filmUpdatePromises);
+      await Promise.all([
+        ...campaignPersistencePromises,
+        ...scheduledCampaignUpdatePromises,
+        ...filmUpdatePromises,
+      ]);
 
-      // PARALLEL: Handle box office for released films (only this save)
-      // Re-fetch films after phase updates to include newly released films
-      const updatedAllFilms = await storage.getFilmsByStudioIds(Array.from(simulationStudioIds));
+      // Phase changes were mirrored into the in-memory snapshot above.
+      const updatedAllFilms = initialFilms;
       const updatedSaveFilms = updatedAllFilms.filter(f => {
         const filmStudio = allStudios.find(s => s.id === f.studioId);
         return filmStudio && (filmStudio.id === id || filmStudio.playerGameId === id);
@@ -4913,9 +5012,9 @@ export async function registerRoutes(
       const saveReleasedFilms = updatedSaveFilms.filter(f => f.phase === 'released' && f.status !== 'archived');
       
       const filmReleasesMap = new Map<string, FilmRelease[]>();
-      const releasedFilmReleases = await storage.getFilmReleasesByFilms(
-        saveReleasedFilms.map(film => film.id),
-      );
+      const releasedFilmIds = new Set(saveReleasedFilms.map(film => film.id));
+      const releasedFilmReleases = initialFilmReleases.filter(release =>
+        releasedFilmIds.has(release.filmId));
       for (const release of releasedFilmReleases) {
         const releases = filmReleasesMap.get(release.filmId) || [];
         releases.push(release);
@@ -5147,11 +5246,11 @@ export async function registerRoutes(
           // Mark films that have reached 24 weeks as archived (theatrical run complete)
           if (actualWeeksOut >= 24) {
             if (film.status !== 'archived') {
-              await storage.updateFilm(film.id, {
+              boxOfficeUpdatePromises.push(storage.updateFilm(film.id, {
                 status: 'archived',
                 archivedWeek: newWeek,
                 archivedYear: newYear,
-              });
+              }));
             }
             continue;
           }
@@ -5363,6 +5462,11 @@ export async function registerRoutes(
             totalBoxOffice: newTotalBoxOffice,
             totalBoxOfficeByCountry: newTotalByCountry,
           };
+          if (newWeeklyBoxOffice.length >= 12 && globalWeeklyGross < 100000) {
+            filmUpdate.status = 'archived';
+            filmUpdate.archivedWeek = newWeek;
+            filmUpdate.archivedYear = newYear;
+          }
           if (isOpeningWeek) {
             const northAmerica = filmReleases.find(release => release.territoryCode === "NA");
             filmUpdate.theaterCount = northAmerica
@@ -5471,6 +5575,9 @@ export async function registerRoutes(
               totalBoxOffice: newTotalBoxOffice,
               totalBoxOfficeByCountry: newTotalByCountry,
               territoryPercentages: aiTerritoryPcts,
+              ...(newWeeklyBoxOffice.length >= 12 && globalWeeklyGross < 100000
+                ? { status: 'archived', archivedWeek: newWeek, archivedYear: newYear }
+                : {}),
             }));
             
             // Credit studio if there's earnings
@@ -5540,6 +5647,9 @@ export async function registerRoutes(
             weeklyBoxOfficeByCountry: newWeeklyByCountry,
             totalBoxOffice: newTotalBoxOffice,
             totalBoxOfficeByCountry: newTotalByCountry,
+            ...(newWeeklyBoxOffice.length >= 12 && newGross < 100000
+              ? { status: 'archived', archivedWeek: newWeek, archivedYear: newYear }
+              : {}),
           } as any));
           
           // Only credit studio if there's actual earnings
@@ -5556,30 +5666,9 @@ export async function registerRoutes(
         ...boxOfficeUpdatePromises,
       ]);
 
-      // Archive films that have completed 12+ weeks and are earning < $100K
-      // Re-fetch films to get updated box office data after this week's update
-      const updatedFilms = await storage.getFilmsByStudioIds(Array.from(simulationStudioIds));
-      const archivePromises: Promise<any>[] = [];
-      for (const film of updatedFilms) {
-        if (film.phase === 'released' && film.status !== 'archived' && film.weeklyBoxOffice.length >= 12) {
-          const lastWeek = film.weeklyBoxOffice[film.weeklyBoxOffice.length - 1] || 0;
-          
-          // Archive ONLY if: exactly hit 12 weeks or more AND last week earnings < $100K
-          if (lastWeek < 100000) {
-            archivePromises.push(storage.updateFilm(film.id, {
-              status: 'archived',
-              archivedWeek: newWeek,
-              archivedYear: newYear,
-            }));
-          }
-        }
-      }
-      await Promise.all(archivePromises);
-
       // FREE TALENT whose busy period has ended
-      const allTalentNow = await storage.getAllTalent();
       const talentReleasePromises: Promise<any>[] = [];
-      for (const talent of allTalentNow) {
+      for (const talent of allTalent) {
         if (talent.currentFilmId && talent.busyUntilWeek && talent.busyUntilYear) {
           // Check if current week/year has passed their busy_until date
           const shouldBeFree = 
@@ -5674,7 +5763,6 @@ export async function registerRoutes(
         budget: playerNewBudget,
         totalEarnings: playerNewEarnings,
       }));
-      
       // Calculate AI studio updates and prepare for parallel execution
       for (const aiStudio of aiStudios) {
         let aiNewWeek = aiStudio.currentWeek + 1;
@@ -5857,13 +5945,27 @@ export async function registerRoutes(
 
               // Generate roles and hire talent for the AI film
               try {
-                await generateFilmRoles(newFilm.id, genre, prodBudget);
-                const talentCost = await hireAITalent(newFilm.id, genre, aiStudio);
+                const createdRoles = await generateFilmRoles(newFilm.id, genre, prodBudget);
+                const talentCost = await hireAITalent(
+                  newFilm.id,
+                  genre,
+                  aiStudio,
+                  newFilm,
+                  allTalent,
+                  createdRoles,
+                );
                 // Deduct talent cost from AI studio budget
                 aiStudioBudgetChanges.set(aiStudio.id, (aiStudioBudgetChanges.get(aiStudio.id) || 0) - talentCost);
                 
                 // Generate synopsis after talent is assigned
-                const synopsis = await generateAIFilmSynopsis(newFilm.id, title, genre);
+                const synopsis = await generateAIFilmSynopsis(
+                  newFilm.id,
+                  title,
+                  genre,
+                  newFilm,
+                  createdRoles,
+                  allTalent,
+                );
                 await storage.updateFilm(newFilm.id, { synopsis });
               } catch (talentErr) {
                 console.error(`[AI-TALENT-ERROR] Failed to hire talent for ${title}:`, talentErr);
