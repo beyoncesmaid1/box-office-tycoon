@@ -51,6 +51,7 @@ export const talent = pgTable("talent", {
   boxOfficeAvg: integer("box_office_avg").notNull().default(100000000),
   awards: integer("awards").notNull().default(0),
   genres: jsonb("genres").notNull().default(sql`'{}'::jsonb`), // Object mapping genre names to scores (0-100)
+  genreTags: text("genre_tags").array().notNull().default(sql`ARRAY[]::text[]`),
   isActive: boolean("is_active").notNull().default(true), // Whether talent is available for hire
   imageUrl: text("image_url"), // URL to talent headshot/portrait
   birthYear: integer("birth_year"), // Year of birth for age display
@@ -90,6 +91,68 @@ export const talent = pgTable("talent", {
 export const insertTalentSchema = createInsertSchema(talent).omit({ id: true });
 export type InsertTalent = z.infer<typeof insertTalentSchema>;
 export type Talent = typeof talent.$inferSelect;
+
+// Per-save talent progression. The talent table above is the updateable base
+// content template; these values are copied when a save is created and are
+// never overwritten by a later content update.
+export const saveTalentState = pgTable("save_talent_state", {
+  playerGameId: varchar("player_game_id").notNull().references(() => studios.id, { onDelete: "cascade" }),
+  talentId: varchar("talent_id").notNull().references(() => talent.id, { onDelete: "cascade" }),
+  starRating: integer("star_rating").notNull(),
+  askingPrice: integer("asking_price").notNull(),
+  boxOfficeAvg: integer("box_office_avg").notNull(),
+  awards: integer("awards").notNull(),
+  popularity: integer("popularity").notNull(),
+  performance: integer("performance").notNull(),
+  experience: integer("experience").notNull(),
+  fame: integer("fame").notNull(),
+  skillAction: integer("skill_action").notNull(),
+  skillDrama: integer("skill_drama").notNull(),
+  skillComedy: integer("skill_comedy").notNull(),
+  skillThriller: integer("skill_thriller").notNull(),
+  skillHorror: integer("skill_horror").notNull(),
+  skillScifi: integer("skill_scifi").notNull(),
+  skillAnimation: integer("skill_animation").notNull(),
+  skillRomance: integer("skill_romance").notNull(),
+  skillFantasy: integer("skill_fantasy").notNull(),
+  skillMusicals: integer("skill_musicals").notNull(),
+  skillCinematography: integer("skill_cinematography").notNull(),
+  skillEditing: integer("skill_editing").notNull(),
+  skillOrchestral: integer("skill_orchestral").notNull(),
+  skillElectronic: integer("skill_electronic").notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  initializedContentVersion: integer("initialized_content_version").notNull(),
+}, table => ({
+  saveTalentPrimaryKey: primaryKey({ columns: [table.playerGameId, table.talentId] }),
+}));
+
+export const insertSaveTalentStateSchema = createInsertSchema(saveTalentState);
+export type InsertSaveTalentState = z.infer<typeof insertSaveTalentStateSchema>;
+export type SaveTalentState = typeof saveTalentState.$inferSelect;
+
+// Tracks the content bundle installed in the local database. There is one
+// canonical row (id = "base-content").
+export const contentState = pgTable("content_state", {
+  id: varchar("id").primaryKey(),
+  localContentVersion: integer("local_content_version").notNull().default(0),
+  contentSchemaVersion: integer("content_schema_version").notNull().default(1),
+  contentHash: text("content_hash"),
+  source: text("source").notNull().default("bundled"),
+  lastCheckedAt: integer("last_checked_at"),
+  lastAppliedAt: integer("last_applied_at"),
+  lastError: text("last_error"),
+});
+
+export const contentUpdateHistory = pgTable("content_update_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  fromVersion: integer("from_version").notNull(),
+  toVersion: integer("to_version").notNull(),
+  contentHash: text("content_hash").notNull(),
+  source: text("source").notNull(),
+  status: text("status").notNull(),
+  error: text("error"),
+  createdAt: integer("created_at").notNull().default(sql`CAST(EXTRACT(EPOCH FROM NOW()) AS INTEGER)`),
+});
 
 // Films
 export const films = pgTable("films", {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Clapperboard, Play, Plus, Trash2, Loader2, Settings2, Users } from 'lucide-react';
+import { Clapperboard, Play, Plus, Trash2, Loader2, Settings2, Users, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,10 +30,39 @@ export function MainMenu({ onSelectStudio, onOpenEditor, onOpenMultiplayer }: Ma
   const [isPreloading, setIsPreloading] = useState(false);
   const [preloadProgress, setPreloadProgress] = useState(0);
   const [preloadMessage, setPreloadMessage] = useState('');
+  const [contentVersion, setContentVersion] = useState<number | null>(null);
+  const [isCheckingContent, setIsCheckingContent] = useState(false);
 
   useEffect(() => {
     fetchSaves();
+    fetch('/api/content/status').then(response => response.json())
+      .then(status => setContentVersion(status.localContentVersion ?? null))
+      .catch(() => undefined);
   }, []);
+
+  const handleContentCheck = async () => {
+    setIsCheckingContent(true);
+    try {
+      const response = await fetch('/api/content/check', { method: 'POST' });
+      const result = await response.json();
+      setContentVersion(result.version ?? contentVersion);
+      toast({
+        title: result.applied ? 'Content Updated' : 'Content Is Ready',
+        description: result.applied
+          ? `Installed content version ${result.version}.`
+          : result.error
+            ? 'Could not reach GitHub. The local game remains fully playable.'
+            : `You already have content version ${result.version}.`,
+      });
+    } catch {
+      toast({
+        title: 'Using Local Content',
+        description: 'The update check failed, but this does not affect the game.',
+      });
+    } finally {
+      setIsCheckingContent(false);
+    }
+  };
 
   const fetchSaves = async () => {
     try {
@@ -210,6 +239,21 @@ export function MainMenu({ onSelectStudio, onOpenEditor, onOpenMultiplayer }: Ma
                 Talent Editor
               </Button>
             )}
+
+            <Button
+              onClick={handleContentCheck}
+              size="lg"
+              variant="outline"
+              className="w-full"
+              disabled={isCheckingContent}
+              data-testid="button-check-content"
+            >
+              {isCheckingContent
+                ? <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                : <RefreshCw className="w-5 h-5 mr-2" />}
+              Check for Content Updates
+              {contentVersion !== null && <span className="ml-2 text-xs opacity-70">v{contentVersion}</span>}
+            </Button>
 
             {saves.length > 0 && (
               <div className="space-y-3">

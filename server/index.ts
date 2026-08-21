@@ -2,6 +2,8 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { localDatabaseDirectory } from "./db";
+import { checkForRemoteContentUpdates } from "./content/content-service";
 
 const app = express();
 const httpServer = createServer(app);
@@ -50,10 +52,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  console.log(`Using local gameplay database: ${localDatabaseDirectory}`);
   if (process.env.DATABASE_URL) {
-    console.log("Database URL detected, using PostgreSQL storage");
-  } else {
-    console.log("Warning: No DATABASE_URL, using in-memory storage");
+    console.log("Remote DATABASE_URL is ignored by single-player runtime");
   }
 
   await registerRoutes(httpServer, app);
@@ -83,5 +84,12 @@ app.use((req, res, next) => {
   const port = parseInt(process.env.PORT || "5000", 10);
   httpServer.listen(port, "0.0.0.0", () => {
     log(`serving on port ${port}`);
+    void checkForRemoteContentUpdates().then(result => {
+      if (result.applied) {
+        console.log(`[CONTENT] Updated local content to version ${result.version}`);
+      } else if (result.error) {
+        console.log(`[CONTENT] Offline or update unavailable; using local version ${result.version}`);
+      }
+    });
   });
 })();

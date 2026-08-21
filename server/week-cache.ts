@@ -76,7 +76,7 @@ async function loadWeekSaveCache(playerStudioId: string): Promise<WeekSaveCache>
     awardCeremonies,
     slateFinancingDeals,
   ] = await Promise.all([
-    persistentStorage.getAllTalent(),
+    persistentStorage.getAllTalentForSave(playerStudioId),
     persistentStorage.getFilmReleasesByFilms(filmIds),
     persistentStorage.getFilmRolesByFilms(filmIds),
     persistentStorage.getMarketingActionsByFilms(filmIds),

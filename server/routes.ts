@@ -8,6 +8,12 @@ import {
   getSinglePlayerSaveStudios,
 } from "./save-scope";
 import {
+  checkForRemoteContentUpdates,
+  ensureBundledContent,
+  getContentStatus,
+  initializeTalentStateForSave,
+} from "./content/content-service";
+import {
   insertFilmSchema,
   insertStudioSchema,
   insertTalentSchema,
@@ -3052,48 +3058,29 @@ export async function registerRoutes(
   // Register multiplayer routes
   registerMultiplayerRoutes(app);
   
-  // Run database migrations before seeding
+  // Local schema and bundled base content must be ready before gameplay routes.
   const { runMigrations, withDatabaseRetry } = await import("./db");
   await withDatabaseRetry("startup migrations", runMigrations);
-  
-  // Seed talent data on startup
-  await withDatabaseRetry("talent initialization", () => storage.seedTalent());
-
-  // Initialize AI studios on first run
-  const allStudios = await withDatabaseRetry("studio initialization", () => storage.getAllStudios());
-  if (allStudios.length === 0) {
-    const defaultDeviceId = "default-device";
-    const newStudio = await storage.createStudio({
-      deviceId: defaultDeviceId,
-      name: "Stellar Pictures",
-      budget: 150000000,
-      currentWeek: 1,
-      currentYear: 2025,
-      prestigeLevel: 1,
-      totalEarnings: 0,
-      totalAwards: 0,
-      isAI: false,
-    });
-    
-    // Create AI studios with varied budgets
-    const budgets = [1000000000, 1000000000, 1000000000, 1000000000, 1000000000, 1000000000, 1000000000];
-    for (let i = 0; i < aiStudioNames.length; i++) {
-      await storage.createStudio({
-        deviceId: defaultDeviceId,
-        name: aiStudioNames[i],
-        budget: budgets[i],
-        currentWeek: 1,
-        currentYear: 2025,
-        prestigeLevel: 1,
-        totalEarnings: 0,
-        totalAwards: 0,
-        isAI: true,
-        strategy: aiStrategies[i],
-      });
-    }
-  }
+  await ensureBundledContent();
+  // These are global reference rows, not save data. Seed them once so a clean
+  // install can create streaming deals and awards without relying on an old DB.
+  await storage.seedStreamingServices();
+  await storage.seedAwardShows();
 
   // === STUDIO ROUTES ===
+
+  app.get("/api/content/status", async (_req, res) => {
+    try {
+      res.json(await getContentStatus());
+    } catch (error) {
+      res.status(500).json({ error: "Failed to read local content status" });
+    }
+  });
+
+  app.post("/api/content/check", async (_req, res) => {
+    const result = await checkForRemoteContentUpdates();
+    res.status(result.error ? 503 : 200).json(result);
+  });
   
   app.get("/api/studio", async (req, res) => {
     try {
@@ -3192,6 +3179,7 @@ export async function registerRoutes(
         totalAwards: 0,
         isAI: false,
       });
+      await initializeTalentStateForSave(newStudio.id);
 
       // Create fresh AI studios for this save
       const budgets = [1000000000, 1000000000, 1000000000, 1000000000, 1000000000, 1000000000, 1000000000];
@@ -3246,7 +3234,7 @@ export async function registerRoutes(
 
       const [allStudios, talentPool] = await Promise.all([
         storage.getAllStudios(),
-        storage.getAllTalent(),
+        storage.getAllTalentForSave(id),
       ]);
       const isMultiplayer = Boolean(studio.gameSessionId);
       const aiStudios = allStudios.filter(candidate => candidate.isAI && (
@@ -7528,7 +7516,12 @@ export async function registerRoutes(
   
   app.get("/api/talent", async (req, res) => {
     try {
-      const allTalent = await storage.getAllTalent();
+      const playerGameId = typeof req.query.playerGameId === "string"
+        ? req.query.playerGameId
+        : undefined;
+      const allTalent = playerGameId
+        ? await storage.getAllTalentForSave(playerGameId)
+        : await storage.getAllTalent();
       res.json(allTalent);
     } catch (error) {
       console.error("Error fetching talent:", error);
@@ -7539,7 +7532,12 @@ export async function registerRoutes(
   app.get("/api/talent/:id", async (req, res) => {
     try {
       const { id } = req.params;
-      const t = await storage.getTalent(id);
+      const playerGameId = typeof req.query.playerGameId === "string"
+        ? req.query.playerGameId
+        : undefined;
+      const t = playerGameId
+        ? await storage.getTalentForSave(id, playerGameId)
+        : await storage.getTalent(id);
       if (!t) {
         return res.status(404).json({ error: "Talent not found" });
       }
@@ -9252,7 +9250,7 @@ export async function registerRoutes(
       }
       const scope = await getGameScopeForStudio(String(playerGameId));
       let allTalent = applySaveTalentAvailability(
-        await storage.getAllTalent(),
+        await storage.getAllTalentForSave(scope.playerStudioId),
         scope.films,
         currentWeek,
         currentYear,

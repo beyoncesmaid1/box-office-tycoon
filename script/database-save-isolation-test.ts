@@ -1,11 +1,19 @@
 import assert from "node:assert/strict";
-import { runMigrations, pool } from "../server/db";
-import { DatabaseStorage } from "../server/storage";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import { applySaveTalentAvailability } from "../server/save-scope";
 
 async function main() {
-  if (!pool) throw new Error("DATABASE_URL is required for the database isolation test");
+  const testRoot = await fs.mkdtemp(path.join(os.tmpdir(), "box-tycoon-isolation-"));
+  process.env.LOCAL_DATA_DIR = testRoot;
+  const [{ runMigrations, pool }, { DatabaseStorage }, { ensureBundledContent }] = await Promise.all([
+    import("../server/db"),
+    import("../server/storage"),
+    import("../server/content/content-service"),
+  ]);
   await runMigrations();
+  await ensureBundledContent();
   const storage = new DatabaseStorage();
   const marker = `isolation-${Date.now()}`;
   let saveAId: string | undefined;
@@ -93,6 +101,7 @@ async function main() {
       }
     }
     await pool.end();
+    await fs.rm(testRoot, { recursive: true, force: true });
   }
 }
 

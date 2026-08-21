@@ -3,6 +3,7 @@ import {
   type Studio, type InsertStudio, 
   type Film, type InsertFilm, 
   type Talent, type InsertTalent,
+  type SaveTalentState, type InsertSaveTalentState,
   type StreamingService, type InsertStreamingService,
   type StreamingDeal, type InsertStreamingDeal,
   type Email, type InsertEmail,
@@ -368,6 +369,22 @@ export class MemStorage implements IStorage {
     return Array.from(this.talentMap.values()).filter(candidate => ids.has(candidate.id));
   }
 
+  async getTalentForSave(id: string, _playerGameId: string): Promise<Talent | undefined> {
+    return this.getTalent(id);
+  }
+
+  async getAllTalentForSave(_playerGameId: string): Promise<Talent[]> {
+    return this.getAllTalent();
+  }
+
+  async getTalentStateForSave(_playerGameId: string): Promise<SaveTalentState[]> {
+    return [];
+  }
+
+  async upsertTalentStateForSave(state: InsertSaveTalentState): Promise<SaveTalentState> {
+    return state as SaveTalentState;
+  }
+
   async createTalent(insertTalent: InsertTalent): Promise<Talent> {
     const id = generateId();
     const t: Talent = {
@@ -381,6 +398,7 @@ export class MemStorage implements IStorage {
       boxOfficeAvg: insertTalent.boxOfficeAvg ?? 100000000,
       awards: insertTalent.awards ?? 0,
       genres: insertTalent.genres ?? {},
+      genreTags: insertTalent.genreTags ?? [],
       isActive: insertTalent.isActive ?? true,
       imageUrl: insertTalent.imageUrl ?? null,
       birthYear: insertTalent.birthYear ?? null,

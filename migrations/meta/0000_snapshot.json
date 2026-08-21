@@ -1,0 +1,4345 @@
+{
+  "id": "5b4bcfd8-c9bd-499c-9296-507e01db228c",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.award_categories": {
+      "name": "award_categories",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "award_show_id": {
+          "name": "award_show_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "short_name": {
+          "name": "short_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category_type": {
+          "name": "category_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "requires_genre": {
+          "name": "requires_genre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_performance": {
+          "name": "is_performance",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "is_international": {
+          "name": "is_international",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "award_categories_award_show_id_award_shows_id_fk": {
+          "name": "award_categories_award_show_id_award_shows_id_fk",
+          "tableFrom": "award_categories",
+          "tableTo": "award_shows",
+          "columnsFrom": [
+            "award_show_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.award_ceremonies": {
+      "name": "award_ceremonies",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "player_game_id": {
+          "name": "player_game_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "award_show_id": {
+          "name": "award_show_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ceremony_year": {
+          "name": "ceremony_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nominations_announced": {
+          "name": "nominations_announced",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "ceremony_complete": {
+          "name": "ceremony_complete",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "winners_announced": {
+          "name": "winners_announced",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "award_ceremonies_award_show_id_award_shows_id_fk": {
+          "name": "award_ceremonies_award_show_id_award_shows_id_fk",
+          "tableFrom": "award_ceremonies",
+          "tableTo": "award_shows",
+          "columnsFrom": [
+            "award_show_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.award_nominations": {
+      "name": "award_nominations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "player_game_id": {
+          "name": "player_game_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "award_show_id": {
+          "name": "award_show_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category_id": {
+          "name": "category_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "film_id": {
+          "name": "film_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "talent_id": {
+          "name": "talent_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ceremony_year": {
+          "name": "ceremony_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_winner": {
+          "name": "is_winner",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "announced_week": {
+          "name": "announced_week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "announced_year": {
+          "name": "announced_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "award_nominations_award_show_id_award_shows_id_fk": {
+          "name": "award_nominations_award_show_id_award_shows_id_fk",
+          "tableFrom": "award_nominations",
+          "tableTo": "award_shows",
+          "columnsFrom": [
+            "award_show_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "award_nominations_category_id_award_categories_id_fk": {
+          "name": "award_nominations_category_id_award_categories_id_fk",
+          "tableFrom": "award_nominations",
+          "tableTo": "award_categories",
+          "columnsFrom": [
+            "category_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "award_nominations_film_id_films_id_fk": {
+          "name": "award_nominations_film_id_films_id_fk",
+          "tableFrom": "award_nominations",
+          "tableTo": "films",
+          "columnsFrom": [
+            "film_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "award_nominations_talent_id_talent_id_fk": {
+          "name": "award_nominations_talent_id_talent_id_fk",
+          "tableFrom": "award_nominations",
+          "tableTo": "talent",
+          "columnsFrom": [
+            "talent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.award_shows": {
+      "name": "award_shows",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "short_name": {
+          "name": "short_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ceremony_week": {
+          "name": "ceremony_week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nominations_week": {
+          "name": "nominations_week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "prestige_level": {
+          "name": "prestige_level",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.co_production_deals": {
+      "name": "co_production_deals",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "player_game_id": {
+          "name": "player_game_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "partner_name": {
+          "name": "partner_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "investment_amount": {
+          "name": "investment_amount",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "international_rights_percent": {
+          "name": "international_rights_percent",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 100
+        },
+        "start_week": {
+          "name": "start_week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "start_year": {
+          "name": "start_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "film_id": {
+          "name": "film_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "is_used": {
+          "name": "is_used",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "co_production_deals_film_id_films_id_fk": {
+          "name": "co_production_deals_film_id_films_id_fk",
+          "tableFrom": "co_production_deals",
+          "tableTo": "films",
+          "columnsFrom": [
+            "film_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.content_state": {
+      "name": "content_state",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "local_content_version": {
+          "name": "local_content_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "content_schema_version": {
+          "name": "content_schema_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "content_hash": {
+          "name": "content_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'bundled'"
+        },
+        "last_checked_at": {
+          "name": "last_checked_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_applied_at": {
+          "name": "last_applied_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_error": {
+          "name": "last_error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.content_update_history": {
+      "name": "content_update_history",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "from_version": {
+          "name": "from_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "to_version": {
+          "name": "to_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "content_hash": {
+          "name": "content_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "error": {
+          "name": "error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CAST(EXTRACT(EPOCH FROM NOW()) AS INTEGER)"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.emails": {
+      "name": "emails",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "player_game_id": {
+          "name": "player_game_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "subject": {
+          "name": "subject",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sender": {
+          "name": "sender",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sender_title": {
+          "name": "sender_title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "body": {
+          "name": "body",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_read": {
+          "name": "is_read",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "is_archived": {
+          "name": "is_archived",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "has_action": {
+          "name": "has_action",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "action_label": {
+          "name": "action_label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "action_data": {
+          "name": "action_data",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sent_week": {
+          "name": "sent_week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sent_year": {
+          "name": "sent_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_week": {
+          "name": "expires_week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expires_year": {
+          "name": "expires_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.film_milestones": {
+      "name": "film_milestones",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "film_id": {
+          "name": "film_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "milestone_id": {
+          "name": "milestone_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "start_week": {
+          "name": "start_week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "start_year": {
+          "name": "start_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "completed_week": {
+          "name": "completed_week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "completed_year": {
+          "name": "completed_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "duration_weeks": {
+          "name": "duration_weeks",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 2
+        },
+        "weeks_spent": {
+          "name": "weeks_spent",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "film_milestones_film_id_films_id_fk": {
+          "name": "film_milestones_film_id_films_id_fk",
+          "tableFrom": "film_milestones",
+          "tableTo": "films",
+          "columnsFrom": [
+            "film_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.film_releases": {
+      "name": "film_releases",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "film_id": {
+          "name": "film_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "territory_code": {
+          "name": "territory_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "release_week": {
+          "name": "release_week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "release_year": {
+          "name": "release_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "production_budget": {
+          "name": "production_budget",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "marketing_budget": {
+          "name": "marketing_budget",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "awareness": {
+          "name": "awareness",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 8
+        },
+        "interest": {
+          "name": "interest",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 10
+        },
+        "expectation": {
+          "name": "expectation",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 52
+        },
+        "buzz": {
+          "name": "buzz",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "paid_reach": {
+          "name": "paid_reach",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "opening_expectation": {
+          "name": "opening_expectation",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_released": {
+          "name": "is_released",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "weekly_box_office": {
+          "name": "weekly_box_office",
+          "type": "bigint[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "ARRAY[]::bigint[]"
+        },
+        "weekly_capacity_breakdown": {
+          "name": "weekly_capacity_breakdown",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "total_box_office": {
+          "name": "total_box_office",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "theater_count": {
+          "name": "theater_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "weeks_in_release": {
+          "name": "weeks_in_release",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "film_releases_film_id_films_id_fk": {
+          "name": "film_releases_film_id_films_id_fk",
+          "tableFrom": "film_releases",
+          "tableTo": "films",
+          "columnsFrom": [
+            "film_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.film_roles": {
+      "name": "film_roles",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "film_id": {
+          "name": "film_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role_name": {
+          "name": "role_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "character_age": {
+          "name": "character_age",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "importance": {
+          "name": "importance",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'supporting'"
+        },
+        "character_type": {
+          "name": "character_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'hero'"
+        },
+        "gender_preference": {
+          "name": "gender_preference",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'any'"
+        },
+        "actor_id": {
+          "name": "actor_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_cast": {
+          "name": "is_cast",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "film_roles_film_id_films_id_fk": {
+          "name": "film_roles_film_id_films_id_fk",
+          "tableFrom": "film_roles",
+          "tableTo": "films",
+          "columnsFrom": [
+            "film_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "film_roles_actor_id_talent_id_fk": {
+          "name": "film_roles_actor_id_talent_id_fk",
+          "tableFrom": "film_roles",
+          "tableTo": "talent",
+          "columnsFrom": [
+            "actor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.films": {
+      "name": "films",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "studio_id": {
+          "name": "studio_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "genre": {
+          "name": "genre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "synopsis": {
+          "name": "synopsis",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "phase": {
+          "name": "phase",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'development'"
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'active'"
+        },
+        "archived_week": {
+          "name": "archived_week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "archived_year": {
+          "name": "archived_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "production_budget": {
+          "name": "production_budget",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "marketing_budget": {
+          "name": "marketing_budget",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "campaign_limit": {
+          "name": "campaign_limit",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "campaign_spent": {
+          "name": "campaign_spent",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "campaign_strategy": {
+          "name": "campaign_strategy",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'balanced'"
+        },
+        "auto_manage_marketing": {
+          "name": "auto_manage_marketing",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "talent_budget": {
+          "name": "talent_budget",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "total_budget": {
+          "name": "total_budget",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "director_id": {
+          "name": "director_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "writer_id": {
+          "name": "writer_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cast_ids": {
+          "name": "cast_ids",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "ARRAY[]::text[]"
+        },
+        "cinematographer_id": {
+          "name": "cinematographer_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "editor_id": {
+          "name": "editor_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "composer_id": {
+          "name": "composer_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vfx_studio_id": {
+          "name": "vfx_studio_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "script_quality": {
+          "name": "script_quality",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 70
+        },
+        "cinematography_quality": {
+          "name": "cinematography_quality",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 70
+        },
+        "sets_budget": {
+          "name": "sets_budget",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "costumes_budget": {
+          "name": "costumes_budget",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "stunts_budget": {
+          "name": "stunts_budget",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "makeup_budget": {
+          "name": "makeup_budget",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "practical_effects_budget": {
+          "name": "practical_effects_budget",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "sound_crew_budget": {
+          "name": "sound_crew_budget",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "has_hired_talent": {
+          "name": "has_hired_talent",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "has_edited_post_production": {
+          "name": "has_edited_post_production",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at_week": {
+          "name": "created_at_week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "created_at_year": {
+          "name": "created_at_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 2025
+        },
+        "development_duration_weeks": {
+          "name": "development_duration_weeks",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 2
+        },
+        "pre_production_duration_weeks": {
+          "name": "pre_production_duration_weeks",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 2
+        },
+        "production_duration_weeks": {
+          "name": "production_duration_weeks",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 4
+        },
+        "post_production_duration_weeks": {
+          "name": "post_production_duration_weeks",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 2
+        },
+        "weeks_in_current_phase": {
+          "name": "weeks_in_current_phase",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "release_week": {
+          "name": "release_week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "release_year": {
+          "name": "release_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "weekly_box_office": {
+          "name": "weekly_box_office",
+          "type": "bigint[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "ARRAY[]::bigint[]"
+        },
+        "weekly_box_office_by_country": {
+          "name": "weekly_box_office_by_country",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "total_box_office": {
+          "name": "total_box_office",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "total_box_office_by_country": {
+          "name": "total_box_office_by_country",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "territory_percentages": {
+          "name": "territory_percentages",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "audience_score": {
+          "name": "audience_score",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "critic_score": {
+          "name": "critic_score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "critic_score_breakdown": {
+          "name": "critic_score_breakdown",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "audience_score_breakdown": {
+          "name": "audience_score_breakdown",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "box_office_breakdown": {
+          "name": "box_office_breakdown",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "cost_breakdown": {
+          "name": "cost_breakdown",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "theater_count": {
+          "name": "theater_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "imax_suitability": {
+          "name": "imax_suitability",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "dolby_suitability": {
+          "name": "dolby_suitability",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "box_office_model_version": {
+          "name": "box_office_model_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 2
+        },
+        "awards": {
+          "name": "awards",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "ARRAY[]::text[]"
+        },
+        "franchise_id": {
+          "name": "franchise_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_sequel": {
+          "name": "is_sequel",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "prequel_film_id": {
+          "name": "prequel_film_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "poster_url": {
+          "name": "poster_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "films_studio_id_studios_id_fk": {
+          "name": "films_studio_id_studios_id_fk",
+          "tableFrom": "films",
+          "tableTo": "studios",
+          "columnsFrom": [
+            "studio_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "films_director_id_talent_id_fk": {
+          "name": "films_director_id_talent_id_fk",
+          "tableFrom": "films",
+          "tableTo": "talent",
+          "columnsFrom": [
+            "director_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "films_writer_id_talent_id_fk": {
+          "name": "films_writer_id_talent_id_fk",
+          "tableFrom": "films",
+          "tableTo": "talent",
+          "columnsFrom": [
+            "writer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "films_cinematographer_id_talent_id_fk": {
+          "name": "films_cinematographer_id_talent_id_fk",
+          "tableFrom": "films",
+          "tableTo": "talent",
+          "columnsFrom": [
+            "cinematographer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "films_editor_id_talent_id_fk": {
+          "name": "films_editor_id_talent_id_fk",
+          "tableFrom": "films",
+          "tableTo": "talent",
+          "columnsFrom": [
+            "editor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "films_composer_id_talent_id_fk": {
+          "name": "films_composer_id_talent_id_fk",
+          "tableFrom": "films",
+          "tableTo": "talent",
+          "columnsFrom": [
+            "composer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "films_franchise_id_franchises_id_fk": {
+          "name": "films_franchise_id_franchises_id_fk",
+          "tableFrom": "films",
+          "tableTo": "franchises",
+          "columnsFrom": [
+            "franchise_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "films_prequel_film_id_films_id_fk": {
+          "name": "films_prequel_film_id_films_id_fk",
+          "tableFrom": "films",
+          "tableTo": "films",
+          "columnsFrom": [
+            "prequel_film_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.franchises": {
+      "name": "franchises",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "studio_id": {
+          "name": "studio_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "original_film_id": {
+          "name": "original_film_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total_films": {
+          "name": "total_films",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "total_revenue": {
+          "name": "total_revenue",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_week": {
+          "name": "created_week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "created_year": {
+          "name": "created_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 2025
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "franchises_studio_id_studios_id_fk": {
+          "name": "franchises_studio_id_studios_id_fk",
+          "tableFrom": "franchises",
+          "tableTo": "studios",
+          "columnsFrom": [
+            "studio_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "franchises_original_film_id_films_id_fk": {
+          "name": "franchises_original_film_id_films_id_fk",
+          "tableFrom": "franchises",
+          "tableTo": "films",
+          "columnsFrom": [
+            "original_film_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.game_activity_log": {
+      "name": "game_activity_log",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "game_session_id": {
+          "name": "game_session_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "studio_id": {
+          "name": "studio_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "event_type": {
+          "name": "event_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "event_data": {
+          "name": "event_data",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "message": {
+          "name": "message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "game_week": {
+          "name": "game_week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "game_year": {
+          "name": "game_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CAST(EXTRACT(EPOCH FROM NOW()) AS INTEGER)"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "game_activity_log_game_session_id_game_sessions_id_fk": {
+          "name": "game_activity_log_game_session_id_game_sessions_id_fk",
+          "tableFrom": "game_activity_log",
+          "tableTo": "game_sessions",
+          "columnsFrom": [
+            "game_session_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "game_activity_log_user_id_users_id_fk": {
+          "name": "game_activity_log_user_id_users_id_fk",
+          "tableFrom": "game_activity_log",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "game_activity_log_studio_id_studios_id_fk": {
+          "name": "game_activity_log_studio_id_studios_id_fk",
+          "tableFrom": "game_activity_log",
+          "tableTo": "studios",
+          "columnsFrom": [
+            "studio_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.game_session_players": {
+      "name": "game_session_players",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "game_session_id": {
+          "name": "game_session_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "studio_id": {
+          "name": "studio_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_ready": {
+          "name": "is_ready",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "is_connected": {
+          "name": "is_connected",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "is_host": {
+          "name": "is_host",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "joined_at": {
+          "name": "joined_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CAST(EXTRACT(EPOCH FROM NOW()) AS INTEGER)"
+        },
+        "last_seen_at": {
+          "name": "last_seen_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CAST(EXTRACT(EPOCH FROM NOW()) AS INTEGER)"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "game_session_players_game_session_id_game_sessions_id_fk": {
+          "name": "game_session_players_game_session_id_game_sessions_id_fk",
+          "tableFrom": "game_session_players",
+          "tableTo": "game_sessions",
+          "columnsFrom": [
+            "game_session_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "game_session_players_user_id_users_id_fk": {
+          "name": "game_session_players_user_id_users_id_fk",
+          "tableFrom": "game_session_players",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "game_session_players_studio_id_studios_id_fk": {
+          "name": "game_session_players_studio_id_studios_id_fk",
+          "tableFrom": "game_session_players",
+          "tableTo": "studios",
+          "columnsFrom": [
+            "studio_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.game_sessions": {
+      "name": "game_sessions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code": {
+          "name": "code",
+          "type": "varchar(6)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "host_user_id": {
+          "name": "host_user_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "current_week": {
+          "name": "current_week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "current_year": {
+          "name": "current_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 2025
+        },
+        "max_players": {
+          "name": "max_players",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 4
+        },
+        "is_public": {
+          "name": "is_public",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "week_advance_mode": {
+          "name": "week_advance_mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ready'"
+        },
+        "timer_minutes": {
+          "name": "timer_minutes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 5
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'lobby'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CAST(EXTRACT(EPOCH FROM NOW()) AS INTEGER)"
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_activity_at": {
+          "name": "last_activity_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CAST(EXTRACT(EPOCH FROM NOW()) AS INTEGER)"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "game_sessions_host_user_id_users_id_fk": {
+          "name": "game_sessions_host_user_id_users_id_fk",
+          "tableFrom": "game_sessions",
+          "tableTo": "users",
+          "columnsFrom": [
+            "host_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "game_sessions_code_unique": {
+          "name": "game_sessions_code_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "code"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.marketing_actions": {
+      "name": "marketing_actions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "film_id": {
+          "name": "film_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "territory_code": {
+          "name": "territory_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "action_kind": {
+          "name": "action_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "spend": {
+          "name": "spend",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "response": {
+          "name": "response",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "reach_gain": {
+          "name": "reach_gain",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "week": {
+          "name": "week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "year": {
+          "name": "year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "state_after": {
+          "name": "state_after",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "marketing_actions_film_id_films_id_fk": {
+          "name": "marketing_actions_film_id_films_id_fk",
+          "tableFrom": "marketing_actions",
+          "tableTo": "films",
+          "columnsFrom": [
+            "film_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.marketplace_script_purchases": {
+      "name": "marketplace_script_purchases",
+      "schema": "",
+      "columns": {
+        "player_game_id": {
+          "name": "player_game_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "script_id": {
+          "name": "script_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "purchased_week": {
+          "name": "purchased_week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "purchased_year": {
+          "name": "purchased_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "marketplace_script_purchases_player_game_id_studios_id_fk": {
+          "name": "marketplace_script_purchases_player_game_id_studios_id_fk",
+          "tableFrom": "marketplace_script_purchases",
+          "tableTo": "studios",
+          "columnsFrom": [
+            "player_game_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "marketplace_script_purchases_script_id_marketplace_scripts_id_fk": {
+          "name": "marketplace_script_purchases_script_id_marketplace_scripts_id_fk",
+          "tableFrom": "marketplace_script_purchases",
+          "tableTo": "marketplace_scripts",
+          "columnsFrom": [
+            "script_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "marketplace_script_purchases_player_game_id_script_id_pk": {
+          "name": "marketplace_script_purchases_player_game_id_script_id_pk",
+          "columns": [
+            "player_game_id",
+            "script_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.marketplace_scripts": {
+      "name": "marketplace_scripts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "genre": {
+          "name": "genre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "synopsis": {
+          "name": "synopsis",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "logline": {
+          "name": "logline",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quality": {
+          "name": "quality",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 70
+        },
+        "price": {
+          "name": "price",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 500000
+        },
+        "writer_name": {
+          "name": "writer_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_available": {
+          "name": "is_available",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "estimated_budget": {
+          "name": "estimated_budget",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 50000000
+        },
+        "target_audience": {
+          "name": "target_audience",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'general'"
+        },
+        "roles": {
+          "name": "roles",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CAST(EXTRACT(EPOCH FROM NOW()) AS INTEGER)"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.premium_bookings": {
+      "name": "premium_bookings",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "film_id": {
+          "name": "film_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "format": {
+          "name": "format",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "territory_code": {
+          "name": "territory_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "access_level": {
+          "name": "access_level",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "start_week": {
+          "name": "start_week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "start_year": {
+          "name": "start_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "duration_weeks": {
+          "name": "duration_weeks",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'requested'"
+        },
+        "fee": {
+          "name": "fee",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "premium_bookings_film_id_films_id_fk": {
+          "name": "premium_bookings_film_id_films_id_fk",
+          "tableFrom": "premium_bookings",
+          "tableTo": "films",
+          "columnsFrom": [
+            "film_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.save_talent_state": {
+      "name": "save_talent_state",
+      "schema": "",
+      "columns": {
+        "player_game_id": {
+          "name": "player_game_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "talent_id": {
+          "name": "talent_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "star_rating": {
+          "name": "star_rating",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "asking_price": {
+          "name": "asking_price",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "box_office_avg": {
+          "name": "box_office_avg",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "awards": {
+          "name": "awards",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "popularity": {
+          "name": "popularity",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "performance": {
+          "name": "performance",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "experience": {
+          "name": "experience",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fame": {
+          "name": "fame",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "skill_action": {
+          "name": "skill_action",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "skill_drama": {
+          "name": "skill_drama",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "skill_comedy": {
+          "name": "skill_comedy",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "skill_thriller": {
+          "name": "skill_thriller",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "skill_horror": {
+          "name": "skill_horror",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "skill_scifi": {
+          "name": "skill_scifi",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "skill_animation": {
+          "name": "skill_animation",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "skill_romance": {
+          "name": "skill_romance",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "skill_fantasy": {
+          "name": "skill_fantasy",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "skill_musicals": {
+          "name": "skill_musicals",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "skill_cinematography": {
+          "name": "skill_cinematography",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "skill_editing": {
+          "name": "skill_editing",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "skill_orchestral": {
+          "name": "skill_orchestral",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "skill_electronic": {
+          "name": "skill_electronic",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "initialized_content_version": {
+          "name": "initialized_content_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "save_talent_state_player_game_id_studios_id_fk": {
+          "name": "save_talent_state_player_game_id_studios_id_fk",
+          "tableFrom": "save_talent_state",
+          "tableTo": "studios",
+          "columnsFrom": [
+            "player_game_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "save_talent_state_talent_id_talent_id_fk": {
+          "name": "save_talent_state_talent_id_talent_id_fk",
+          "tableFrom": "save_talent_state",
+          "tableTo": "talent",
+          "columnsFrom": [
+            "talent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "save_talent_state_player_game_id_talent_id_pk": {
+          "name": "save_talent_state_player_game_id_talent_id_pk",
+          "columns": [
+            "player_game_id",
+            "talent_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.slate_financing_deals": {
+      "name": "slate_financing_deals",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "player_game_id": {
+          "name": "player_game_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "investor_name": {
+          "name": "investor_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "investment_amount": {
+          "name": "investment_amount",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "profit_share_percent": {
+          "name": "profit_share_percent",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 25
+        },
+        "films_remaining": {
+          "name": "films_remaining",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 4
+        },
+        "films_completed": {
+          "name": "films_completed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "total_profit_paid": {
+          "name": "total_profit_paid",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "start_week": {
+          "name": "start_week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "start_year": {
+          "name": "start_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.streaming_deals": {
+      "name": "streaming_deals",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "film_id": {
+          "name": "film_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "streaming_service_id": {
+          "name": "streaming_service_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "player_game_id": {
+          "name": "player_game_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "license_fee": {
+          "name": "license_fee",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "weekly_revenue": {
+          "name": "weekly_revenue",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "total_revenue": {
+          "name": "total_revenue",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "start_week": {
+          "name": "start_week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "start_year": {
+          "name": "start_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end_week": {
+          "name": "end_week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "end_year": {
+          "name": "end_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "weeks_active": {
+          "name": "weeks_active",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "deal_type": {
+          "name": "deal_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'license'"
+        },
+        "license_years": {
+          "name": "license_years",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 2
+        },
+        "weekly_views": {
+          "name": "weekly_views",
+          "type": "bigint[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "ARRAY[]::bigint[]"
+        },
+        "total_views": {
+          "name": "total_views",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "annual_payment": {
+          "name": "annual_payment",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "upfront_payment": {
+          "name": "upfront_payment",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "is_production_deal": {
+          "name": "is_production_deal",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "production_deadline_week": {
+          "name": "production_deadline_week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "production_deadline_year": {
+          "name": "production_deadline_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "streaming_deals_film_id_films_id_fk": {
+          "name": "streaming_deals_film_id_films_id_fk",
+          "tableFrom": "streaming_deals",
+          "tableTo": "films",
+          "columnsFrom": [
+            "film_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "streaming_deals_streaming_service_id_streaming_services_id_fk": {
+          "name": "streaming_deals_streaming_service_id_streaming_services_id_fk",
+          "tableFrom": "streaming_deals",
+          "tableTo": "streaming_services",
+          "columnsFrom": [
+            "streaming_service_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.streaming_services": {
+      "name": "streaming_services",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "logo": {
+          "name": "logo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "color": {
+          "name": "color",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "subscriber_count": {
+          "name": "subscriber_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "monthly_revenue_per_sub": {
+          "name": "monthly_revenue_per_sub",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "genre_preferences": {
+          "name": "genre_preferences",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "ARRAY[]::text[]"
+        },
+        "minimum_quality_score": {
+          "name": "minimum_quality_score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 60
+        },
+        "license_fee_multiplier": {
+          "name": "license_fee_multiplier",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.studios": {
+      "name": "studios",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "device_id": {
+          "name": "device_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "game_session_id": {
+          "name": "game_session_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'New Studio'"
+        },
+        "budget": {
+          "name": "budget",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 150000000
+        },
+        "current_week": {
+          "name": "current_week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "current_year": {
+          "name": "current_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 2025
+        },
+        "prestige_level": {
+          "name": "prestige_level",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "total_earnings": {
+          "name": "total_earnings",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "total_awards": {
+          "name": "total_awards",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "is_ai": {
+          "name": "is_ai",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "strategy": {
+          "name": "strategy",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'balanced'"
+        },
+        "home_territory": {
+          "name": "home_territory",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'NA'"
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "player_game_id": {
+          "name": "player_game_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CAST(EXTRACT(EPOCH FROM NOW()) AS INTEGER)"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.talent": {
+      "name": "talent",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "gender": {
+          "name": "gender",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'unknown'"
+        },
+        "nationality": {
+          "name": "nationality",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'American'"
+        },
+        "star_rating": {
+          "name": "star_rating",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 3
+        },
+        "asking_price": {
+          "name": "asking_price",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 5000000
+        },
+        "box_office_avg": {
+          "name": "box_office_avg",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 100000000
+        },
+        "awards": {
+          "name": "awards",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "genres": {
+          "name": "genres",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "genre_tags": {
+          "name": "genre_tags",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "ARRAY[]::text[]"
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "image_url": {
+          "name": "image_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "birth_year": {
+          "name": "birth_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "popularity": {
+          "name": "popularity",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 50
+        },
+        "performance": {
+          "name": "performance",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 70
+        },
+        "experience": {
+          "name": "experience",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 50
+        },
+        "fame": {
+          "name": "fame",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 50
+        },
+        "skill_action": {
+          "name": "skill_action",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 50
+        },
+        "skill_drama": {
+          "name": "skill_drama",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 50
+        },
+        "skill_comedy": {
+          "name": "skill_comedy",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 50
+        },
+        "skill_thriller": {
+          "name": "skill_thriller",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 50
+        },
+        "skill_horror": {
+          "name": "skill_horror",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 50
+        },
+        "skill_scifi": {
+          "name": "skill_scifi",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 50
+        },
+        "skill_animation": {
+          "name": "skill_animation",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 50
+        },
+        "skill_romance": {
+          "name": "skill_romance",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 50
+        },
+        "skill_fantasy": {
+          "name": "skill_fantasy",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 50
+        },
+        "skill_musicals": {
+          "name": "skill_musicals",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 50
+        },
+        "skill_cinematography": {
+          "name": "skill_cinematography",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 50
+        },
+        "skill_editing": {
+          "name": "skill_editing",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 50
+        },
+        "skill_orchestral": {
+          "name": "skill_orchestral",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 50
+        },
+        "skill_electronic": {
+          "name": "skill_electronic",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 50
+        },
+        "current_film_id": {
+          "name": "current_film_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "busy_until_week": {
+          "name": "busy_until_week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "busy_until_year": {
+          "name": "busy_until_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.tv_deals": {
+      "name": "tv_deals",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tv_show_id": {
+          "name": "tv_show_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "player_game_id": {
+          "name": "player_game_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "deal_type": {
+          "name": "deal_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'streaming'"
+        },
+        "streaming_service_id": {
+          "name": "streaming_service_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "network_name": {
+          "name": "network_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "license_fee": {
+          "name": "license_fee",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "episode_fee": {
+          "name": "episode_fee",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "total_value": {
+          "name": "total_value",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "start_week": {
+          "name": "start_week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "start_year": {
+          "name": "start_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end_week": {
+          "name": "end_week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "end_year": {
+          "name": "end_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "seasons_committed": {
+          "name": "seasons_committed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "is_exclusive": {
+          "name": "is_exclusive",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "weekly_views": {
+          "name": "weekly_views",
+          "type": "bigint[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "ARRAY[]::bigint[]"
+        },
+        "total_views": {
+          "name": "total_views",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "weekly_revenue": {
+          "name": "weekly_revenue",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "total_revenue": {
+          "name": "total_revenue",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "weeks_active": {
+          "name": "weeks_active",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "tv_deals_tv_show_id_tv_shows_id_fk": {
+          "name": "tv_deals_tv_show_id_tv_shows_id_fk",
+          "tableFrom": "tv_deals",
+          "tableTo": "tv_shows",
+          "columnsFrom": [
+            "tv_show_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "tv_deals_streaming_service_id_streaming_services_id_fk": {
+          "name": "tv_deals_streaming_service_id_streaming_services_id_fk",
+          "tableFrom": "tv_deals",
+          "tableTo": "streaming_services",
+          "columnsFrom": [
+            "streaming_service_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.tv_episodes": {
+      "name": "tv_episodes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tv_season_id": {
+          "name": "tv_season_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tv_show_id": {
+          "name": "tv_show_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "episode_number": {
+          "name": "episode_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "synopsis": {
+          "name": "synopsis",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "director_id": {
+          "name": "director_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "writer_id": {
+          "name": "writer_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "guest_cast_ids": {
+          "name": "guest_cast_ids",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "ARRAY[]::text[]"
+        },
+        "episode_budget": {
+          "name": "episode_budget",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 5000000
+        },
+        "episode_quality": {
+          "name": "episode_quality",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 70
+        },
+        "air_week": {
+          "name": "air_week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "air_year": {
+          "name": "air_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "has_aired": {
+          "name": "has_aired",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "viewers": {
+          "name": "viewers",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "rating": {
+          "name": "rating",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'planned'"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "tv_episodes_tv_season_id_tv_seasons_id_fk": {
+          "name": "tv_episodes_tv_season_id_tv_seasons_id_fk",
+          "tableFrom": "tv_episodes",
+          "tableTo": "tv_seasons",
+          "columnsFrom": [
+            "tv_season_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "tv_episodes_tv_show_id_tv_shows_id_fk": {
+          "name": "tv_episodes_tv_show_id_tv_shows_id_fk",
+          "tableFrom": "tv_episodes",
+          "tableTo": "tv_shows",
+          "columnsFrom": [
+            "tv_show_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "tv_episodes_director_id_talent_id_fk": {
+          "name": "tv_episodes_director_id_talent_id_fk",
+          "tableFrom": "tv_episodes",
+          "tableTo": "talent",
+          "columnsFrom": [
+            "director_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "tv_episodes_writer_id_talent_id_fk": {
+          "name": "tv_episodes_writer_id_talent_id_fk",
+          "tableFrom": "tv_episodes",
+          "tableTo": "talent",
+          "columnsFrom": [
+            "writer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.tv_networks": {
+      "name": "tv_networks",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "viewer_base": {
+          "name": "viewer_base",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ad_revenue_per_million": {
+          "name": "ad_revenue_per_million",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "genre_preferences": {
+          "name": "genre_preferences",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "minimum_quality": {
+          "name": "minimum_quality",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 60
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.tv_seasons": {
+      "name": "tv_seasons",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tv_show_id": {
+          "name": "tv_show_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "season_number": {
+          "name": "season_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "phase": {
+          "name": "phase",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'concept'"
+        },
+        "episode_count": {
+          "name": "episode_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 10
+        },
+        "episodes_completed": {
+          "name": "episodes_completed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "episodes_aired": {
+          "name": "episodes_aired",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "season_budget": {
+          "name": "season_budget",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 50000000
+        },
+        "budget_spent": {
+          "name": "budget_spent",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "writers_room_weeks": {
+          "name": "writers_room_weeks",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 8
+        },
+        "pre_production_weeks": {
+          "name": "pre_production_weeks",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 4
+        },
+        "production_weeks": {
+          "name": "production_weeks",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 16
+        },
+        "post_production_weeks": {
+          "name": "post_production_weeks",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 8
+        },
+        "weeks_in_current_phase": {
+          "name": "weeks_in_current_phase",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "cast_ids": {
+          "name": "cast_ids",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "ARRAY[]::text[]"
+        },
+        "season_quality": {
+          "name": "season_quality",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 70
+        },
+        "audience_score": {
+          "name": "audience_score",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "critic_score": {
+          "name": "critic_score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "premiere_week": {
+          "name": "premiere_week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "premiere_year": {
+          "name": "premiere_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "finale_week": {
+          "name": "finale_week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "finale_year": {
+          "name": "finale_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "average_viewers": {
+          "name": "average_viewers",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "peak_viewers": {
+          "name": "peak_viewers",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "total_views": {
+          "name": "total_views",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "weekly_views": {
+          "name": "weekly_views",
+          "type": "bigint[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "ARRAY[]::bigint[]"
+        },
+        "season_revenue": {
+          "name": "season_revenue",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "is_complete": {
+          "name": "is_complete",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "is_airing": {
+          "name": "is_airing",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "tv_seasons_tv_show_id_tv_shows_id_fk": {
+          "name": "tv_seasons_tv_show_id_tv_shows_id_fk",
+          "tableFrom": "tv_seasons",
+          "tableTo": "tv_shows",
+          "columnsFrom": [
+            "tv_show_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.tv_shows": {
+      "name": "tv_shows",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "studio_id": {
+          "name": "studio_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "genre": {
+          "name": "genre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "synopsis": {
+          "name": "synopsis",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "show_type": {
+          "name": "show_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'drama'"
+        },
+        "phase": {
+          "name": "phase",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'concept'"
+        },
+        "showrunner_id": {
+          "name": "showrunner_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "creator_id": {
+          "name": "creator_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "episode_budget": {
+          "name": "episode_budget",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 5000000
+        },
+        "total_budget": {
+          "name": "total_budget",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "network_id": {
+          "name": "network_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "streaming_service_id": {
+          "name": "streaming_service_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_streaming_exclusive": {
+          "name": "is_streaming_exclusive",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "release_strategy": {
+          "name": "release_strategy",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'weekly'"
+        },
+        "overall_quality": {
+          "name": "overall_quality",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 70
+        },
+        "audience_score": {
+          "name": "audience_score",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "critic_score": {
+          "name": "critic_score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "total_seasons": {
+          "name": "total_seasons",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "total_episodes": {
+          "name": "total_episodes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "episodes_per_season": {
+          "name": "episodes_per_season",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 10
+        },
+        "current_season": {
+          "name": "current_season",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "renewal_status": {
+          "name": "renewal_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "weeks_streaming": {
+          "name": "weeks_streaming",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "total_views": {
+          "name": "total_views",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "total_revenue": {
+          "name": "total_revenue",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "weekly_views": {
+          "name": "weekly_views",
+          "type": "bigint[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "ARRAY[]::bigint[]"
+        },
+        "created_at_week": {
+          "name": "created_at_week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "created_at_year": {
+          "name": "created_at_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 2025
+        },
+        "premiere_week": {
+          "name": "premiere_week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "premiere_year": {
+          "name": "premiere_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "finale_week": {
+          "name": "finale_week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "finale_year": {
+          "name": "finale_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_renewed": {
+          "name": "is_renewed",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "is_cancelled": {
+          "name": "is_cancelled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "renewal_pending": {
+          "name": "renewal_pending",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "awards": {
+          "name": "awards",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "ARRAY[]::text[]"
+        },
+        "emmy_nominations": {
+          "name": "emmy_nominations",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "emmy_wins": {
+          "name": "emmy_wins",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "tv_shows_studio_id_studios_id_fk": {
+          "name": "tv_shows_studio_id_studios_id_fk",
+          "tableFrom": "tv_shows",
+          "tableTo": "studios",
+          "columnsFrom": [
+            "studio_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "tv_shows_showrunner_id_talent_id_fk": {
+          "name": "tv_shows_showrunner_id_talent_id_fk",
+          "tableFrom": "tv_shows",
+          "tableTo": "talent",
+          "columnsFrom": [
+            "showrunner_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "tv_shows_creator_id_talent_id_fk": {
+          "name": "tv_shows_creator_id_talent_id_fk",
+          "tableFrom": "tv_shows",
+          "tableTo": "talent",
+          "columnsFrom": [
+            "creator_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "tv_shows_streaming_service_id_streaming_services_id_fk": {
+          "name": "tv_shows_streaming_service_id_streaming_services_id_fk",
+          "tableFrom": "tv_shows",
+          "tableTo": "streaming_services",
+          "columnsFrom": [
+            "streaming_service_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.users": {
+      "name": "users",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "username": {
+          "name": "username",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "password": {
+          "name": "password",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "avatar_url": {
+          "name": "avatar_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_online": {
+          "name": "is_online",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "last_seen_at": {
+          "name": "last_seen_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CAST(EXTRACT(EPOCH FROM NOW()) AS INTEGER)"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "users_username_unique": {
+          "name": "users_username_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "username"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

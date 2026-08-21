@@ -159,7 +159,13 @@ export function GameProvider({ children, studioId, multiplayerSessionId, userId,
 
   // Fetch talent
   const { data: talent = [] } = useQuery<Talent[]>({
-    queryKey: ['/api/talent'],
+    queryKey: ['/api/talent', studioId],
+    queryFn: async () => {
+      const response = await fetch(`/api/talent?playerGameId=${encodeURIComponent(studioId)}`);
+      if (!response.ok) throw new Error('Failed to load save talent');
+      return response.json();
+    },
+    enabled: Boolean(studioId),
   });
 
   // Advance week mutation - uses multiplayer endpoint if in a multiplayer game

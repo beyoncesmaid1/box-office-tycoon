@@ -156,6 +156,13 @@ function startServer() {
         NODE_ENV: isDev ? 'development' : 'production',
         PORT: serverPort.toString(),
         ELECTRON: 'true',
+        ELECTRON_USER_DATA_DIR: app.getPath('userData'),
+        MIGRATIONS_DIR: isDev
+          ? path.join(__dirname, '..', 'migrations')
+          : path.join(process.resourcesPath, 'migrations'),
+        CONTENT_DIR: isDev
+          ? path.join(__dirname, '..', 'shared', 'content')
+          : path.join(process.resourcesPath, 'shared', 'content'),
         // Reuse Electron's bundled Node runtime for the packaged server.
         ...(isDev ? {} : { ELECTRON_RUN_AS_NODE: '1' })
       },

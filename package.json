@@ -9,11 +9,15 @@
     "start": "node dist/index.cjs",
     "check": "tsc",
     "test:isolation": "tsx script/save-isolation-test.ts",
-    "test:isolation:db": "tsx --env-file=.env script/database-save-isolation-test.ts",
+    "test:isolation:db": "tsx script/database-save-isolation-test.ts",
+    "content:build": "tsx script/build-content-manifest.ts",
+    "test:content": "tsx script/content-update-test.ts",
+    "test:local-runtime": "npm run build && tsx script/local-runtime-integration-test.ts",
     "balance": "tsx script/balance-simulation.ts",
     "db:push": "drizzle-kit push"
   },
   "dependencies": {
+    "@electric-sql/pglite": "^0.3.16",
     "@hookform/resolvers": "^3.10.0",
     "@jridgewell/trace-mapping": "^0.3.25",
     "@neondatabase/serverless": "^0.10.4",

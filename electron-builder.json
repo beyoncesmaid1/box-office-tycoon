@@ -17,6 +17,14 @@
     {
       "from": "shared/data",
       "to": "shared/data"
+    },
+    {
+      "from": "shared/content",
+      "to": "shared/content"
+    },
+    {
+      "from": "migrations",
+      "to": "migrations"
     }
   ],
   "win": {

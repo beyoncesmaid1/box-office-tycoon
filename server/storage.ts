@@ -3,6 +3,7 @@ import {
   type Studio, type InsertStudio, 
   type Film, type InsertFilm, 
   type Talent, type InsertTalent,
+  type SaveTalentState, type InsertSaveTalentState,
   type StreamingService, type InsertStreamingService,
   type StreamingDeal, type InsertStreamingDeal,
   type Email, type InsertEmail,
@@ -28,7 +29,7 @@ import {
   type GameSession, type InsertGameSession,
   type GameSessionPlayer, type InsertGameSessionPlayer,
   type GameActivityLog, type InsertGameActivityLog,
-  studios, films, talent, users, streamingServices, streamingDeals, emails,
+  studios, films, talent, saveTalentState, users, streamingServices, streamingDeals, emails,
   awardShows, awardCategories, awardNominations, awardCeremonies,
   filmReleases, marketingActions, premiumBookings, filmMilestones, filmRoles, franchises, marketplaceScripts,
   marketplaceScriptPurchases,
@@ -36,12 +37,12 @@ import {
   coProductionDeals,
   gameSessions, gameSessionPlayers, gameActivityLog
 } from "@shared/schema";
-import { db, hasDatabase, pool, withDatabaseRetry } from "./db";
+import { db, pool, withDatabaseRetry, withLocalTransaction } from "./db";
 import { eq, and, inArray, sql, getTableColumns } from "drizzle-orm";
 import { AsyncLocalStorage } from "node:async_hooks";
 import * as fs from "fs";
 import * as path from "path";
-import { MemStorage } from "./mem-storage";
+import { overlayTalentState } from "./content/content-service";
 
 function withoutGlobalTalentAvailability<T extends Talent | undefined>(candidate: T): T {
   if (!candidate) return candidate;
@@ -86,6 +87,10 @@ export interface IStorage {
   getTalentByName(name: string): Promise<Talent | undefined>;
   getAllTalent(): Promise<Talent[]>;
   getTalentByIds(talentIds: string[]): Promise<Talent[]>;
+  getTalentForSave(id: string, playerGameId: string): Promise<Talent | undefined>;
+  getAllTalentForSave(playerGameId: string): Promise<Talent[]>;
+  getTalentStateForSave(playerGameId: string): Promise<SaveTalentState[]>;
+  upsertTalentStateForSave(state: InsertSaveTalentState): Promise<SaveTalentState>;
   createTalent(t: InsertTalent): Promise<Talent>;
   updateTalent(id: string, updates: Partial<InsertTalent>): Promise<Talent | undefined>;
   updateTalentSkillsDirect(id: string, skillFantasy: number, skillMusicals: number): Promise<void>;
@@ -366,43 +371,40 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteSinglePlayerSave(playerStudioId: string): Promise<void> {
-    if (!pool) throw new Error("Cannot delete a save without a database connection");
-    const client = await pool.connect();
-    try {
-      await client.query("BEGIN");
-      const playerResult = await client.query(
+    await withLocalTransaction(async query => {
+      const playerResult = await query(
         "SELECT id, game_session_id FROM studios WHERE id = $1 AND is_ai = false FOR UPDATE",
         [playerStudioId],
       );
       if (playerResult.rows.length === 0) throw new Error("Studio not found");
       if (playerResult.rows[0].game_session_id) throw new Error("Multiplayer saves use their own deletion flow");
 
-      const studioRows = await client.query(
+      const studioRows = await query(
         "SELECT id FROM studios WHERE id = $1 OR player_game_id = $1",
         [playerStudioId],
       );
       const studioIds = studioRows.rows.map(row => row.id);
-      const filmRows = await client.query(
+      const filmRows = await query(
         "SELECT id FROM films WHERE studio_id = ANY($1::varchar[])",
         [studioIds],
       );
       const filmIds = filmRows.rows.map(row => row.id);
-      const showRows = await client.query(
+      const showRows = await query(
         "SELECT id FROM tv_shows WHERE studio_id = ANY($1::varchar[])",
         [studioIds],
       );
       const showIds = showRows.rows.map(row => row.id);
 
       if (showIds.length > 0) {
-        await client.query(
+        await query(
           "DELETE FROM tv_deals WHERE tv_show_id = ANY($1::varchar[]) OR player_game_id = $2",
           [showIds, playerStudioId],
         );
-        await client.query("DELETE FROM tv_episodes WHERE tv_show_id = ANY($1::varchar[])", [showIds]);
-        await client.query("DELETE FROM tv_seasons WHERE tv_show_id = ANY($1::varchar[])", [showIds]);
-        await client.query("DELETE FROM tv_shows WHERE id = ANY($1::varchar[])", [showIds]);
+        await query("DELETE FROM tv_episodes WHERE tv_show_id = ANY($1::varchar[])", [showIds]);
+        await query("DELETE FROM tv_seasons WHERE tv_show_id = ANY($1::varchar[])", [showIds]);
+        await query("DELETE FROM tv_shows WHERE id = ANY($1::varchar[])", [showIds]);
       } else {
-        await client.query("DELETE FROM tv_deals WHERE player_game_id = $1", [playerStudioId]);
+        await query("DELETE FROM tv_deals WHERE player_game_id = $1", [playerStudioId]);
       }
 
       if (filmIds.length > 0) {
@@ -413,40 +415,34 @@ export class DatabaseStorage implements IStorage {
           "film_roles",
           "film_releases",
         ]) {
-          await client.query(`DELETE FROM ${tableName} WHERE film_id = ANY($1::varchar[])`, [filmIds]);
+          await query(`DELETE FROM ${tableName} WHERE film_id = ANY($1::varchar[])`, [filmIds]);
         }
-        await client.query(
+        await query(
           "DELETE FROM streaming_deals WHERE film_id = ANY($1::varchar[]) OR player_game_id = ANY($2::varchar[])",
           [filmIds, studioIds],
         );
-        await client.query(
+        await query(
           "DELETE FROM award_nominations WHERE film_id = ANY($1::varchar[]) OR player_game_id = $2",
           [filmIds, playerStudioId],
         );
-        await client.query(
+        await query(
           "DELETE FROM co_production_deals WHERE film_id = ANY($1::varchar[]) OR player_game_id = $2",
           [filmIds, playerStudioId],
         );
-        await client.query(
+        await query(
           "UPDATE films SET franchise_id = NULL, prequel_film_id = NULL WHERE id = ANY($1::varchar[])",
           [filmIds],
         );
-        await client.query("DELETE FROM franchises WHERE studio_id = ANY($1::varchar[])", [studioIds]);
-        await client.query("DELETE FROM films WHERE id = ANY($1::varchar[])", [filmIds]);
+        await query("DELETE FROM franchises WHERE studio_id = ANY($1::varchar[])", [studioIds]);
+        await query("DELETE FROM films WHERE id = ANY($1::varchar[])", [filmIds]);
       }
 
-      await client.query("DELETE FROM award_ceremonies WHERE player_game_id = $1", [playerStudioId]);
-      await client.query("DELETE FROM emails WHERE player_game_id = $1", [playerStudioId]);
-      await client.query("DELETE FROM slate_financing_deals WHERE player_game_id = $1", [playerStudioId]);
-      await client.query("DELETE FROM co_production_deals WHERE player_game_id = $1", [playerStudioId]);
-      await client.query("DELETE FROM studios WHERE id = ANY($1::varchar[])", [studioIds]);
-      await client.query("COMMIT");
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    } finally {
-      client.release();
-    }
+      await query("DELETE FROM award_ceremonies WHERE player_game_id = $1", [playerStudioId]);
+      await query("DELETE FROM emails WHERE player_game_id = $1", [playerStudioId]);
+      await query("DELETE FROM slate_financing_deals WHERE player_game_id = $1", [playerStudioId]);
+      await query("DELETE FROM co_production_deals WHERE player_game_id = $1", [playerStudioId]);
+      await query("DELETE FROM studios WHERE id = ANY($1::varchar[])", [studioIds]);
+    });
   }
   // Users
   async getUser(id: string): Promise<User | undefined> {
@@ -549,6 +545,43 @@ export class DatabaseStorage implements IStorage {
     if (talentIds.length === 0) return [];
     return (await db.select().from(talent).where(inArray(talent.id, talentIds)))
       .map(withoutGlobalTalentAvailability);
+  }
+
+  async getTalentStateForSave(playerGameId: string): Promise<SaveTalentState[]> {
+    return db.select().from(saveTalentState)
+      .where(eq(saveTalentState.playerGameId, playerGameId));
+  }
+
+  async getAllTalentForSave(playerGameId: string): Promise<Talent[]> {
+    const [baseTalent, states] = await Promise.all([
+      this.getAllTalent(),
+      this.getTalentStateForSave(playerGameId),
+    ]);
+    const byTalentId = new Map(states.map(state => [state.talentId, state]));
+    return baseTalent.map(person => {
+      const state = byTalentId.get(person.id);
+      return state ? overlayTalentState(person, state) : person;
+    });
+  }
+
+  async getTalentForSave(id: string, playerGameId: string): Promise<Talent | undefined> {
+    const [person, states] = await Promise.all([
+      this.getTalent(id),
+      db.select().from(saveTalentState).where(and(
+        eq(saveTalentState.playerGameId, playerGameId),
+        eq(saveTalentState.talentId, id),
+      )),
+    ]);
+    if (!person || !states[0]) return person;
+    return overlayTalentState(person, states[0]);
+  }
+
+  async upsertTalentStateForSave(state: InsertSaveTalentState): Promise<SaveTalentState> {
+    const [saved] = await db.insert(saveTalentState).values(state).onConflictDoUpdate({
+      target: [saveTalentState.playerGameId, saveTalentState.talentId],
+      set: state,
+    }).returning();
+    return saved;
   }
 
   async createTalent(insertTalent: InsertTalent): Promise<Talent> {
@@ -3890,7 +3923,7 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-export const persistentStorage: IStorage = hasDatabase ? new DatabaseStorage() : new MemStorage();
+export const persistentStorage: IStorage = new DatabaseStorage();
 const storageContext = new AsyncLocalStorage<IStorage>();
 let storageMutationListener: (() => void) | undefined;
 
@@ -3918,9 +3951,4 @@ export const storage: IStorage = new Proxy({} as IStorage, {
 
 export function runWithStorage<T>(override: IStorage, operation: () => Promise<T>): Promise<T> {
   return storageContext.run(override, operation);
-}
-
-if (!hasDatabase) {
-  console.log('Warning: Running with in-memory storage. Data will not persist between restarts.');
-  console.log('To enable persistent storage, provision a PostgreSQL database and set DATABASE_URL.');
 }
