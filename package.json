@@ -14,6 +14,7 @@
     "test:content": "tsx script/content-update-test.ts",
     "test:local-runtime": "npm run build && tsx script/local-runtime-integration-test.ts",
     "test:deletion": "tsx script/save-deletion-test.ts",
+    "test:preload-handoff": "tsx script/preload-handoff-test.ts",
     "balance": "tsx script/balance-simulation.ts",
     "db:push": "drizzle-kit push"
   },

@@ -2610,6 +2610,146 @@ async function calculateCanonicalFilmScores(
 
 const absoluteWeek = (week: number, year: number): number => year * 52 + week;
 
+function distributeWorldwideHistory(
+  weeklyWorldwide: number[],
+  territoryCodes: string[],
+) {
+  const rawShares = territoryCodes.map(code => Math.max(0, getTerritoryBasePercentage(code)));
+  const totalShare = rawShares.reduce((sum, share) => sum + share, 0) || 1;
+  const histories = new Map(territoryCodes.map(code => [code, [] as number[]]));
+  const weeklyByCountry: Array<Record<string, number>> = [];
+
+  for (const worldwideGross of weeklyWorldwide) {
+    const safeWorldwideGross = Math.max(0, Math.round(Number(worldwideGross) || 0));
+    const countryWeek: Record<string, number> = {};
+    let assigned = 0;
+    for (let index = 0; index < territoryCodes.length; index += 1) {
+      const code = territoryCodes[index];
+      const gross = index === territoryCodes.length - 1
+        ? safeWorldwideGross - assigned
+        : Math.round(safeWorldwideGross * rawShares[index] / totalShare);
+      assigned += gross;
+      histories.get(code)!.push(gross);
+      countryWeek[getCountryName(code) || code] = gross;
+    }
+    weeklyByCountry.push(countryWeek);
+  }
+
+  const totalByCountry: Record<string, number> = {};
+  const territoryPercentages: Record<string, number> = {};
+  for (let index = 0; index < territoryCodes.length; index += 1) {
+    const code = territoryCodes[index];
+    const countryName = getCountryName(code) || code;
+    totalByCountry[countryName] = (histories.get(code) || [])
+      .reduce((sum, gross) => sum + gross, 0);
+    territoryPercentages[countryName] = rawShares[index] / totalShare;
+  }
+  return { histories, weeklyByCountry, totalByCountry, territoryPercentages };
+}
+
+function expectedPreloadHold(film: Film, weekNumber: number): number {
+  const storedAudience = Number(film.audienceScore || 0);
+  const audience100 = storedAudience <= 10 ? storedAudience * 10 : storedAudience;
+  const qualityHold = 0.34 + (Math.max(0, Math.min(100, audience100)) - 50) * 0.004;
+  const weekFactor = weekNumber <= 3 ? 1 : weekNumber <= 6 ? 0.9 :
+    weekNumber <= 12 ? 0.78 : 0.65;
+  return Math.max(0.18, Math.min(0.62, qualityHold * weekFactor));
+}
+
+export async function repairPreloadBoxOfficeHandoffs(): Promise<void> {
+  const allStudios = await storage.getAllStudios();
+  const players = allStudios.filter(studio => !studio.isAI && !studio.gameSessionId);
+  let hydratedFilms = 0;
+  let correctedFilms = 0;
+
+  for (const player of players) {
+    const ownedStudioIds = allStudios
+      .filter(studio => studio.id === player.id || studio.playerGameId === player.id)
+      .map(studio => studio.id);
+    const films = (await storage.getFilmsByStudioIds(ownedStudioIds))
+      .filter(film => film.phase === "released" && film.weeklyBoxOffice.length > 0);
+    const releases = await storage.getFilmReleasesByFilms(films.map(film => film.id));
+    const releasesByFilm = new Map<string, FilmRelease[]>();
+    for (const release of releases) {
+      const rows = releasesByFilm.get(release.filmId) || [];
+      rows.push(release);
+      releasesByFilm.set(release.filmId, rows);
+    }
+
+    for (const film of films) {
+      const filmReleases = releasesByFilm.get(film.id) || [];
+      if (filmReleases.length === 0) continue;
+      const filmHistory = [...film.weeklyBoxOffice].map(gross => Math.max(0, Math.round(Number(gross) || 0)));
+      const releaseHistoryLength = Math.max(
+        ...filmReleases.map(release => release.weeklyBoxOffice.length),
+      );
+      const historiesMatch = filmReleases.every(release =>
+        release.weeklyBoxOffice.length === filmHistory.length &&
+        release.weeksInRelease === filmHistory.length
+      );
+      if (historiesMatch) continue;
+
+      // In the old preload handoff, territory history started at zero even
+      // though worldwide history already existed. Every suffix entry was then
+      // calculated from a duplicate opening. Rescale that suffix from the last
+      // legitimate preloaded week while preserving its later week-to-week holds.
+      const handoffIndex = Math.max(0, filmHistory.length - releaseHistoryLength);
+      if (releaseHistoryLength > 0 && handoffIndex > 0 && handoffIndex < filmHistory.length) {
+        const originalHistory = [...filmHistory];
+        filmHistory[handoffIndex] = Math.round(
+          filmHistory[handoffIndex - 1] * expectedPreloadHold(film, handoffIndex + 1),
+        );
+        for (let index = handoffIndex + 1; index < filmHistory.length; index += 1) {
+          const observedHold = originalHistory[index - 1] > 0
+            ? originalHistory[index] / originalHistory[index - 1]
+            : 0;
+          const safeHold = Math.max(0.15, Math.min(0.7, observedHold));
+          filmHistory[index] = Math.round(filmHistory[index - 1] * safeHold);
+        }
+        correctedFilms += 1;
+      } else {
+        hydratedFilms += 1;
+      }
+
+      const territoryHistory = distributeWorldwideHistory(
+        filmHistory,
+        filmReleases.map(release => release.territoryCode),
+      );
+      Object.assign(film, {
+        weeklyBoxOffice: filmHistory,
+        weeklyBoxOfficeByCountry: territoryHistory.weeklyByCountry,
+        totalBoxOffice: filmHistory.reduce((sum, gross) => sum + gross, 0),
+        totalBoxOfficeByCountry: territoryHistory.totalByCountry,
+        territoryPercentages: territoryHistory.territoryPercentages,
+      });
+      await storage.updateFilm(film.id, {
+        weeklyBoxOffice: film.weeklyBoxOffice,
+        weeklyBoxOfficeByCountry: film.weeklyBoxOfficeByCountry,
+        totalBoxOffice: film.totalBoxOffice,
+        totalBoxOfficeByCountry: film.totalBoxOfficeByCountry,
+        territoryPercentages: film.territoryPercentages,
+      } as any);
+      await storage.updateFilmReleaseWeeks(filmReleases.map(release => {
+        const weeklyBoxOffice = territoryHistory.histories.get(release.territoryCode) || [];
+        return {
+          ...release,
+          weeklyBoxOffice,
+          weeklyCapacityBreakdown: [],
+          totalBoxOffice: weeklyBoxOffice.reduce((sum, gross) => sum + gross, 0),
+          weeksInRelease: weeklyBoxOffice.length,
+          isReleased: true,
+        };
+      }));
+    }
+  }
+
+  if (hydratedFilms > 0 || correctedFilms > 0) {
+    console.log(
+      `[PRELOAD-HANDOFF] Hydrated ${hydratedFilms} films and corrected ${correctedFilms} duplicate-opening histories.`,
+    );
+  }
+}
+
 function campaignStateFromRelease(release: FilmRelease): TerritoryCampaignState {
   return {
     awareness: Number(release.awareness ?? 8),
@@ -3066,6 +3206,7 @@ export async function registerRoutes(
   // install can create streaming deals and awards without relying on an old DB.
   await storage.seedStreamingServices();
   await storage.seedAwardShows();
+  await repairPreloadBoxOfficeHandoffs();
 
   // === STUDIO ROUTES ===
 
@@ -3528,7 +3669,13 @@ export async function registerRoutes(
         openingExpectation: 60,
         isReleased: true,
       })));
-      await storage.createFilmReleases(releaseRows);
+      const createdReleases = await storage.createFilmReleases(releaseRows);
+      const createdReleasesByFilm = new Map<string, FilmRelease[]>();
+      for (const release of createdReleases) {
+        const releases = createdReleasesByFilm.get(release.filmId) || [];
+        releases.push(release);
+        createdReleasesByFilm.set(release.filmId, releases);
+      }
 
       await runBatched(releasedPlans, 8, async plan => {
         const film = plan.film!;
@@ -3545,9 +3692,17 @@ export async function registerRoutes(
           finalAbsolute - plan.releaseAbsolute + 1,
         ));
         const weeklyBoxOffice = run.weeklyGrosses.slice(0, historyLength);
+        const filmReleases = createdReleasesByFilm.get(film.id) || [];
+        const territoryHistory = distributeWorldwideHistory(
+          weeklyBoxOffice,
+          filmReleases.map(release => release.territoryCode),
+        );
         Object.assign(film, {
           weeklyBoxOffice,
+          weeklyBoxOfficeByCountry: territoryHistory.weeklyByCountry,
           totalBoxOffice: weeklyBoxOffice.reduce((sum, gross) => sum + gross, 0),
+          totalBoxOfficeByCountry: territoryHistory.totalByCountry,
+          territoryPercentages: territoryHistory.territoryPercentages,
           theaterCount: run.theaterCount,
           boxOfficeBreakdown: {
             ...run.breakdown,
@@ -3561,10 +3716,23 @@ export async function registerRoutes(
           criticScoreBreakdown: film.criticScoreBreakdown,
           audienceScoreBreakdown: film.audienceScoreBreakdown,
           weeklyBoxOffice: film.weeklyBoxOffice,
+          weeklyBoxOfficeByCountry: film.weeklyBoxOfficeByCountry,
           totalBoxOffice: film.totalBoxOffice,
+          totalBoxOfficeByCountry: film.totalBoxOfficeByCountry,
+          territoryPercentages: film.territoryPercentages,
           theaterCount: film.theaterCount,
           boxOfficeBreakdown: film.boxOfficeBreakdown,
         } as any);
+        await storage.updateFilmReleaseWeeks(filmReleases.map(release => {
+          const weeklyBoxOffice = territoryHistory.histories.get(release.territoryCode) || [];
+          return {
+            ...release,
+            weeklyBoxOffice,
+            totalBoxOffice: weeklyBoxOffice.reduce((sum, gross) => sum + gross, 0),
+            weeksInRelease: weeklyBoxOffice.length,
+            isReleased: true,
+          };
+        }));
       });
 
       await Promise.all([

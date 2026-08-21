@@ -104,12 +104,42 @@ async function main() {
     const preloadMs = performance.now() - preloadStart;
     assert.equal(preloadResponse.status, 200);
 
+    const preloadedFilms = await fetch(`${baseUrl}/api/all-films/${studio.id}`).then(r => r.json());
+    const preloadedReleases = await fetch(
+      `${baseUrl}/api/all-releases?playerGameId=${studio.id}`,
+    ).then(r => r.json());
+    const preloadedReleasedFilms = preloadedFilms.filter((film: any) =>
+      film.phase === "released" && film.weeklyBoxOffice.length > 0);
+    assert.ok(preloadedReleasedFilms.length > 0);
+    for (const film of preloadedReleasedFilms) {
+      const releases = preloadedReleases.filter((release: any) => release.filmId === film.id);
+      assert.ok(releases.length > 0);
+      assert.ok(releases.every((release: any) =>
+        release.weeklyBoxOffice.length === film.weeklyBoxOffice.length &&
+        release.weeksInRelease === film.weeklyBoxOffice.length
+      ), `Preloaded release history mismatch for ${film.title}`);
+    }
+    const preAdvanceGross = new Map(preloadedReleasedFilms.map((film: any) => [
+      film.id,
+      film.weeklyBoxOffice[film.weeklyBoxOffice.length - 1],
+    ]));
+
     const weekStart = performance.now();
     const weekResponse = await fetch(`${baseUrl}/api/studio/${studio.id}/advance-week`, { method: "POST" });
     const nextWeekMs = performance.now() - weekStart;
     assert.equal(weekResponse.status, 200);
     assert.ok(nextWeekMs < 3_000, `Next Week took ${nextWeekMs.toFixed(0)}ms`);
     assert.equal(contentRequests, 1, "Simulation must not make remote content or database requests");
+    const filmsAfterWeekTwo = await fetch(`${baseUrl}/api/all-films/${studio.id}`).then(r => r.json());
+    for (const film of filmsAfterWeekTwo) {
+      const previousGross = Number(preAdvanceGross.get(film.id));
+      if (!Number.isFinite(previousGross) || previousGross <= 0) continue;
+      const currentGross = film.weeklyBoxOffice[film.weeklyBoxOffice.length - 1] || 0;
+      assert.ok(
+        currentGross <= previousGross * 0.8 + 100,
+        `${film.title} received a duplicate opening: ${currentGross} after ${previousGross}`,
+      );
+    }
 
     const deleteResponse = await fetch(`${baseUrl}/api/studio/${studio.id}`, { method: "DELETE" });
     assert.equal(deleteResponse.status, 200);
