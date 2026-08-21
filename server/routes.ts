@@ -5564,6 +5564,9 @@ export async function registerRoutes(
           let retentionTotal = 0;
           let retentionCount = 0;
           let peakEventPotential = 0;
+          let peakEventIntensity = 0;
+          let peakPhenomenonPotential = 0;
+          let peakPhenomenonIntensity = 0;
           let worldwideImaxGross = 0;
           let worldwideDolbyGross = 0;
           let worldwideRegularGross = 0;
@@ -5602,6 +5605,15 @@ export async function registerRoutes(
             retentionTotal += territoryResult.retention;
             retentionCount += 1;
             peakEventPotential = Math.max(peakEventPotential, territoryResult.eventPotential);
+            peakEventIntensity = Math.max(peakEventIntensity, territoryResult.eventIntensity);
+            peakPhenomenonPotential = Math.max(
+              peakPhenomenonPotential,
+              territoryResult.phenomenonPotential,
+            );
+            peakPhenomenonIntensity = Math.max(
+              peakPhenomenonIntensity,
+              territoryResult.phenomenonIntensity,
+            );
             worldwideImaxGross += territoryResult.imaxGross;
             worldwideDolbyGross += territoryResult.dolbyGross;
             worldwideRegularGross += territoryResult.regularGross;
@@ -5622,6 +5634,9 @@ export async function registerRoutes(
               week: newWeek,
               year: newYear,
               eventPotential: Math.round(territoryResult.eventPotential * 10) / 10,
+              eventIntensity: Math.round(territoryResult.eventIntensity * 1000) / 1000,
+              phenomenonPotential: Math.round(territoryResult.phenomenonPotential * 10) / 10,
+              phenomenonIntensity: Math.round(territoryResult.phenomenonIntensity * 1000) / 1000,
               regularAdmissions: Math.round(territoryResult.regularAdmissions),
               imaxAdmissions: Math.round(territoryResult.imaxAdmissions),
               dolbyAdmissions: Math.round(territoryResult.dolbyAdmissions),
@@ -5671,6 +5686,37 @@ export async function registerRoutes(
             totalBoxOffice: newTotalBoxOffice,
             totalBoxOfficeByCountry: newTotalByCountry,
           };
+          const previousBoxOfficeBreakdown = film.boxOfficeBreakdown &&
+            typeof film.boxOfficeBreakdown === "object"
+            ? film.boxOfficeBreakdown as Record<string, any>
+            : {};
+          const lifetimeEventPotential = Math.max(
+            Number(previousBoxOfficeBreakdown.peakEventPotential || 0),
+            peakEventPotential,
+          );
+          const lifetimeEventIntensity = Math.max(
+            Number(previousBoxOfficeBreakdown.peakEventIntensity || 0),
+            peakEventIntensity,
+          );
+          const lifetimePhenomenonPotential = Math.max(
+            Number(previousBoxOfficeBreakdown.peakPhenomenonPotential || 0),
+            peakPhenomenonPotential,
+          );
+          const lifetimePhenomenonIntensity = Math.max(
+            Number(previousBoxOfficeBreakdown.peakPhenomenonIntensity || 0),
+            peakPhenomenonIntensity,
+          );
+          filmUpdate.boxOfficeBreakdown = {
+            ...previousBoxOfficeBreakdown,
+            modelVersion: 3,
+            peakEventPotential: Math.round(lifetimeEventPotential * 10) / 10,
+            peakEventIntensity: Math.round(lifetimeEventIntensity * 1000) / 1000,
+            peakPhenomenonPotential: Math.round(lifetimePhenomenonPotential * 10) / 10,
+            peakPhenomenonIntensity: Math.round(lifetimePhenomenonIntensity * 1000) / 1000,
+            isEventFilm: lifetimeEventIntensity >= 0.1,
+            isCulturalPhenomenon: lifetimePhenomenonIntensity >= 0.1 &&
+              lifetimeEventIntensity < 0.1,
+          };
           if (newWeeklyBoxOffice.length >= 12 && globalWeeklyGross < 100000) {
             filmUpdate.status = 'archived';
             filmUpdate.archivedWeek = newWeek;
@@ -5685,7 +5731,7 @@ export async function registerRoutes(
               ? retentionTotal / retentionCount
               : 0.5;
             filmUpdate.boxOfficeBreakdown = {
-              modelVersion: 2,
+              ...filmUpdate.boxOfficeBreakdown,
               peakEventPotential: Math.round(peakEventPotential * 10) / 10,
               regularGross: worldwideRegularGross,
               imaxGross: worldwideImaxGross,

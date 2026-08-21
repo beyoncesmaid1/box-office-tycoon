@@ -312,5 +312,9 @@ export interface TerritoryWeekResult {
   imaxAdmissions: number;
   dolbyAdmissions: number;
   eventPotential: number;
+  eventIntensity: number;
+  phenomenonPotential: number;
+  phenomenonIntensity: number;
+  regularCapacityAdmissions: number;
   retention: number;
 }

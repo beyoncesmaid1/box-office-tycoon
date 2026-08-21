@@ -43,6 +43,24 @@ const DOLBY_GENRE_FIT: Record<string, number> = {
   comedy: 44,
 };
 
+const GLOBAL_ACCESSIBILITY: Record<string, number> = {
+  action: 96,
+  scifi: 100,
+  fantasy: 96,
+  animation: 97,
+  thriller: 72,
+  musicals: 68,
+  horror: 62,
+  drama: 55,
+  romance: 54,
+  comedy: 46,
+};
+
+/** Existing genre is the only reliable signal for how broadly a film travels. */
+export function getGenreGlobalAccessibility(genre: string): number {
+  return GLOBAL_ACCESSIBILITY[normalizedGenre(genre)] ?? 60;
+}
+
 export function calculatePremiumSuitability(
   input: PremiumSuitabilityInput,
 ): PremiumSuitabilityResult {
@@ -227,6 +245,12 @@ export function simulateTerritoryWeek(input: TerritoryWeekInput): TerritoryWeekR
   const launchHook = clamp(input.launchHook) / 100;
   const marketScale = Math.max(0.005, input.territoryMarketShare / 0.35);
   const variance = clamp(input.demandVariance ?? 1, 0.45, 1.75);
+  const premiumReadiness = clamp(
+    (clamp(input.imaxSuitability) * 0.58 + clamp(input.dolbySuitability) * 0.42) / 100,
+    0.2,
+    1,
+  );
+  const globalAccessibility = getGenreGlobalAccessibility(input.genre) / 100;
   const eventPotential = clamp(geometricMean([
     awareness,
     interest,
@@ -235,6 +259,8 @@ export function simulateTerritoryWeek(input: TerritoryWeekInput): TerritoryWeekR
     Math.max(0.18, launchHook),
     clamp(timing / 1.18, 0.2, 1),
     clamp(competitionOpportunity, 0.2, 1),
+    premiumReadiness,
+    globalAccessibility,
   ]) * 100);
   const eventIntensity = Math.pow(
     clamp(
@@ -242,12 +268,43 @@ export function simulateTerritoryWeek(input: TerritoryWeekInput): TerritoryWeekR
       0,
       1,
     ),
-    3,
+    BALANCE.eventCurveExponent,
   );
   const eventDemandMultiplier = 1 + BALANCE.eventDemandBoost * eventIntensity;
 
+  const womDelta = audienceExperience - clamp(input.openingExpectation);
+  const deliveryStrength = clamp((womDelta - 8) / 24, 0, 1);
+  const experienceStrength = clamp((audienceExperience - 62) / 36, 0, 1);
+  const organicMomentum = clamp(
+    (input.campaign.buzz + 12) / 30 + Math.max(0, womDelta - 8) / 80,
+    0.05,
+    1,
+  );
+  const phenomenonPotential = input.weekNumber === 0 ? 0 : clamp(geometricMean([
+    deliveryStrength,
+    experienceStrength,
+    organicMomentum,
+    globalAccessibility,
+  ]) * 100);
+  const rawPhenomenonIntensity = input.weekNumber === 0 ? 0 : Math.pow(
+    clamp(
+      (phenomenonPotential - BALANCE.phenomenonThreshold) /
+        BALANCE.phenomenonRange,
+      0,
+      1,
+    ),
+    BALANCE.phenomenonCurveExponent,
+  );
+  // Anticipated events and sleeper phenomena are separate paths. A film that
+  // already opened as a major event cannot stack the full sleeper expansion.
+  const phenomenonIntensity = rawPhenomenonIntensity *
+    (1 - clamp(eventIntensity / 0.1, 0, 1));
+
+  const internationalReach = 1 +
+    BALANCE.eventInternationalReachBoost * eventIntensity * globalAccessibility *
+    (input.territoryCode === "NA" ? 0.15 : 1);
   const openingAddressableAdmissions =
-    BALANCE.openingAddressableAdmissionsDomestic * marketScale;
+    BALANCE.openingAddressableAdmissionsDomestic * marketScale * internationalReach;
   const openingDemand = openingAddressableAdmissions *
     Math.pow(awareness, 1.08) *
     Math.pow(interest, 1.02) *
@@ -259,41 +316,51 @@ export function simulateTerritoryWeek(input: TerritoryWeekInput): TerritoryWeekR
     eventDemandMultiplier *
     variance;
 
-  const womDelta = audienceExperience - clamp(input.openingExpectation);
   const retention = clamp(
     BALANCE.retentionBase +
     womDelta * 0.006 +
     input.campaign.buzz * 0.0012 +
-    Math.min(0.08, input.weekNumber * 0.012),
+    Math.min(0.08, input.weekNumber * 0.012) +
+    BALANCE.phenomenonRetentionBoost * phenomenonIntensity,
     0.22,
-    0.78,
+    0.86,
   );
   const previousAdmissions = Math.max(0, input.previousWeekGross ?? 0) /
     Math.max(1, input.baseTicketPrice * 1.08);
+  const holdoverDemand = previousAdmissions * retention *
+    (0.94 + awareness * 0.03 + interest * 0.03);
+  const discoveryDecay = Math.exp(-Math.max(0, input.weekNumber - 1) / 8);
+  const organicDiscoveryDemand = openingAddressableAdmissions *
+    BALANCE.phenomenonDiscoveryShare * phenomenonIntensity * discoveryDecay *
+    (0.45 + awareness * 0.35 + interest * 0.2);
   const totalDemandAdmissions = input.weekNumber === 0
     ? openingDemand
-    : previousAdmissions * retention *
-      (0.94 + awareness * 0.03 + interest * 0.03);
+    : holdoverDemand + organicDiscoveryDemand;
 
   const formatDemand = estimatePremiumFormatDemand(
     totalDemandAdmissions,
     input.imaxSuitability,
     input.dolbySuitability,
   );
+  const premiumTurnover = 1 +
+    BALANCE.eventPremiumTurnoverBoost * eventIntensity +
+    BALANCE.phenomenonPremiumTurnoverBoost * phenomenonIntensity;
   const imaxAdmissions = Math.min(
     formatDemand.imax,
-    Math.max(0, input.imaxAllocationAdmissions),
+    Math.max(0, input.imaxAllocationAdmissions) * premiumTurnover,
   );
   const dolbyAdmissions = Math.min(
     formatDemand.dolby,
-    Math.max(0, input.dolbyAllocationAdmissions),
+    Math.max(0, input.dolbyAllocationAdmissions) * premiumTurnover,
   );
   // Most viewers unable to obtain their preferred premium format can choose a
   // regular presentation, but some demand is lost rather than duplicated.
   const premiumSpillover =
     Math.max(0, formatDemand.imax - imaxAdmissions) * 0.82 +
     Math.max(0, formatDemand.dolby - dolbyAdmissions) * 0.86;
-  const eventDensity = 1 + BALANCE.eventCapacityBoost * eventIntensity;
+  const eventDensity = 1 +
+    BALANCE.eventCapacityBoost * eventIntensity +
+    BALANCE.phenomenonCapacityBoost * phenomenonIntensity;
   const regularCapacity = Math.max(0, input.regularCapacityAdmissions) * eventDensity;
   const regularDemand = formatDemand.regular + premiumSpillover;
   const regularAdmissions = Math.min(regularDemand, regularCapacity);
@@ -315,7 +382,10 @@ export function simulateTerritoryWeek(input: TerritoryWeekInput): TerritoryWeekR
     imaxAdmissions,
     dolbyAdmissions,
     eventPotential,
+    eventIntensity,
+    phenomenonPotential,
+    phenomenonIntensity,
+    regularCapacityAdmissions: regularCapacity,
     retention,
   };
 }
-

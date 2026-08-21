@@ -119,8 +119,18 @@ export interface ExhibitionBalanceConfig {
   retentionBase: number;
   eventThreshold: number;
   eventRange: number;
+  eventCurveExponent: number;
   eventDemandBoost: number;
   eventCapacityBoost: number;
+  eventPremiumTurnoverBoost: number;
+  eventInternationalReachBoost: number;
+  phenomenonThreshold: number;
+  phenomenonRange: number;
+  phenomenonCurveExponent: number;
+  phenomenonDiscoveryShare: number;
+  phenomenonCapacityBoost: number;
+  phenomenonPremiumTurnoverBoost: number;
+  phenomenonRetentionBoost: number;
   maximumPremiumDemandShare: number;
 }
 
@@ -272,10 +282,20 @@ export const DEFAULT_SIMULATION_CONFIG: SimulationBalanceConfig = {
     openingAddressableAdmissionsDomestic: 54_000_000,
     productionDemandFloor: 0.62,
     retentionBase: 0.51,
-    eventThreshold: 70,
+    eventThreshold: 73,
     eventRange: 18,
+    eventCurveExponent: 2.2,
     eventDemandBoost: 3.4,
     eventCapacityBoost: 6,
+    eventPremiumTurnoverBoost: 0.65,
+    eventInternationalReachBoost: 0.28,
+    phenomenonThreshold: 76,
+    phenomenonRange: 18,
+    phenomenonCurveExponent: 2.1,
+    phenomenonDiscoveryShare: 0.018,
+    phenomenonCapacityBoost: 2,
+    phenomenonPremiumTurnoverBoost: 0.4,
+    phenomenonRetentionBoost: 0.08,
     maximumPremiumDemandShare: 0.46,
   },
   genres: {

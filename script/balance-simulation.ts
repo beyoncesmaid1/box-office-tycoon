@@ -28,7 +28,13 @@ type CohortName =
   | "skilled optimizer"
   | "average"
   | "high-budget"
-  | "low-budget";
+  | "low-budget"
+  | "high-quality / low-commercial-appeal"
+  | "mediocre-quality / high-commercial-appeal"
+  | "franchise event"
+  | "original event"
+  | "globally accessible"
+  | "culturally narrow";
 
 interface Plan {
   genre: SimulationGenre;
@@ -72,6 +78,11 @@ interface Observation {
   imaxGross: number;
   dolbyGross: number;
   eventPotential: number;
+  eventIntensity: number;
+  phenomenonPotential: number;
+  phenomenonIntensity: number;
+  openingDemandAdmissions: number;
+  openingAdmissions: number;
 }
 
 interface PreparedCampaign {
@@ -282,6 +293,62 @@ function generatePlan(cohort: CohortName, rng: RandomSource): Plan {
   if (cohort === "high-budget") return makePlan(rng, highBudgetProfile);
   if (cohort === "low-budget") return makePlan(rng, lowBudgetProfile);
 
+  const globalGenres: SimulationGenre[] = ["action", "scifi", "fantasy", "animation"];
+  const narrowGenres: SimulationGenre[] = ["comedy", "drama", "romance"];
+  if (cohort === "high-quality / low-commercial-appeal") {
+    const plan = makePlan(rng, averageProfile);
+    plan.scriptQuality = uniform(rng, 84, 98);
+    plan.cinematographyQuality = uniform(rng, 82, 98);
+    plan.productionExecution = uniform(rng, 82, 97);
+    plan.conceptCommerciality = uniform(rng, 28, 48);
+    plan.franchiseAwareness = 0;
+    return plan;
+  }
+  if (cohort === "mediocre-quality / high-commercial-appeal") {
+    const plan = makePlan(rng, highBudgetProfile, pick(rng, globalGenres));
+    plan.scriptQuality = uniform(rng, 42, 62);
+    plan.cinematographyQuality = uniform(rng, 48, 68);
+    plan.productionExecution = uniform(rng, 45, 66);
+    plan.conceptCommerciality = uniform(rng, 88, 100);
+    plan.marketingBudget *= uniform(rng, 1.05, 1.35);
+    const lowerCreativeSkill = (person: TalentLike): TalentLike => ({
+      ...person,
+      performance: uniform(rng, 42, 64),
+      experience: uniform(rng, 44, 68),
+      genres: { [plan.genre]: uniform(rng, 42, 68) },
+    });
+    plan.director = lowerCreativeSkill(plan.director);
+    plan.writer = lowerCreativeSkill(plan.writer);
+    plan.cast = plan.cast.map(lowerCreativeSkill);
+    plan.specialists = plan.specialists.map(lowerCreativeSkill);
+    return plan;
+  }
+  if (cohort === "franchise event" || cohort === "original event") {
+    const plan = makePlan(rng, highBudgetProfile, pick(rng, globalGenres));
+    plan.productionBudget *= uniform(rng, 1.05, 1.3);
+    plan.marketingBudget *= uniform(rng, 1.15, 1.55);
+    plan.conceptCommerciality = uniform(rng, 86, 100);
+    plan.releaseTiming = uniform(rng, 76, 100);
+    plan.competition = uniform(rng, 0, 28);
+    plan.franchiseAwareness = cohort === "franchise event" ? uniform(rng, 84, 100) : 0;
+    plan.cast = plan.cast.map(person => ({
+      ...person,
+      fame: uniform(rng, 82, 100),
+      popularity: uniform(rng, 80, 100),
+    }));
+    return plan;
+  }
+  if (cohort === "globally accessible") {
+    return makePlan(rng, skilledProfile, pick(rng, globalGenres));
+  }
+  if (cohort === "culturally narrow") {
+    const plan = makePlan(rng, highBudgetProfile, pick(rng, narrowGenres));
+    plan.conceptCommerciality = uniform(rng, 78, 98);
+    plan.releaseTiming = uniform(rng, 65, 95);
+    plan.competition = uniform(rng, 5, 42);
+    return plan;
+  }
+
   // The optimizer sees plan attributes, not outcome RNG, and picks from a finite slate.
   let best = makePlan(rng, skilledProfile);
   let bestUtility = planUtility(best);
@@ -379,6 +446,11 @@ function simulateCampaignRun(
   imaxGross: number;
   dolbyGross: number;
   eventPotential: number;
+  eventIntensity: number;
+  phenomenonPotential: number;
+  phenomenonIntensity: number;
+  openingDemandAdmissions: number;
+  openingAdmissions: number;
 } {
   const genreBalance = resolveGenre(plan.genre);
   const productionScale = clamp(
@@ -413,6 +485,11 @@ function simulateCampaignRun(
   let imaxGross = 0;
   let dolbyGross = 0;
   let peakEventPotential = 0;
+  let peakEventIntensity = 0;
+  let peakPhenomenonPotential = 0;
+  let peakPhenomenonIntensity = 0;
+  let openingDemandAdmissions = 0;
+  let openingAdmissions = 0;
   const previousGrosses = new Map<string, number>();
   for (let weekNumber = 0; weekNumber < 16; weekNumber += 1) {
     let worldwideGross = 0;
@@ -478,6 +555,20 @@ function simulateCampaignRun(
       imaxGross += result.imaxGross;
       dolbyGross += result.dolbyGross;
       peakEventPotential = Math.max(peakEventPotential, result.eventPotential);
+      peakEventIntensity = Math.max(peakEventIntensity, result.eventIntensity);
+      peakPhenomenonPotential = Math.max(
+        peakPhenomenonPotential,
+        result.phenomenonPotential,
+      );
+      peakPhenomenonIntensity = Math.max(
+        peakPhenomenonIntensity,
+        result.phenomenonIntensity,
+      );
+      if (weekNumber === 0) {
+        openingDemandAdmissions += result.totalDemandAdmissions;
+        openingAdmissions += result.regularAdmissions +
+          result.imaxAdmissions + result.dolbyAdmissions;
+      }
       previousGrosses.set(territory.code, result.gross);
       campaigns.set(territory.code, advanceCampaignWeek(campaign, {
         isReleased: true,
@@ -500,6 +591,11 @@ function simulateCampaignRun(
     imaxGross,
     dolbyGross,
     eventPotential: peakEventPotential,
+    eventIntensity: peakEventIntensity,
+    phenomenonPotential: peakPhenomenonPotential,
+    phenomenonIntensity: peakPhenomenonIntensity,
+    openingDemandAdmissions,
+    openingAdmissions,
   };
 }
 
@@ -572,6 +668,11 @@ function runFilm(cohort: CohortName, rng: RandomSource): Observation {
     imaxGross: boxOffice.imaxGross,
     dolbyGross: boxOffice.dolbyGross,
     eventPotential: boxOffice.eventPotential,
+    eventIntensity: boxOffice.eventIntensity,
+    phenomenonPotential: boxOffice.phenomenonPotential,
+    phenomenonIntensity: boxOffice.phenomenonIntensity,
+    openingDemandAdmissions: boxOffice.openingDemandAdmissions,
+    openingAdmissions: boxOffice.openingAdmissions,
   };
 }
 
@@ -611,6 +712,8 @@ const sameDirection = (left: number, right: number): boolean =>
 
 const money = (value: number): string => `$${(value / 1_000_000).toFixed(1)}M`;
 const percent = (value: number): string => `${(value * 100).toFixed(2)}%`;
+const tailPercent = (value: number): string =>
+  `${(value * 100).toFixed(value < 0.001 ? 4 : 2)}%`;
 
 function recordBreaksAfterWarmup(observations: readonly Observation[]): number {
   const warmupCount = Math.min(observations.length - 1, Math.max(100, Math.floor(observations.length * 0.2)));
@@ -625,7 +728,7 @@ function recordBreaksAfterWarmup(observations: readonly Observation[]): number {
   return breaks;
 }
 
-function report(cohort: CohortName, observations: readonly Observation[]): void {
+function report(cohort: string, observations: readonly Observation[]): void {
   const critics = observations.map((item) => item.critic);
   const audiences = observations.map((item) => item.audience);
   const grosses = observations.map((item) => item.gross);
@@ -641,6 +744,9 @@ function report(cohort: CohortName, observations: readonly Observation[]): void 
   const absoluteGaps = gaps.map(Math.abs);
   const explainedLargeGaps = observations.filter(item =>
     Math.abs(item.critic - item.audience) >= 10);
+  const eventFilms = observations.filter(item => item.eventIntensity >= 0.1);
+  const phenomena = observations.filter(item =>
+    item.phenomenonIntensity >= 0.1 && item.eventIntensity < 0.1);
 
   console.log(`\n${cohort.toUpperCase()} (${observations.length.toLocaleString()} films)`);
   console.log(
@@ -691,8 +797,9 @@ function report(cohort: CohortName, observations: readonly Observation[]): void 
       item.criticPerfect && item.audiencePerfect))}`,
   );
   console.log(
-    `Gross   mean/median/p90/p99/p99.9/max: ${money(mean(grosses))} / ${money(percentile(grosses, 0.5))} / ` +
-    `${money(percentile(grosses, 0.9))} / ${money(percentile(grosses, 0.99))} / ` +
+    `Gross   mean/median/p90/p95/p99/p99.9/max: ${money(mean(grosses))} / ${money(percentile(grosses, 0.5))} / ` +
+    `${money(percentile(grosses, 0.9))} / ${money(percentile(grosses, 0.95))} / ` +
+    `${money(percentile(grosses, 0.99))} / ` +
     `${money(percentile(grosses, 0.999))} / ${money(Math.max(...grosses))} | opening median: ${money(percentile(openings, 0.5))}`,
   );
   console.log(
@@ -703,11 +810,24 @@ function report(cohort: CohortName, observations: readonly Observation[]): void 
   );
   console.log(
     `Economy profitable: ${percent(rate(observations, (item) => item.profit > 0))} | ` +
+    `>$100M: ${percent(rate(observations, (item) => item.gross >= 100_000_000))} | ` +
     `>$500M: ${percent(rate(observations, (item) => item.gross >= 500_000_000))} | ` +
     `>$1B: ${percent(rate(observations, (item) => item.gross >= 1_000_000_000))} | ` +
+    `>$1.5B: ${percent(rate(observations, (item) => item.gross >= 1_500_000_000))} | ` +
     `>$2B: ${percent(rate(observations, (item) => item.gross >= 2_000_000_000))} | ` +
+    `>$2.5B: ${percent(rate(observations, (item) => item.gross >= 2_500_000_000))} | ` +
     `bad-film flag: ${percent(rate(observations, (item) => item.badFilm))} | ` +
     `median legs: ${percentile(legs, 0.5).toFixed(2)} | median net: ${money(percentile(profits, 0.5))}`,
+  );
+  console.log(
+    `Tail    event films: ${tailPercent(eventFilms.length / observations.length)} ` +
+    `(${eventFilms.length}) | cultural phenomena: ` +
+    `${tailPercent(phenomena.length / observations.length)} (${phenomena.length}) | ` +
+    `max event/phenomenon potential: ${Math.max(...observations.map(item =>
+      item.eventPotential)).toFixed(1)}/${Math.max(...observations.map(item =>
+      item.phenomenonPotential)).toFixed(1)} | ` +
+    `opening demand converted: ${percent(mean(observations.map(item =>
+      item.openingAdmissions / Math.max(1, item.openingDemandAdmissions))))}`,
   );
   console.log(
     `Formats mean IMAX/Dolby gross: ${money(mean(imaxGrosses))} / ${money(mean(dolbyGrosses))} | ` +
@@ -1105,6 +1225,14 @@ function reportEventScenarios(seed: string): void {
     phenomenonCampaign,
     phenomenonRng,
   );
+  if (megaEvent.eventIntensity < 0.1 || megaEvent.totalGross < 1_000_000_000) {
+    throw new Error("Elite anticipated event failed to unlock event capacity");
+  }
+  if (phenomenon.phenomenonIntensity < 0.1 ||
+      phenomenon.openingWeekend >= 100_000_000 ||
+      phenomenon.totalGross < phenomenon.openingWeekend * 8) {
+    throw new Error("Sleeper success failed to emerge through organic expansion");
+  }
   console.log("\nEVENT SCENARIOS");
   console.log(
     `Mega-event opening/total/event potential: ${money(megaEvent.openingWeekend)} / ` +
@@ -1112,7 +1240,9 @@ function reportEventScenarios(seed: string): void {
   );
   console.log(
     `Under-marketed phenomenon opening/total/legs: ${money(phenomenon.openingWeekend)} / ` +
-    `${money(phenomenon.totalGross)} / ${phenomenon.legsMultiplier.toFixed(2)}`,
+    `${money(phenomenon.totalGross)} / ${phenomenon.legsMultiplier.toFixed(2)} ` +
+    `(potential ${phenomenon.phenomenonPotential.toFixed(1)}, ` +
+    `intensity ${phenomenon.phenomenonIntensity.toFixed(3)})`,
   );
 }
 
@@ -1123,6 +1253,10 @@ function main(): void {
   const cohorts: CohortName[] = [
     "random AI", "heuristic AI", "skilled optimizer",
     "average", "high-budget", "low-budget",
+    "high-quality / low-commercial-appeal",
+    "mediocre-quality / high-commercial-appeal",
+    "franchise event", "original event",
+    "globally accessible", "culturally narrow",
   ];
 
   console.log(`Seed: ${seed}; films per cohort: ${count.toLocaleString()}`);
@@ -1132,16 +1266,23 @@ function main(): void {
   reportEventScenarios(seed);
   const cohortMeans = new Map<CohortName, { critic: number; gross: number }>();
   const allObservations: Observation[] = [];
+  const coreObservations: Observation[] = [];
+  const coreCohorts = new Set<CohortName>([
+    "random AI", "heuristic AI", "skilled optimizer",
+    "average", "high-budget", "low-budget",
+  ]);
   for (const cohort of cohorts) {
     const rng = createSeededRng(`${seed}:${cohort}`);
     const observations = Array.from({ length: count }, () => runFilm(cohort, rng));
     allObservations.push(...observations);
+    if (coreCohorts.has(cohort)) coreObservations.push(...observations);
     report(cohort, observations);
     cohortMeans.set(cohort, {
       critic: mean(observations.map(item => item.critic)),
       gross: mean(observations.map(item => item.gross)),
     });
   }
+  report("core six equal-weight mix", coreObservations);
   reportGenreRelationships(allObservations);
   const heuristic = cohortMeans.get("heuristic AI");
   const skilled = cohortMeans.get("skilled optimizer");
