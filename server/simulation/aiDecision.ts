@@ -59,6 +59,27 @@ export interface AIPlannedFilmCommitment {
   commitment: AIFilmCommitmentPlan;
 }
 
+export interface AIFilmReturnHistory {
+  genre: string;
+  productionBudget: number;
+  totalBoxOffice: number;
+  ancillaryRevenue?: number;
+}
+
+export interface AIFilmReturnForecast {
+  expectedTheatricalGross: number;
+  expectedTheatricalRevenue: number;
+  expectedStreamingRevenue: number;
+  expectedLifecycleRevenue: number;
+  projectedProfit: number;
+  projectedRoi: number;
+  hurdleRoi: number;
+  comparableCount: number;
+  confidence: number;
+  explorationOverride: boolean;
+  shouldGreenlight: boolean;
+}
+
 const TENTPOLE_GENRES = new Set(["action", "scifi", "fantasy", "animation"]);
 const TENTPOLE_BUDGET_FLOOR = 170_000_000;
 
@@ -291,6 +312,124 @@ export function selectAffordableAIFilmCommitment(
     );
   }
   return { production, commitment };
+}
+
+/**
+ * Produce a deliberately fallible pre-greenlight return estimate. The studio
+ * learns from comparable released films, but sparse samples, planning noise,
+ * optimism, and exploration prevent it from becoming an omniscient optimizer.
+ * Ancillary value mirrors the existing post-theatrical streaming-license flow;
+ * no unimplemented digital revenue is counted as cash.
+ */
+export function forecastAIFilmReturn(
+  genre: string,
+  plannedFilm: AIPlannedFilmCommitment,
+  history: AIFilmReturnHistory[],
+  profile: AIStudioDecisionProfile,
+  rng: RandomSource = Math.random,
+): AIFilmReturnForecast {
+  const productionBudget = Math.max(1, plannedFilm.production.productionBudget);
+  const targetTier = productionBudget < 15_000_000 ? 0
+    : productionBudget < 40_000_000 ? 1
+    : productionBudget < 100_000_000 ? 2
+    : productionBudget < 170_000_000 ? 3 : 4;
+  const tierOf = (budget: number) => budget < 15_000_000 ? 0
+    : budget < 40_000_000 ? 1
+    : budget < 100_000_000 ? 2
+    : budget < 170_000_000 ? 3 : 4;
+  const usable = history.filter(item =>
+    item.productionBudget > 0 && item.totalBoxOffice > 0);
+  let comparables = usable.filter(item =>
+    item.genre.toLowerCase() === genre.toLowerCase() &&
+    Math.abs(tierOf(item.productionBudget) - targetTier) <= 1);
+  if (comparables.length < 8) {
+    comparables = usable.filter(item =>
+      Math.abs(tierOf(item.productionBudget) - targetTier) <= 1);
+  }
+  if (comparables.length < 8) comparables = usable;
+
+  const grossMultiples: Record<string, number> = {
+    action: 2.25,
+    scifi: 2.3,
+    fantasy: 2.2,
+    animation: 2.35,
+    thriller: 2.1,
+    comedy: 2.0,
+    romance: 1.95,
+    musicals: 2.0,
+    horror: 2.7,
+    drama: 1.8,
+  };
+  const priorGross = productionBudget *
+    (grossMultiples[genre.toLowerCase()] || 2.05);
+  const normalizedGrosses = comparables.map(item =>
+    item.totalBoxOffice * Math.pow(
+      productionBudget / Math.max(1, item.productionBudget),
+      0.62,
+    ));
+  const historicalGross = normalizedGrosses.length > 0
+    ? percentileMedian(normalizedGrosses)
+    : priorGross;
+  const confidence = Math.max(0.12, Math.min(0.88, comparables.length / 24));
+  const learnedGross = priorGross * (1 - confidence) + historicalGross * confidence;
+
+  const commitment = plannedFilm.commitment;
+  const supportRatio = (
+    commitment.departmentBudget * 0.32 +
+    commitment.talentBudgetLimit * 0.28 +
+    commitment.vfxBudgetCeiling * 0.16 +
+    commitment.marketingBudget * 0.24
+  ) / productionBudget;
+  const supportAdjustment = Math.max(0.88, Math.min(1.12,
+    0.94 + Math.sqrt(Math.max(0, supportRatio)) * 0.09));
+  const forecastNoiseSigma = 0.16 + (1 - profile.decisionQuality) * 0.18 +
+    profile.explorationRate * 0.12;
+  const optimism = 1 + profile.riskTolerance * 0.07 -
+    profile.valueDiscipline * 0.035;
+  const grossNoise = Math.max(0.58, Math.min(1.55,
+    1 + normalNoise(rng) * forecastNoiseSigma));
+  const expectedTheatricalGross = Math.max(0,
+    learnedGross * supportAdjustment * optimism * grossNoise);
+  const expectedTheatricalRevenue = expectedTheatricalGross * 0.7;
+
+  // Existing AI streaming deals pay about 12% of theatrical gross before
+  // quality and negotiation variance. Forecast the opportunity conservatively.
+  const streamingRate = Math.max(0.065, Math.min(0.145,
+    0.102 + normalNoise(rng) * 0.018));
+  const expectedStreamingRevenue = expectedTheatricalGross * streamingRate;
+  const expectedLifecycleRevenue = expectedTheatricalRevenue + expectedStreamingRevenue;
+  const projectedAllIn = Math.max(1, commitment.projectedAllIn);
+  const projectedProfit = expectedLifecycleRevenue - projectedAllIn;
+  const projectedRoi = projectedProfit / projectedAllIn;
+  // A greenlight hurdle below zero reflects slate strategy and the wide error
+  // bars on early forecasts. Studios can knowingly accept a moderate projected
+  // loss, but deeply unattractive projects require a much rarer override.
+  const hurdleRoi = -0.30 + profile.valueDiscipline * 0.12 -
+    profile.riskTolerance * 0.06 + normalNoise(rng) * 0.055;
+  const explorationOverride = rng() < 0.012 + profile.explorationRate * 0.22;
+
+  return {
+    expectedTheatricalGross,
+    expectedTheatricalRevenue,
+    expectedStreamingRevenue,
+    expectedLifecycleRevenue,
+    projectedProfit,
+    projectedRoi,
+    hurdleRoi,
+    comparableCount: comparables.length,
+    confidence,
+    explorationOverride,
+    shouldGreenlight: projectedRoi >= hurdleRoi || explorationOverride,
+  };
+}
+
+function percentileMedian(values: number[]): number {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((left, right) => left - right);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0
+    ? (sorted[middle - 1] + sorted[middle]) / 2
+    : sorted[middle];
 }
 
 export function createTentpoleDecisionProfile(

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import {
   createStudioDecisionProfile,
+  forecastAIFilmReturn,
   planAIFilmCommitment,
   selectAffordableAIFilmCommitment,
   type AIProductionBudgetPlan,
@@ -78,7 +79,61 @@ assert.ok(maximumRatio - minimumRatio > 0.45,
 assert.ok(samples.some(plan => plan.planningError < 0.9));
 assert.ok(samples.some(plan => plan.planningError > 1.08));
 
+const forecastPlan = {
+  production: production(50_000_000),
+  commitment: planAIFilmCommitment(
+    "drama",
+    production(50_000_000),
+    500_000_000,
+    profile,
+    createSeededRng("forecast-plan").next,
+  ),
+};
+const strongHistory = Array.from({ length: 16 }, (_, index) => ({
+  genre: "drama",
+  productionBudget: 45_000_000 + index * 500_000,
+  totalBoxOffice: 175_000_000 + index * 2_000_000,
+  ancillaryRevenue: 18_000_000,
+}));
+const weakHistory = strongHistory.map(item => ({
+  ...item,
+  totalBoxOffice: item.totalBoxOffice * 0.28,
+  ancillaryRevenue: item.ancillaryRevenue * 0.28,
+}));
+const strongForecast = forecastAIFilmReturn(
+  "drama",
+  forecastPlan,
+  strongHistory,
+  profile,
+  createSeededRng("comparable-forecast").next,
+);
+const weakForecast = forecastAIFilmReturn(
+  "drama",
+  forecastPlan,
+  weakHistory,
+  profile,
+  createSeededRng("comparable-forecast").next,
+);
+assert.ok(strongForecast.expectedTheatricalGross > weakForecast.expectedTheatricalGross * 1.5);
+assert.ok(strongForecast.expectedStreamingRevenue > 0);
+assert.equal(strongForecast.comparableCount, 16);
+
+const returnForecasts = Array.from({ length: 500 }, (_, index) => forecastAIFilmReturn(
+  "drama",
+  forecastPlan,
+  weakHistory,
+  profile,
+  createSeededRng(`return-forecast-${index}`).next,
+));
+assert.ok(returnForecasts.some(result => !result.shouldGreenlight),
+  "Forecasting must reject projects whose expected lifecycle return is too weak");
+assert.ok(returnForecasts.some(result => result.explorationOverride && result.shouldGreenlight),
+  "Studios must occasionally greenlight a rejected-looking project for exploration");
+assert.ok(Math.max(...returnForecasts.map(result => result.projectedRoi)) -
+  Math.min(...returnForecasts.map(result => result.projectedRoi)) > 0.35,
+"Return forecasts should retain meaningful uncertainty");
+
 console.log(
   "AI commitment planning passed: proportional categories, affordability, " +
-  "contingency, forecast noise, and stochastic overruns verified.",
+  "contingency, imperfect lifecycle forecasting, and stochastic overruns verified.",
 );

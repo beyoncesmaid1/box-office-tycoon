@@ -280,7 +280,7 @@ export const DEFAULT_SIMULATION_CONFIG: SimulationBalanceConfig = {
   },
   exhibition: {
     productionScaleHalfSaturation: 0.75,
-    openingAddressableAdmissionsDomestic: 54_000_000,
+    openingAddressableAdmissionsDomestic: 72_900_000, // Provisional +35% working baseline.
     productionDemandFloor: 0.62,
     retentionBase: 0.51,
     eventThreshold: 67,

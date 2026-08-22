@@ -73,7 +73,11 @@ interface FilmEconomics {
   marketingSpend: number;
   totalInvestment: number;
   breakEvenGross: number;
+  theatricalRevenue: number;
+  ancillaryRevenue: number;
   studioRevenue: number;
+  theatricalProfit: number;
+  theatricalRoi: number;
   profit: number;
   roi: number;
 }
@@ -81,6 +85,7 @@ interface FilmEconomics {
 function calculateFilmEconomics(
   film: any,
   vfxCosts: ReadonlyMap<string, number>,
+  ancillaryRevenueByFilm: ReadonlyMap<string, number>,
 ): FilmEconomics {
   const productionBudget = Number(film.productionBudget || 0);
   const departmentSpend = [
@@ -96,7 +101,10 @@ function calculateFilmEconomics(
   const marketingSpend = Number(film.campaignSpent || 0);
   const productionInvestment = productionBudget + departmentSpend + talentSpend + vfxSpend;
   const totalInvestment = productionInvestment + marketingSpend;
-  const studioRevenue = Number(film.totalBoxOffice || 0) * 0.7;
+  const theatricalRevenue = Number(film.totalBoxOffice || 0) * 0.7;
+  const ancillaryRevenue = Number(ancillaryRevenueByFilm.get(film.id) || 0);
+  const studioRevenue = theatricalRevenue + ancillaryRevenue;
+  const theatricalProfit = theatricalRevenue - totalInvestment;
   const profit = studioRevenue - totalInvestment;
   return {
     film,
@@ -108,7 +116,11 @@ function calculateFilmEconomics(
     marketingSpend,
     totalInvestment,
     breakEvenGross: totalInvestment / 0.7,
+    theatricalRevenue,
+    ancillaryRevenue,
     studioRevenue,
+    theatricalProfit,
+    theatricalRoi: totalInvestment > 0 ? theatricalProfit / totalInvestment : 0,
     profit,
     roi: totalInvestment > 0 ? profit / totalInvestment : 0,
   };
@@ -187,8 +199,23 @@ async function main() {
       String(candidate.id),
       Number(candidate.cost || 0),
     ]));
+    const streamingDeals = (await Promise.all(
+      finalStudios.filter(candidate => candidate.isAI).map(candidate =>
+        fetch(`${baseUrl}/api/streaming-deals?playerGameId=${candidate.id}`)
+          .then(response => response.json()) as Promise<any[]>),
+    )).flat();
+    const ancillaryRevenueByFilm = new Map<string, number>();
+    for (const deal of streamingDeals) {
+      if (!deal.filmId) continue;
+      ancillaryRevenueByFilm.set(
+        String(deal.filmId),
+        (ancillaryRevenueByFilm.get(String(deal.filmId)) || 0) +
+          Number(deal.licenseFee || 0) + Number(deal.totalRevenue || 0),
+      );
+    }
     const released = films.filter(film => film.phase === "released" && Number(film.totalBoxOffice) > 0);
-    const economics = released.map(film => calculateFilmEconomics(film, vfxCosts));
+    const economics = released.map(film =>
+      calculateFilmEconomics(film, vfxCosts, ancillaryRevenueByFilm));
     const sorted = [...released].sort((left, right) =>
       Number(right.totalBoxOffice || 0) - Number(left.totalBoxOffice || 0));
     const tentpoles = films.filter(film =>
@@ -239,7 +266,7 @@ async function main() {
       { label: "Tentpole ($170M+)", minimum: 170_000_000, maximum: Infinity },
     ];
     console.log("\nEconomics by production-budget tier (break-even gross = all-in cost / 0.70):");
-    console.log("Tier                 n  prod med  all-in med  break-even  gross med  profitable  bomb(<-25%)  ROI med");
+    console.log("Tier                 n  prod med  all-in med  break-even  gross med  theatr profit  life profit  life ROI");
     for (const tier of budgetTiers) {
       const tierFilms = economics.filter(item =>
         item.productionBudget >= tier.minimum && item.productionBudget < tier.maximum);
@@ -249,9 +276,66 @@ async function main() {
         `${money(median(tierFilms.map(item => item.totalInvestment))).padStart(11)} ` +
         `${money(median(tierFilms.map(item => item.breakEvenGross))).padStart(11)} ` +
         `${money(median(tierFilms.map(item => Number(item.film.totalBoxOffice)))).padStart(10)} ` +
-        `${percent(rate(tierFilms, item => item.profit >= 0)).padStart(10)} ` +
-        `${percent(rate(tierFilms, item => item.roi <= -0.25)).padStart(11)} ` +
+        `${percent(rate(tierFilms, item => item.theatricalProfit >= 0)).padStart(12)} ` +
+        `${percent(rate(tierFilms, item => item.profit >= 0)).padStart(11)} ` +
         `${percent(median(tierFilms.map(item => item.roi))).padStart(8)}`,
+      );
+    }
+
+    console.log("\nActual lifecycle ROI severity by production-budget tier:");
+    console.log("Definition: catastrophic <= -75%; severe bomb (-75%, -50%]; major loss (-50%, -25%]; ordinary loss (-25%, 0%).");
+    console.log("Tier                   catastrophic  severe bomb  major loss  ordinary loss  profitable");
+    for (const tier of budgetTiers) {
+      const tierFilms = economics.filter(item =>
+        item.productionBudget >= tier.minimum && item.productionBudget < tier.maximum);
+      console.log(
+        `${tier.label.padEnd(22)} ` +
+        `${percent(rate(tierFilms, item => item.roi <= -0.75)).padStart(12)} ` +
+        `${percent(rate(tierFilms, item => item.roi > -0.75 && item.roi <= -0.5)).padStart(12)} ` +
+        `${percent(rate(tierFilms, item => item.roi > -0.5 && item.roi <= -0.25)).padStart(11)} ` +
+        `${percent(rate(tierFilms, item => item.roi > -0.25 && item.roi < 0)).padStart(14)} ` +
+        `${percent(rate(tierFilms, item => item.roi >= 0)).padStart(10)}`,
+      );
+    }
+
+    console.log("\nRealized post-theatrical value by production-budget tier:");
+    console.log("Tier                  licensed  ancillary med  ancillary/gross med");
+    for (const tier of budgetTiers) {
+      const tierFilms = economics.filter(item =>
+        item.productionBudget >= tier.minimum && item.productionBudget < tier.maximum);
+      console.log(
+        `${tier.label.padEnd(22)} ` +
+        `${percent(rate(tierFilms, item => item.ancillaryRevenue > 0)).padStart(8)} ` +
+        `${money(median(tierFilms.map(item => item.ancillaryRevenue))).padStart(14)} ` +
+        `${percent(median(tierFilms.map(item =>
+          item.ancillaryRevenue / Math.max(1, Number(item.film.totalBoxOffice || 0))))).padStart(19)}`,
+      );
+    }
+
+    const forecastedFilms = economics.filter(item =>
+      item.film.boxOfficeBreakdown?.aiReturnForecast);
+    console.log("\nAI return forecast calibration (live-greenlit films only):");
+    console.log("Tier                    n  predicted ROI  actual ROI  median error  profit-direction  projected losers  exploration");
+    for (const tier of budgetTiers) {
+      const tierFilms = forecastedFilms.filter(item =>
+        item.productionBudget >= tier.minimum && item.productionBudget < tier.maximum);
+      const predicted = tierFilms.map(item =>
+        Number(item.film.boxOfficeBreakdown.aiReturnForecast.projectedRoi || 0));
+      const errors = tierFilms.map((item, index) =>
+        Math.abs(item.roi - predicted[index]));
+      console.log(
+        `${tier.label.padEnd(22)} ${String(tierFilms.length).padStart(3)} ` +
+        `${percent(median(predicted)).padStart(13)} ` +
+        `${percent(median(tierFilms.map(item => item.roi))).padStart(10)} ` +
+        `${percent(median(errors)).padStart(13)} ` +
+        `${percent(rate(tierFilms, (item) => {
+          const projected = Number(item.film.boxOfficeBreakdown.aiReturnForecast.projectedRoi || 0);
+          return (projected >= 0) === (item.roi >= 0);
+        })).padStart(16)} ` +
+        `${percent(rate(tierFilms, item =>
+          Number(item.film.boxOfficeBreakdown.aiReturnForecast.projectedRoi || 0) < 0)).padStart(16)} ` +
+        `${percent(rate(tierFilms, item =>
+          Boolean(item.film.boxOfficeBreakdown.aiReturnForecast.explorationOverride))).padStart(11)}`,
       );
     }
 
@@ -293,8 +377,10 @@ async function main() {
       { label: "Major hit (ROI 200%+)", test: (item: FilmEconomics) => item.roi >= 2 },
       { label: "Hit (ROI 50–199%)", test: (item: FilmEconomics) => item.roi >= 0.5 && item.roi < 2 },
       { label: "Modest profit (ROI 0–49%)", test: (item: FilmEconomics) => item.roi >= 0 && item.roi < 0.5 },
-      { label: "Loss (ROI 0 to -25%)", test: (item: FilmEconomics) => item.roi < 0 && item.roi > -0.25 },
-      { label: "Bomb (ROI -25% or worse)", test: (item: FilmEconomics) => item.roi <= -0.25 },
+      { label: "Ordinary loss (ROI 0 to -25%)", test: (item: FilmEconomics) => item.roi < 0 && item.roi > -0.25 },
+      { label: "Major loss (ROI -25% to -50%)", test: (item: FilmEconomics) => item.roi <= -0.25 && item.roi > -0.5 },
+      { label: "Severe bomb (ROI -50% to -75%)", test: (item: FilmEconomics) => item.roi <= -0.5 && item.roi > -0.75 },
+      { label: "Catastrophic (ROI -75% or worse)", test: (item: FilmEconomics) => item.roi <= -0.75 },
     ];
     console.log("\nMarket outcomes:");
     for (const band of outcomeBands) {

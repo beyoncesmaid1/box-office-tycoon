@@ -42,6 +42,7 @@ import {
   calculateAIMarketingRatio,
   createStudioDecisionProfile,
   createTentpoleDecisionProfile,
+  forecastAIFilmReturn,
   isAITentpoleBudget,
   selectAIGenre,
   selectAffordableAIFilmCommitment,
@@ -1180,6 +1181,7 @@ async function processAIStreamingAcquisitions(
   let dealsCreated = 0;
   let filmsProcessed = 0;
   let filmsSkipped = 0;
+  const licenseRevenueByStudio = new Map<string, number>();
   
   try {
     // Get all AI studios for this player's game
@@ -1247,11 +1249,10 @@ async function processAIStreamingAcquisitions(
           });
           filmsWithDeals.add(film.id);
 
-          // Add license fee to AI studio budget
-          await storage.updateStudio(aiStudio.id, {
-            budget: aiStudio.budget + licenseFee,
-            totalEarnings: aiStudio.totalEarnings + licenseFee,
-          });
+          licenseRevenueByStudio.set(
+            aiStudio.id,
+            (licenseRevenueByStudio.get(aiStudio.id) || 0) + licenseFee,
+          );
 
           dealsCreated++;
         } catch (dealError) {
@@ -1259,6 +1260,15 @@ async function processAIStreamingAcquisitions(
         }
       }
     }
+
+    await Promise.all(Array.from(licenseRevenueByStudio.entries()).map(async ([studioId, revenue]) => {
+      const currentStudio = await storage.getStudio(studioId);
+      if (!currentStudio) return;
+      await storage.updateStudio(studioId, {
+        budget: currentStudio.budget + revenue,
+        totalEarnings: currentStudio.totalEarnings + revenue,
+      });
+    }));
     
     if (dealsCreated > 0) {
       // Streaming deals created
@@ -1286,7 +1296,7 @@ async function processStreamingViews(
     relevantStudios.map(candidate => candidate.id),
   )).map(film => [film.id, film]));
   const dealUpdates: Promise<unknown>[] = [];
-  const playerRevenue = new Map<string, number>();
+  const streamingRevenueByStudio = new Map<string, number>();
 
     for (const deal of activeDeals) {
       const studio = relevantStudioById.get(deal.playerGameId);
@@ -1341,10 +1351,12 @@ async function processStreamingViews(
         isActive: !isExpired,
       }));
       
-      // Add streaming revenue to studio budget
-      if (!studio.isAI) {
-        playerRevenue.set(studio.id, (playerRevenue.get(studio.id) || 0) + weeklyRevenue);
-      }
+      // Streaming royalties are real lifecycle revenue for both player and AI
+      // studios. Aggregate them so each studio receives one safe cash update.
+      streamingRevenueByStudio.set(
+        studio.id,
+        (streamingRevenueByStudio.get(studio.id) || 0) + weeklyRevenue,
+      );
       
       // Send renewal email when deal expires (only for player studio)
       if (isExpired && !studio.isAI) {
@@ -1363,11 +1375,14 @@ async function processStreamingViews(
   }
   await Promise.all([
     ...dealUpdates,
-    ...Array.from(playerRevenue.entries()).map(([studioId, revenue]) => {
-      const studio = relevantStudioById.get(studioId)!;
+    ...Array.from(streamingRevenueByStudio.entries()).map(async ([studioId, revenue]) => {
+      // AI production and theatrical receipts may already have changed cash
+      // this week, so never overwrite them with the cached beginning-of-week value.
+      const currentStudio = await storage.getStudio(studioId);
+      if (!currentStudio) return;
       return storage.updateStudio(studioId, {
-        budget: studio.budget + revenue,
-        totalEarnings: studio.totalEarnings + revenue,
+        budget: currentStudio.budget + revenue,
+        totalEarnings: currentStudio.totalEarnings + revenue,
       });
     }),
   ]);
@@ -4870,11 +4885,21 @@ export async function registerRoutes(
 
       const simulationStudioIds = new Set([id, ...aiStudios.map(aiStudio => aiStudio.id)]);
       const simulationStudioIdList = Array.from(simulationStudioIds);
-      const [initialFilms, initialPremiumBookings, initialFilmReleases] = await Promise.all([
+      const [initialFilms, initialPremiumBookings, initialFilmReleases, initialStreamingDeals] = await Promise.all([
         storage.getFilmsByStudioIds(simulationStudioIdList),
         storage.getPremiumBookingsByStudioIds(simulationStudioIdList),
         storage.getFilmReleasesByStudioIds(simulationStudioIdList),
+        storage.getStreamingDealsByPlayers(simulationStudioIdList),
       ]);
+      const ancillaryRevenueByFilm = new Map<string, number>();
+      for (const deal of initialStreamingDeals) {
+        if (!deal.filmId) continue;
+        ancillaryRevenueByFilm.set(
+          deal.filmId,
+          (ancillaryRevenueByFilm.get(deal.filmId) || 0) +
+            Number(deal.licenseFee || 0) + Number(deal.totalRevenue || 0),
+        );
+      }
       const initialReleasesByFilm = new Map<string, FilmRelease[]>();
       for (const release of initialFilmReleases) {
         const releases = initialReleasesByFilm.get(release.filmId) || [];
@@ -6295,9 +6320,13 @@ export async function registerRoutes(
             );
             if (completed.length > 0) {
               const averageReturn = completed.reduce((sum, f) =>
-                sum + ((f.totalBoxOffice || 0) / Math.max(1, f.totalBudget || 1)), 0
+                sum + (
+                  (Number(f.totalBoxOffice || 0) * 0.7 +
+                    (ancillaryRevenueByFilm.get(f.id) || 0) - Number(f.totalBudget || 0)) /
+                  Math.max(1, Number(f.totalBudget || 1))
+                ), 0
               ) / completed.length;
-              genreReturns[candidateGenre] = Math.max(-0.25, Math.min(0.25, (averageReturn - 1.5) / 6));
+              genreReturns[candidateGenre] = Math.max(-0.25, Math.min(0.25, averageReturn / 2));
             }
           }
           const unreleasedTentpoleCount = previousStudioFilms.filter(film =>
@@ -6307,17 +6336,6 @@ export async function registerRoutes(
           ).length;
           const reserveFlagshipOpportunity = unreleasedTentpoleCount === 0 &&
             updatedBudget >= 650_000_000;
-          const genre = selectAIGenre(
-            reserveFlagshipOpportunity
-              ? ["action", "scifi", "fantasy", "animation"]
-              : GENRES,
-            decisionProfile,
-            genreReturns,
-          ) as keyof typeof filmTitles;
-
-          const titleList = filmTitles[genre];
-          const title = titleList[Math.floor(Math.random() * titleList.length)];
-
           const reservedCampaignBudget = previousStudioFilms
             .filter(film => film.status !== "archived")
             .reduce((sum, film) => sum + Math.max(
@@ -6325,13 +6343,60 @@ export async function registerRoutes(
               Number(film.campaignLimit || 0) - Number(film.campaignSpent || 0),
             ), 0);
           const planningBudget = Math.max(0, updatedBudget - reservedCampaignBudget);
-          const plannedFilm = selectAffordableAIFilmCommitment(
-            genre,
-            planningBudget,
-            decisionProfile,
-            Math.random,
-            unreleasedTentpoleCount < 2,
-          );
+          const returnHistory = allFilms
+            .filter(film => film.phase === "released" &&
+              Number(film.productionBudget || 0) > 0 &&
+              Number(film.totalBoxOffice || 0) > 0)
+            .map(film => ({
+              genre: film.genre,
+              productionBudget: Number(film.productionBudget || 0),
+              totalBoxOffice: Number(film.totalBoxOffice || 0),
+              ancillaryRevenue: ancillaryRevenueByFilm.get(film.id) || 0,
+            }));
+          const availableGenres = reserveFlagshipOpportunity
+            ? ["action", "scifi", "fantasy", "animation"]
+            : GENRES;
+          let selectedCandidate: {
+            genre: keyof typeof filmTitles;
+            plannedFilm: ReturnType<typeof selectAffordableAIFilmCommitment>;
+            forecast: ReturnType<typeof forecastAIFilmReturn>;
+          } | null = null;
+          for (let attempt = 0; attempt < 3; attempt += 1) {
+            const candidateGenre = selectAIGenre(
+              availableGenres,
+              decisionProfile,
+              genreReturns,
+            ) as keyof typeof filmTitles;
+            const candidatePlan = selectAffordableAIFilmCommitment(
+              candidateGenre,
+              planningBudget,
+              decisionProfile,
+              Math.random,
+              unreleasedTentpoleCount < 2,
+            );
+            const candidateProfile = candidatePlan.production.isTentpole
+              ? createTentpoleDecisionProfile(decisionProfile)
+              : decisionProfile;
+            const forecast = forecastAIFilmReturn(
+              candidateGenre,
+              candidatePlan,
+              returnHistory,
+              candidateProfile,
+            );
+            if (candidatePlan.commitment.isAffordable && forecast.shouldGreenlight) {
+              selectedCandidate = {
+                genre: candidateGenre,
+                plannedFilm: candidatePlan,
+                forecast,
+              };
+              break;
+            }
+          }
+          if (!selectedCandidate) return;
+
+          const { genre, plannedFilm, forecast } = selectedCandidate;
+          const titleList = filmTitles[genre];
+          const title = titleList[Math.floor(Math.random() * titleList.length)];
           const productionPlan = plannedFilm.production;
           const commitmentPlan = plannedFilm.commitment;
           const prodBudget = productionPlan.productionBudget;
@@ -6402,6 +6467,21 @@ export async function registerRoutes(
                 practicalEffectsBudget: Math.floor(practicalEffectsBudget),
                 soundCrewBudget: Math.floor(soundCrewBudget),
                 totalBudget: Math.floor(totalBudgetForDisplay),
+                boxOfficeBreakdown: {
+                  aiReturnForecast: {
+                    expectedTheatricalGross: Math.round(forecast.expectedTheatricalGross),
+                    expectedTheatricalRevenue: Math.round(forecast.expectedTheatricalRevenue),
+                    expectedStreamingRevenue: Math.round(forecast.expectedStreamingRevenue),
+                    expectedLifecycleRevenue: Math.round(forecast.expectedLifecycleRevenue),
+                    projectedAllIn: Math.round(commitmentPlan.projectedAllIn),
+                    projectedProfit: Math.round(forecast.projectedProfit),
+                    projectedRoi: Math.round(forecast.projectedRoi * 1000) / 1000,
+                    hurdleRoi: Math.round(forecast.hurdleRoi * 1000) / 1000,
+                    comparableCount: forecast.comparableCount,
+                    confidence: Math.round(forecast.confidence * 1000) / 1000,
+                    explorationOverride: forecast.explorationOverride,
+                  },
+                },
                 scriptQuality: Math.floor(60 + Math.random() * 30),
                 createdAtWeek: aiNewWeek,
                 createdAtYear: aiNewYear,
@@ -6635,14 +6715,17 @@ export async function registerRoutes(
       );
       const gameFilmsForAwards = finalFilms.filter(f => gameStudioIds.has(f.studioId));
       
+      // License payments and streaming royalties both update studio cash, so
+      // apply them in order rather than allowing stale read/modify/write races.
+      await processAIStreamingAcquisitions(id, newWeek, newYear, allStudios, finalFilms)
+        .catch(() => {});
+
       // OPTIMIZATION: Run independent end-of-week processes in parallel
       await Promise.all([
         // Generate weekly emails
         generateWeeklyEmails(id, studio, playerFilmsForEmails, newWeek, newYear).catch(() => {}),
         // Process awards - only pass films from this game session
         processAwardCeremonies(id, gameFilmsForAwards, newWeek, newYear).catch((err) => console.error('[Awards] Error:', err)),
-        // Process AI streaming acquisitions
-        processAIStreamingAcquisitions(id, newWeek, newYear, allStudios, finalFilms).catch(() => {}),
         // Process streaming views
         processStreamingViews(id, newWeek, newYear, allStudios, finalFilms).catch(() => {})
       ]);
