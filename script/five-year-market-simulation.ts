@@ -43,6 +43,16 @@ const median = (values: number[]): number => {
     : sorted[middle];
 };
 
+const percentile = (values: number[], quantile: number): number => {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((left, right) => left - right);
+  const position = Math.max(0, Math.min(1, quantile)) * (sorted.length - 1);
+  const lower = Math.floor(position);
+  const upper = Math.ceil(position);
+  if (lower === upper) return sorted[lower];
+  return sorted[lower] + (sorted[upper] - sorted[lower]) * (position - lower);
+};
+
 const rate = <T>(values: T[], predicate: (value: T) => boolean): number =>
   values.length > 0 ? values.filter(predicate).length / values.length : 0;
 
@@ -62,6 +72,7 @@ interface FilmEconomics {
   productionInvestment: number;
   marketingSpend: number;
   totalInvestment: number;
+  breakEvenGross: number;
   studioRevenue: number;
   profit: number;
   roi: number;
@@ -96,6 +107,7 @@ function calculateFilmEconomics(
     productionInvestment,
     marketingSpend,
     totalInvestment,
+    breakEvenGross: totalInvestment / 0.7,
     studioRevenue,
     profit,
     roi: totalInvestment > 0 ? profit / totalInvestment : 0,
@@ -226,8 +238,8 @@ async function main() {
       { label: "High ($100–170M)", minimum: 100_000_000, maximum: 170_000_000 },
       { label: "Tentpole ($170M+)", minimum: 170_000_000, maximum: Infinity },
     ];
-    console.log("\nEconomics by production-budget tier (studio receives 70% of gross):");
-    console.log("Tier                 n  prod med  all-in med  gross med  profitable  bomb(<-25%)  ROI med  $100M+  $500M+");
+    console.log("\nEconomics by production-budget tier (break-even gross = all-in cost / 0.70):");
+    console.log("Tier                 n  prod med  all-in med  break-even  gross med  profitable  bomb(<-25%)  ROI med");
     for (const tier of budgetTiers) {
       const tierFilms = economics.filter(item =>
         item.productionBudget >= tier.minimum && item.productionBudget < tier.maximum);
@@ -235,12 +247,29 @@ async function main() {
         `${tier.label.padEnd(20)} ${String(tierFilms.length).padStart(3)} ` +
         `${money(median(tierFilms.map(item => item.productionBudget))).padStart(9)} ` +
         `${money(median(tierFilms.map(item => item.totalInvestment))).padStart(11)} ` +
+        `${money(median(tierFilms.map(item => item.breakEvenGross))).padStart(11)} ` +
         `${money(median(tierFilms.map(item => Number(item.film.totalBoxOffice)))).padStart(10)} ` +
         `${percent(rate(tierFilms, item => item.profit >= 0)).padStart(10)} ` +
         `${percent(rate(tierFilms, item => item.roi <= -0.25)).padStart(11)} ` +
-        `${percent(median(tierFilms.map(item => item.roi))).padStart(8)} ` +
-        `${percent(rate(tierFilms, item => Number(item.film.totalBoxOffice) >= 100_000_000)).padStart(7)} ` +
-        `${percent(rate(tierFilms, item => Number(item.film.totalBoxOffice) >= 500_000_000)).padStart(7)}`,
+        `${percent(median(tierFilms.map(item => item.roi))).padStart(8)}`,
+      );
+    }
+
+    console.log("\nROI distribution by production-budget tier:");
+    console.log("Tier                    p10      p25   median      p75      p90   50%+ ROI  200%+ ROI");
+    for (const tier of budgetTiers) {
+      const tierFilms = economics.filter(item =>
+        item.productionBudget >= tier.minimum && item.productionBudget < tier.maximum);
+      const rois = tierFilms.map(item => item.roi);
+      console.log(
+        `${tier.label.padEnd(22)} ` +
+        `${percent(percentile(rois, 0.10)).padStart(8)} ` +
+        `${percent(percentile(rois, 0.25)).padStart(8)} ` +
+        `${percent(percentile(rois, 0.50)).padStart(8)} ` +
+        `${percent(percentile(rois, 0.75)).padStart(8)} ` +
+        `${percent(percentile(rois, 0.90)).padStart(8)} ` +
+        `${percent(rate(tierFilms, item => item.roi >= 0.5)).padStart(9)} ` +
+        `${percent(rate(tierFilms, item => item.roi >= 2)).padStart(9)}`,
       );
     }
     console.log("\nMedian spending components by tier:");
