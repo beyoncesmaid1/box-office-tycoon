@@ -15,7 +15,9 @@ import {
   TrendingUp,
   DollarSign,
   MapPin,
-  Megaphone
+  Megaphone,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -252,10 +254,12 @@ function WeeklyPerformanceTracker({
 }) {
   const [view, setView] = useState<PerformanceView>('weekend');
   const [territoryCode, setTerritoryCode] = useState('ALL');
+  const [dailyWeekIndex, setDailyWeekIndex] = useState(0);
 
   useEffect(() => {
     setView('weekend');
     setTerritoryCode('ALL');
+    setDailyWeekIndex(0);
   }, [filmId]);
 
   const availableTerritories = useMemo(() => PERFORMANCE_TERRITORIES.filter(territory =>
@@ -402,6 +406,20 @@ function WeeklyPerformanceTracker({
     : view === 'weekly' ? 'Weekly Box Office' : 'Daily Box Office';
   const grossHeading = view === 'weekend' ? 'Weekend' : view === 'weekly' ? 'Week' : 'Daily';
   const comparisonHeading = view === 'daily' ? '%± Prev' : '%± LW';
+  const dailyWeekCount = Math.max(1, Math.ceil(rows.length / 7));
+  const boundedDailyWeekIndex = Math.min(dailyWeekIndex, dailyWeekCount - 1);
+  const firstVisibleRowIndex = view === 'daily' ? boundedDailyWeekIndex * 7 : 0;
+  const visibleRows = view === 'daily'
+    ? rows.slice(firstVisibleRowIndex, firstVisibleRowIndex + 7)
+    : rows;
+
+  useEffect(() => {
+    setDailyWeekIndex(0);
+  }, [territoryCode]);
+
+  useEffect(() => {
+    setDailyWeekIndex(current => Math.min(current, dailyWeekCount - 1));
+  }, [dailyWeekCount]);
 
   return (
     <Card className="overflow-hidden">
@@ -451,6 +469,36 @@ function WeeklyPerformanceTracker({
         </div>
       </CardHeader>
       <CardContent>
+        {view === 'daily' && dailyWeekCount > 1 && (
+          <div className="mb-2 flex items-center justify-end gap-2 text-xs text-muted-foreground">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => setDailyWeekIndex(current => Math.max(0, current - 1))}
+              disabled={boundedDailyWeekIndex === 0}
+              aria-label="Previous release week"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </Button>
+            <span className="min-w-20 text-center">
+              Week {boundedDailyWeekIndex + 1} of {dailyWeekCount}
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => setDailyWeekIndex(current =>
+                Math.min(dailyWeekCount - 1, current + 1))}
+              disabled={boundedDailyWeekIndex >= dailyWeekCount - 1}
+              aria-label="Next release week"
+            >
+              <ChevronRight className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        )}
         <div className="overflow-x-auto">
           <table className={`w-full border-collapse text-[13px] tabular-nums ${
             view === 'daily' ? 'min-w-[680px]' : 'min-w-[900px]'
@@ -480,9 +528,10 @@ function WeeklyPerformanceTracker({
               )}
             </thead>
             <tbody>
-              {rows.map((row, index) => {
-                const previousGross = index > 0 ? rows[index - 1].gross : 0;
-                const grossChange = index > 0 && previousGross > 0
+              {visibleRows.map((row, index) => {
+                const rowIndex = firstVisibleRowIndex + index;
+                const previousGross = rowIndex > 0 ? rows[rowIndex - 1].gross : 0;
+                const grossChange = rowIndex > 0 && previousGross > 0
                   ? ((row.gross - previousGross) / previousGross) * 100
                   : null;
                 const theaterChange = row.isPeriodStart && row.theaters !== null && row.previousTheaters !== null
