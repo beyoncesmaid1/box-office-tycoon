@@ -356,6 +356,21 @@ function geometricMean(values: readonly number[]): number {
   return Math.exp(safe.reduce((sum, value) => sum + Math.log(value), 0) / safe.length);
 }
 
+/**
+ * Expectations explain whether a film over- or under-delivered, but they must
+ * not make objectively weak audience reception harmless. Poor experiences get
+ * a stronger downside than the modest upside awarded to broadly loved films.
+ */
+export function absoluteAudienceRetentionAdjustment(
+  audienceExperience: number,
+): number {
+  const experience = clamp(audienceExperience);
+  if (experience < 70) {
+    return -0.28 * clamp((70 - experience) / 20, 0, 1);
+  }
+  return 0.06 * clamp((experience - 70) / 20, 0, 1);
+}
+
 export function estimatePremiumFormatDemand(
   totalDemandAdmissions: number,
   imaxSuitability: number,
@@ -470,6 +485,7 @@ export function simulateTerritoryWeek(input: TerritoryWeekInput): TerritoryWeekR
 
   const retention = clamp(
     BALANCE.retentionBase +
+    absoluteAudienceRetentionAdjustment(audienceExperience) +
     womDelta * 0.006 +
     input.campaign.buzz * 0.0012 +
     Math.min(0.08, input.weekNumber * 0.012) +
