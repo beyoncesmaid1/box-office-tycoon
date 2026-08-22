@@ -14,6 +14,11 @@ export {
 export { simulateFilmQuality } from "./quality";
 export { simulateBoxOffice } from "./box-office";
 export {
+  calculateCompetitionPressure,
+  type CompetitionRival,
+  type CompetitionTarget,
+} from "./competition";
+export {
   CAMPAIGN_ACTIONS,
   advanceCampaignWeek,
   applyCampaignAction,

@@ -502,7 +502,11 @@ export function simulateTerritoryWeek(input: TerritoryWeekInput): TerritoryWeekR
   );
   const previousAdmissions = Math.max(0, input.previousWeekGross ?? 0) /
     Math.max(1, input.baseTicketPrice * 1.08);
-  const holdoverCompetitionMultiplier = 0.82 + competitionOpportunity * 0.18;
+  // Once a film is open, competition remains capable of moving the run in a
+  // meaningful way. The old blend limited even maximum pressure to roughly
+  // an 11% effect, which made tentpoles largely ignore one another.
+  const holdoverCompetitionMultiplier = 1 -
+    clamp(input.competition) / 100 * 0.52;
   const weeklyDemandMomentum = clamp(
     variance * timing * holdoverCompetitionMultiplier,
     0.6,
@@ -514,7 +518,8 @@ export function simulateTerritoryWeek(input: TerritoryWeekInput): TerritoryWeekR
   const discoveryDecay = Math.exp(-Math.max(0, input.weekNumber - 1) / 8);
   const organicDiscoveryDemand = openingAddressableAdmissions *
     BALANCE.phenomenonDiscoveryShare * phenomenonIntensity * discoveryDecay *
-    (0.45 + awareness * 0.35 + interest * 0.2);
+    (0.45 + awareness * 0.35 + interest * 0.2) *
+    holdoverCompetitionMultiplier;
   const totalDemandAdmissions = input.weekNumber === 0
     ? openingDemand
     : holdoverDemand + organicDiscoveryDemand;

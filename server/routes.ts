@@ -58,6 +58,7 @@ import {
   allocatePremiumFormat,
   applyCampaignAction,
   calculatePremiumSuitability,
+  calculateCompetitionPressure,
   calculateTerritoryTheaterCount,
   createInitialCampaignState,
   createSeededRng,
@@ -2807,6 +2808,14 @@ function campaignStateFromRelease(release: FilmRelease): TerritoryCampaignState 
   };
 }
 
+function latestReleaseEventIntensity(release: FilmRelease): number {
+  const history = Array.isArray(release.weeklyCapacityBreakdown)
+    ? release.weeklyCapacityBreakdown as Array<Record<string, unknown>>
+    : [];
+  const value = Number(history[history.length - 1]?.eventIntensity ?? 0);
+  return Number.isFinite(value) ? Math.max(0, Math.min(0.3, value)) : 0;
+}
+
 function intrinsicAudienceExperience(film: Film): number {
   const breakdown = film.audienceScoreBreakdown;
   if (breakdown && typeof breakdown === "object" && !Array.isArray(breakdown)) {
@@ -3174,8 +3183,21 @@ async function calculateCanonicalBoxOfficeRun(
     other.releaseWeek === releaseWeek &&
     other.releaseYear === releaseYear
   );
-  const directCompetitors = sameWeekReleases.filter(other => other.genre === film.genre).length;
-  const competition = Math.min(100, 12 + sameWeekReleases.length * 9 + directCompetitors * 14);
+  const competition = calculateCompetitionPressure(
+    { genre: film.genre },
+    sameWeekReleases.map(other => ({
+      genre: other.genre,
+      isOpening: true,
+      weeksInRelease: 0,
+      territoryMarketShare: 0.35,
+      awareness: 58,
+      interest: 62,
+      commercialAppeal: resolveGenre(other.genre).baseCommercialAppeal,
+      launchHook: talentLaunchHook(other, availableTalent),
+      blockbusterDeployment: getBlockbusterScale(other.productionBudget || 0),
+      marketingBudget: other.marketingBudget || 0,
+    })),
+  );
   const holidayFit = getGenreHolidayModifier(releaseWeek, film.genre);
   const releaseTiming = Math.max(0, Math.min(100, 52 + (holidayFit - 1) * 62));
   let franchiseAwareness = film.isSequel ? 52 : 0;
@@ -3268,22 +3290,40 @@ async function calculateHistoricalTerritoryRun(
   let peakEventIntensity = 0;
   let peakPhenomenonPotential = 0;
   let peakPhenomenonIntensity = 0;
+  let openingCompetition = 0;
+  let openingReleaseTiming = 52;
   for (let weekNumber = 0; weekNumber < 16; weekNumber += 1) {
     const calendar = absoluteWeek(releaseWeek, releaseYear) + weekNumber;
     const calendarWeek = ((calendar - 1) % 52) + 1;
     const calendarYear = Math.floor((calendar - 1) / 52);
-    const weeklyOpeners = calendarFilms.filter(other =>
-      other.id !== film.id &&
-      other.releaseWeek && other.releaseYear &&
-      absoluteWeek(other.releaseWeek, other.releaseYear) === calendar
+    const weeklyRivals = calendarFilms.flatMap(other => {
+      if (other.id === film.id || !other.releaseWeek || !other.releaseYear) return [];
+      const weeksInRelease = calendar - absoluteWeek(other.releaseWeek, other.releaseYear);
+      if (weeksInRelease < 0 || weeksInRelease >= 24) return [];
+      return [{
+        genre: other.genre,
+        isOpening: weeksInRelease === 0,
+        weeksInRelease,
+        territoryMarketShare: 0.35,
+        awareness: 58,
+        interest: 62,
+        commercialAppeal: resolveGenre(other.genre).baseCommercialAppeal,
+        launchHook: talentLaunchHook(other, talentPool),
+        blockbusterDeployment: getBlockbusterScale(other.productionBudget || 0),
+        marketingBudget: other.marketingBudget || 0,
+      }];
+    });
+    const weeklyCompetition = calculateCompetitionPressure(
+      { genre: film.genre },
+      weeklyRivals,
     );
-    const sameGenreOpeners = weeklyOpeners.filter(other =>
-      other.genre === film.genre).length;
-    const weeklyCompetition = Math.min(100,
-      10 + weeklyOpeners.length * 10 + sameGenreOpeners * 16);
     const weeklyHolidayFit = getGenreHolidayModifier(calendarWeek, film.genre);
     const weeklyReleaseTiming = Math.max(0, Math.min(100,
       52 + (weeklyHolidayFit - 1) * 62));
+    if (weekNumber === 0) {
+      openingCompetition = weeklyCompetition;
+      openingReleaseTiming = weeklyReleaseTiming;
+    }
     const globalDemandVariance = Math.exp(
       0.13 * normal(createSeededRng(
         `historical-weekly-demand:${film.id}:${calendarYear}:${calendarWeek}`,
@@ -3377,8 +3417,8 @@ async function calculateHistoricalTerritoryRun(
       commercialAppeal: genreBalance.baseCommercialAppeal,
       productionScale,
       launchHook,
-      releaseTiming,
-      competition,
+      releaseTiming: openingReleaseTiming,
+      competition: openingCompetition,
       peakEventPotential,
       peakEventIntensity,
       peakPhenomenonPotential,
@@ -5585,16 +5625,30 @@ export async function registerRoutes(
       const allPremiumBookings = initialPremiumBookings;
       const activePremiumBookings = allPremiumBookings.filter(booking =>
         bookingIsActive(booking, newWeek, newYear));
-      const activeOpeningReleases: Array<{ film: Film; release: FilmRelease }> = [];
+      const activeCompetitiveReleases: Array<{ film: Film; release: FilmRelease }> = [];
       for (const candidateFilm of saveReleasedFilms) {
         for (const candidateRelease of filmReleasesMap.get(candidateFilm.id) || []) {
           const releaseStarted = absoluteWeek(candidateRelease.releaseWeek, candidateRelease.releaseYear) <=
             absoluteWeek(newWeek, newYear);
-          if (releaseStarted && (candidateRelease.weeklyBoxOffice || []).length === 0) {
-            activeOpeningReleases.push({ film: candidateFilm, release: candidateRelease });
+          if (releaseStarted && (candidateRelease.weeklyBoxOffice || []).length < 24) {
+            activeCompetitiveReleases.push({ film: candidateFilm, release: candidateRelease });
           }
         }
       }
+
+      const competitionFilmProfiles = new Map(saveReleasedFilms.map(candidateFilm => {
+        const owner = allStudios.find(studio => studio.id === candidateFilm.studioId);
+        return [candidateFilm.id, {
+          commercialAppeal: resolveGenre(candidateFilm.genre).baseCommercialAppeal,
+          launchHook: talentLaunchHook(candidateFilm, allTalent),
+          blockbusterDeployment: getBlockbusterDeployment(
+            candidateFilm.genre,
+            candidateFilm.productionBudget || 0,
+            createStudioDecisionProfile(owner || { id: candidateFilm.studioId }),
+            candidateFilm.prequelFilmId ? 0.8 : 0,
+          ),
+        }] as const;
+      }));
 
       for (const candidateFilm of saveReleasedFilms) {
         const premiumProfile = candidateFilm.imaxSuitability || candidateFilm.dolbySuitability
@@ -5647,13 +5701,34 @@ export async function registerRoutes(
               absoluteWeek(newWeek, newYear)) continue;
           const weekNumber = (release.weeklyBoxOffice || []).length;
           if (weekNumber >= 24) continue;
-          const directOpeners = activeOpeningReleases.filter(item =>
-            item.film.id !== candidateFilm.id &&
-            item.release.territoryCode === release.territoryCode);
-          const sameGenreOpeners = directOpeners.filter(item =>
-            item.film.genre === candidateFilm.genre).length;
-          const competition = Math.min(100,
-            10 + directOpeners.length * 10 + sameGenreOpeners * 16);
+          const competition = calculateCompetitionPressure(
+            { genre: candidateFilm.genre },
+            activeCompetitiveReleases
+              .filter(item =>
+                item.film.id !== candidateFilm.id &&
+                item.release.territoryCode === release.territoryCode)
+              .map(item => {
+                const rivalHistory = item.release.weeklyBoxOffice || [];
+                const rivalCampaign = campaignStateFromRelease(item.release);
+                const profile = competitionFilmProfiles.get(item.film.id)!;
+                return {
+                  genre: item.film.genre,
+                  isOpening: rivalHistory.length === 0,
+                  weeksInRelease: rivalHistory.length,
+                  previousWeekGross: rivalHistory[rivalHistory.length - 1] || 0,
+                  territoryMarketShare: getTerritoryBasePercentage(
+                    item.release.territoryCode,
+                  ),
+                  awareness: rivalCampaign.awareness,
+                  interest: rivalCampaign.interest,
+                  commercialAppeal: profile.commercialAppeal,
+                  launchHook: profile.launchHook,
+                  blockbusterDeployment: profile.blockbusterDeployment,
+                  marketingBudget: item.film.marketingBudget || 0,
+                  eventIntensity: latestReleaseEventIntensity(item.release),
+                };
+              }),
+          );
           const holidayFit = getGenreHolidayModifier(newWeek, candidateFilm.genre);
           const releaseTiming = Math.max(0, Math.min(100, 52 + (holidayFit - 1) * 62));
           const campaign = campaignStateFromRelease(release);
@@ -6006,6 +6081,7 @@ export async function registerRoutes(
               eventIntensity: Math.round(territoryResult.eventIntensity * 1000) / 1000,
               phenomenonPotential: Math.round(territoryResult.phenomenonPotential * 10) / 10,
               phenomenonIntensity: Math.round(territoryResult.phenomenonIntensity * 1000) / 1000,
+              competitionPressure: Math.round(context.competition * 10) / 10,
               regularAdmissions: Math.round(territoryResult.regularAdmissions),
               imaxAdmissions: Math.round(territoryResult.imaxAdmissions),
               dolbyAdmissions: Math.round(territoryResult.dolbyAdmissions),
