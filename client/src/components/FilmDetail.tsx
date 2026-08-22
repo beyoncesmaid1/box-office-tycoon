@@ -20,6 +20,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { useGame, formatMoney, genreLabels } from '@/lib/gameState';
 import type { Film, Studio, Talent, AwardNomination, FilmRole, FilmRelease } from '@shared/schema';
@@ -99,23 +100,204 @@ function exactMoney(amount: number): string {
   return `$${Math.round(amount).toLocaleString('en-US')}`;
 }
 
+const PERFORMANCE_TERRITORIES = [
+  { code: 'NA', name: 'North America' },
+  { code: 'CN', name: 'China' },
+  { code: 'GB', name: 'UK & Ireland' },
+  { code: 'FR', name: 'France' },
+  { code: 'JP', name: 'Japan' },
+  { code: 'DE', name: 'Germany' },
+  { code: 'KR', name: 'South Korea' },
+  { code: 'MX', name: 'Mexico' },
+  { code: 'AU', name: 'Australia' },
+  { code: 'IN', name: 'India' },
+  { code: 'OTHER', name: 'Other Territories' },
+] as const;
+
+type PerformanceView = 'weekend' | 'weekly' | 'daily';
+
+function formatFullWeekRange(week: number, year: number): string {
+  const start = new Date(year, 0, 1 + (week - 1) * 7);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  const startMonth = start.toLocaleDateString('en-US', { month: 'short' });
+  const endMonth = end.toLocaleDateString('en-US', { month: 'short' });
+  return startMonth === endMonth
+    ? `${startMonth} ${start.getDate()}-${end.getDate()}, ${end.getFullYear()}`
+    : `${startMonth} ${start.getDate()}-${endMonth} ${end.getDate()}, ${end.getFullYear()}`;
+}
+
+function dateForReleaseDay(week: number, year: number, dayIndex: number): Date {
+  return new Date(year, 0, 1 + (week - 1) * 7 + dayIndex);
+}
+
+function territoryGross(
+  week: Record<string, number> | undefined,
+  territoryCode: string,
+): number {
+  if (!week) return 0;
+  const territory = PERFORMANCE_TERRITORIES.find(item => item.code === territoryCode);
+  return Number(week[territory?.name || territoryCode] ?? week[territoryCode] ?? 0);
+}
+
 function WeeklyPerformanceTracker({
+  filmId,
   weeklyData,
   weeklyByCountry,
+  filmReleases,
+  allFilms,
   releaseWeek,
   releaseYear,
   ranks,
   theaterCounts,
 }: {
+  filmId: string;
   weeklyData: number[];
   weeklyByCountry: Array<Record<string, number>>;
+  filmReleases: FilmRelease[];
+  allFilms: Film[];
   releaseWeek?: number | null;
   releaseYear?: number | null;
   ranks: Array<number | null>;
   theaterCounts: Array<number | null>;
 }) {
-  const displayedWeeks = weeklyData.map(gross => Number(gross || 0));
-  let grossToDate = 0;
+  const [view, setView] = useState<PerformanceView>('weekend');
+  const [territoryCode, setTerritoryCode] = useState('ALL');
+
+  useEffect(() => {
+    setView('weekend');
+    setTerritoryCode('ALL');
+  }, [filmId]);
+
+  const availableTerritories = useMemo(() => PERFORMANCE_TERRITORIES.filter(territory =>
+    weeklyByCountry.some(week =>
+      Number(week?.[territory.name] ?? week?.[territory.code] ?? 0) > 0,
+    )), [weeklyByCountry]);
+
+  const selectedWeeks = useMemo(() => territoryCode === 'ALL'
+    ? weeklyData.map(gross => Number(gross || 0))
+    : weeklyByCountry.map(week => territoryGross(week, territoryCode)),
+  [territoryCode, weeklyData, weeklyByCountry]);
+
+  const selectedTheaterCounts = useMemo(() => {
+    if (territoryCode === 'ALL' || territoryCode === 'NA') return theaterCounts;
+    const release = filmReleases.find(item => item.territoryCode === territoryCode);
+    const history = Array.isArray(release?.weeklyCapacityBreakdown)
+      ? release.weeklyCapacityBreakdown as Array<Record<string, unknown>>
+      : [];
+    return selectedWeeks.map((_, index) => {
+      const count = Number(history[index]?.theaterCount || 0);
+      return count > 0 ? count : null;
+    });
+  }, [filmReleases, selectedWeeks, theaterCounts, territoryCode]);
+
+  const selectedRanks = useMemo(() => selectedWeeks.map((_, weekIndex) => {
+    if (territoryCode === 'ALL') return ranks[weekIndex] ?? null;
+    if (!releaseWeek || !releaseYear) return null;
+    const calendarWeek = releaseYear * 52 + releaseWeek - 1 + weekIndex;
+    const market = allFilms.map(candidate => {
+      if (!candidate.releaseWeek || !candidate.releaseYear) return null;
+      const candidateRelease = candidate.releaseYear * 52 + candidate.releaseWeek - 1;
+      const candidateWeek = calendarWeek - candidateRelease;
+      const histories = Array.isArray(candidate.weeklyBoxOfficeByCountry)
+        ? candidate.weeklyBoxOfficeByCountry as Array<Record<string, number>>
+        : [];
+      if (candidateWeek < 0 || candidateWeek >= histories.length) return null;
+      const gross = territoryGross(histories[candidateWeek], territoryCode);
+      return gross > 0 ? { id: candidate.id, gross } : null;
+    }).filter((entry): entry is { id: string; gross: number } => entry !== null)
+      .sort((left, right) => right.gross - left.gross);
+    const rank = market.findIndex(entry => entry.id === filmId);
+    return rank >= 0 ? rank + 1 : null;
+  }), [allFilms, filmId, ranks, releaseWeek, releaseYear, selectedWeeks, territoryCode]);
+
+  const rows = useMemo(() => {
+    const generated: Array<{
+      key: string;
+      date: string;
+      gross: number;
+      grossToDate: number;
+      rank: number | null;
+      theaters: number | null;
+      previousTheaters: number | null;
+      periodLabel: string;
+      isPeriodStart: boolean;
+    }> = [];
+    let runningGross = 0;
+
+    selectedWeeks.forEach((weeklyGross, weekIndex) => {
+      const calendar = releaseWeek && releaseYear
+        ? releaseCalendarWeek(releaseWeek, releaseYear, weekIndex)
+        : null;
+      const theaters = selectedTheaterCounts[weekIndex] ?? null;
+      const previousTheaters = weekIndex > 0
+        ? selectedTheaterCounts[weekIndex - 1] ?? null
+        : null;
+      const rank = selectedRanks[weekIndex] ?? null;
+
+      if (view === 'daily') {
+        const opening = weekIndex === 0;
+        const shares = opening
+          ? [0.22, 0.28, 0.18, 0.07, 0.07, 0.08, 0.10]
+          : [0.20, 0.25, 0.17, 0.08, 0.08, 0.10, 0.12];
+        let assigned = 0;
+        shares.forEach((share, dayIndex) => {
+          const gross = dayIndex === shares.length - 1
+            ? Math.max(0, Math.round(weeklyGross) - assigned)
+            : Math.round(weeklyGross * share);
+          assigned += gross;
+          runningGross += gross;
+          const date = calendar
+            ? dateForReleaseDay(calendar.week, calendar.year, dayIndex)
+            : null;
+          generated.push({
+            key: `${weekIndex}-${dayIndex}`,
+            date: date
+              ? date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+              : `Week ${weekIndex + 1}, Day ${dayIndex + 1}`,
+            gross,
+            grossToDate: runningGross,
+            rank,
+            theaters,
+            previousTheaters,
+            periodLabel: date
+              ? date.toLocaleDateString('en-US', { weekday: 'short' })
+              : `D${dayIndex + 1}`,
+            isPeriodStart: dayIndex === 0,
+          });
+        });
+        return;
+      }
+
+      // The simulation stores one authoritative gross per game week. Keep
+      // that number unchanged in both summary views; Daily is the only view
+      // that apportions it into smaller display periods.
+      const gross = Math.round(weeklyGross);
+      runningGross += gross;
+      generated.push({
+        key: `${weekIndex}`,
+        date: calendar
+          ? view === 'weekend'
+            ? formatWeekendRange(calendar.week, calendar.year)
+            : formatFullWeekRange(calendar.week, calendar.year)
+          : `${view === 'weekend' ? 'Weekend' : 'Week'} ${weekIndex + 1}`,
+        gross,
+        grossToDate: runningGross,
+        rank,
+        theaters,
+        previousTheaters,
+        periodLabel: `${weekIndex + 1}`,
+        isPeriodStart: true,
+      });
+    });
+    return generated;
+  }, [releaseWeek, releaseYear, selectedRanks, selectedTheaterCounts, selectedWeeks, view]);
+
+  const title = view === 'weekend'
+    ? 'Weekend Box Office'
+    : view === 'weekly' ? 'Weekly Box Office' : 'Daily Box Office';
+  const grossHeading = view === 'weekend' ? 'Weekend' : view === 'weekly' ? 'Week' : 'Daily';
+  const comparisonHeading = view === 'daily' ? '%± YD' : '%± LW';
 
   return (
     <Card className="overflow-hidden">
@@ -123,22 +305,44 @@ function WeeklyPerformanceTracker({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            Weekend Box Office
+            {title}
           </CardTitle>
           <div className="flex flex-wrap items-center gap-2 text-[11px]">
             <div className="flex items-center rounded-md border bg-muted/20 p-0.5">
-              <span className="rounded bg-primary px-3 py-1.5 font-medium text-primary-foreground">
-                Weekend
-              </span>
-              <span className="px-3 py-1.5 text-muted-foreground">Weekly</span>
-              <span className="px-3 py-1.5 text-muted-foreground">Daily</span>
+              {(['weekend', 'weekly', 'daily'] as const).map(option => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setView(option)}
+                  aria-pressed={view === option}
+                  className={`rounded px-3 py-1.5 font-medium capitalize transition-colors ${
+                    view === option
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {option}
+                </button>
+              ))}
             </div>
             <div className="h-6 w-px bg-border" />
-            <div className="flex min-w-36 items-center gap-2 rounded-md border bg-muted/20 px-3 py-1.5">
-              <Globe className="h-3.5 w-3.5" />
-              <span>Worldwide</span>
-              <span className="ml-auto text-muted-foreground">⌄</span>
-            </div>
+            <Select value={territoryCode} onValueChange={setTerritoryCode}>
+              <SelectTrigger
+                aria-label="Box office territory"
+                className="h-[31px] min-w-36 bg-muted/20 text-[11px]"
+              >
+                <Globe className="mr-1 h-3.5 w-3.5" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Worldwide</SelectItem>
+                {availableTerritories.map(territory => (
+                  <SelectItem key={territory.code} value={territory.code}>
+                    {territory.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </CardHeader>
@@ -149,42 +353,38 @@ function WeeklyPerformanceTracker({
               <tr>
                 <th className="border-b px-2 py-2.5 text-left font-medium">Date</th>
                 <th className="border-b px-3 py-2.5 text-center font-medium">Rank</th>
-                <th className="border-b px-3 py-2.5 text-right font-medium">Weekend</th>
-                <th className="border-b px-3 py-2.5 text-right font-medium">%± LW</th>
+                <th className="border-b px-3 py-2.5 text-right font-medium">{grossHeading}</th>
+                <th className="border-b px-3 py-2.5 text-right font-medium">{comparisonHeading}</th>
                 <th className="border-b px-3 py-2.5 text-right font-medium">Theaters</th>
                 <th className="border-b px-3 py-2.5 text-right font-medium">Change</th>
                 <th className="border-b px-3 py-2.5 text-right font-medium">Avg</th>
                 <th className="border-b px-3 py-2.5 text-right font-medium">To Date</th>
-                <th className="border-b px-2 py-2.5 text-center font-medium">Week</th>
+                <th className="border-b px-2 py-2.5 text-center font-medium">
+                  {view === 'daily' ? 'Day' : 'Week'}
+                </th>
               </tr>
             </thead>
             <tbody>
-              {displayedWeeks.map((weekendGross, index) => {
-                const previousGross = index > 0 ? displayedWeeks[index - 1] : 0;
+              {rows.map((row, index) => {
+                const previousGross = index > 0 ? rows[index - 1].gross : 0;
                 const grossChange = index > 0 && previousGross > 0
-                  ? ((weekendGross - previousGross) / previousGross) * 100
+                  ? ((row.gross - previousGross) / previousGross) * 100
                   : null;
-                const theaters = theaterCounts[index] ?? null;
-                const previousTheaters = index > 0 ? theaterCounts[index - 1] ?? null : null;
-                const theaterChange = theaters !== null && previousTheaters !== null
-                  ? theaters - previousTheaters
+                const theaterChange = row.isPeriodStart && row.theaters !== null && row.previousTheaters !== null
+                  ? row.theaters - row.previousTheaters
                   : null;
-                const average = theaters && theaters > 0 ? weekendGross / theaters : null;
-                grossToDate += weekendGross;
-                const calendar = releaseWeek && releaseYear
-                  ? releaseCalendarWeek(releaseWeek, releaseYear, index)
-                  : null;
+                const average = row.theaters && row.theaters > 0 ? row.gross / row.theaters : null;
 
                 return (
-                  <tr key={index} className="hover:bg-muted/20 transition-colors">
+                  <tr key={row.key} className="hover:bg-muted/20 transition-colors">
                     <td className="whitespace-nowrap border-b px-2 py-3 font-semibold text-primary">
-                      {calendar ? formatWeekendRange(calendar.week, calendar.year) : `Weekend ${index + 1}`}
+                      {row.date}
                     </td>
                     <td className="border-b px-3 py-3 text-center">
-                      {ranks[index] ?? '—'}
+                      {row.rank ?? '—'}
                     </td>
                     <td className="whitespace-nowrap border-b px-3 py-3 text-right font-semibold">
-                      {exactMoney(weekendGross)}
+                      {exactMoney(row.gross)}
                     </td>
                     <td className={`whitespace-nowrap border-b px-3 py-3 text-right ${
                       grossChange === null
@@ -194,7 +394,7 @@ function WeeklyPerformanceTracker({
                       {grossChange === null ? '—' : `${grossChange >= 0 ? '+' : ''}${grossChange.toFixed(1)}%`}
                     </td>
                     <td className="whitespace-nowrap border-b px-3 py-3 text-right">
-                      {theaters === null ? '—' : theaters.toLocaleString('en-US')}
+                      {row.theaters === null ? '—' : row.theaters.toLocaleString('en-US')}
                     </td>
                     <td className={`whitespace-nowrap border-b px-3 py-3 text-right ${
                       theaterChange === null
@@ -207,10 +407,10 @@ function WeeklyPerformanceTracker({
                       {average === null ? '—' : exactMoney(average)}
                     </td>
                     <td className="whitespace-nowrap border-b px-3 py-3 text-right font-semibold">
-                      {exactMoney(grossToDate)}
+                      {exactMoney(row.grossToDate)}
                     </td>
                     <td className="border-b px-2 py-3 text-center">
-                      {index + 1}
+                      {row.periodLabel}
                     </td>
                   </tr>
                 );
@@ -672,8 +872,11 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
       {/* Box Office Mojo-style week-by-week run */}
       {grossStats && grossStats.weeklyData.length > 0 && (
         <WeeklyPerformanceTracker
+          filmId={film.id}
           weeklyData={grossStats.weeklyData}
           weeklyByCountry={grossStats.weeklyByCountry}
+          filmReleases={filmReleases}
+          allFilms={allFilms}
           releaseWeek={film.releaseWeek}
           releaseYear={film.releaseYear}
           ranks={performanceContext.ranks}
