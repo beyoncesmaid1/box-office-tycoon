@@ -54,6 +54,129 @@ function formatCompactMoney(amount: number): string {
   return `$${amount.toLocaleString()}`;
 }
 
+function releaseCalendarWeek(
+  releaseWeek: number,
+  releaseYear: number,
+  weeksAfterOpening: number,
+): { week: number; year: number } {
+  const absoluteWeek = releaseYear * 52 + (releaseWeek - 1) + weeksAfterOpening;
+  return {
+    week: (absoluteWeek % 52) + 1,
+    year: Math.floor(absoluteWeek / 52),
+  };
+}
+
+function weeklyDomesticGross(byCountry?: Record<string, number>): number {
+  if (!byCountry) return 0;
+  return Number(
+    byCountry['North America'] ?? byCountry.NA ?? byCountry.Domestic ?? 0,
+  );
+}
+
+function WeeklyPerformanceTracker({
+  weeklyData,
+  weeklyByCountry,
+  releaseWeek,
+  releaseYear,
+}: {
+  weeklyData: number[];
+  weeklyByCountry: Array<Record<string, number>>;
+  releaseWeek?: number | null;
+  releaseYear?: number | null;
+}) {
+  const totalGross = weeklyData.reduce((sum, gross) => sum + Number(gross || 0), 0);
+  const largestWeek = Math.max(1, ...weeklyData.map(gross => Number(gross || 0)));
+  let cumulativeGross = 0;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <TrendingUp className="w-5 h-5" />
+          Weekly Performance
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="overflow-x-auto rounded-lg border">
+          <table className="w-full min-w-[780px] text-sm">
+            <thead className="bg-muted/60 text-xs uppercase tracking-wide text-muted-foreground">
+              <tr>
+                <th className="px-4 py-3 text-left font-medium">Week</th>
+                <th className="px-4 py-3 text-left font-medium">Date</th>
+                <th className="px-4 py-3 text-right font-medium">Worldwide Gross</th>
+                <th className="px-4 py-3 text-right font-medium">Change</th>
+                <th className="px-4 py-3 text-right font-medium">Domestic</th>
+                <th className="px-4 py-3 text-right font-medium">International</th>
+                <th className="px-4 py-3 text-right font-medium">Cumulative</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {weeklyData.map((rawGross, index) => {
+                const gross = Number(rawGross || 0);
+                const previousGross = index > 0 ? Number(weeklyData[index - 1] || 0) : 0;
+                const change = index > 0 && previousGross > 0
+                  ? ((gross - previousGross) / previousGross) * 100
+                  : null;
+                const domestic = weeklyDomesticGross(weeklyByCountry[index]);
+                const international = Math.max(0, gross - domestic);
+                cumulativeGross += gross;
+                const calendar = releaseWeek && releaseYear
+                  ? releaseCalendarWeek(releaseWeek, releaseYear, index)
+                  : null;
+                const barWidth = Math.max(0, Math.min(100, gross / largestWeek * 100));
+
+                return (
+                  <tr key={index} className={index === 0 ? 'bg-primary/5' : 'hover:bg-muted/30'}>
+                    <td className="whitespace-nowrap px-4 py-3 font-medium">
+                      {index === 0 ? 'Opening' : `Week ${index + 1}`}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
+                      {calendar
+                        ? `${formatReleaseDate(calendar.week, calendar.year)} · W${calendar.week}`
+                        : '—'}
+                    </td>
+                    <td className="relative min-w-[170px] px-4 py-3 text-right font-mono font-semibold">
+                      <div
+                        className="absolute inset-y-2 left-2 rounded bg-primary/10"
+                        style={{ width: `calc(${barWidth}% - 0.5rem)` }}
+                      />
+                      <span className="relative">{formatCompactMoney(gross)}</span>
+                    </td>
+                    <td className={`whitespace-nowrap px-4 py-3 text-right font-mono ${
+                      change === null
+                        ? 'text-muted-foreground'
+                        : change >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {change === null ? '—' : `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right font-mono">
+                      {formatCompactMoney(domestic)}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right font-mono">
+                      {formatCompactMoney(international)}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right font-mono font-semibold">
+                      {formatCompactMoney(cumulativeGross)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+            <tfoot className="border-t bg-muted/40 font-semibold">
+              <tr>
+                <td className="px-4 py-3" colSpan={6}>Total after {weeklyData.length} week{weeklyData.length === 1 ? '' : 's'}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-right font-mono">
+                  {formatCompactMoney(totalGross)}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function ScoreCircle({ score, label, type }: { score: number; label: string; type: 'critic' | 'audience' }) {
   const displayScore = type === 'audience' ? Math.round(score * 10) : Math.round(score);
   const color = displayScore >= 70 ? 'text-green-600 border-green-500 bg-green-50 dark:bg-green-900/20' :
@@ -147,7 +270,9 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
   const grossStats = useMemo(() => {
     if (!film) return null;
     const totalByCountry = film.totalBoxOfficeByCountry as Record<string, number> | null;
-    const weeklyByCountry = film.weeklyBoxOfficeByCountry as Array<Record<string, number>> | null;
+    const weeklyByCountry = Array.isArray(film.weeklyBoxOfficeByCountry)
+      ? film.weeklyBoxOfficeByCountry as Array<Record<string, number>>
+      : [];
     
     const domesticGross = totalByCountry?.['North America'] || totalByCountry?.['NA'] || 
       Math.floor(film.totalBoxOffice * 0.4);
@@ -204,6 +329,7 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
       roi,
       openingWeekend,
       weeklyData,
+      weeklyByCountry,
       countryBreakdown,
       domesticMarkets,
       internationalMarkets,
@@ -411,6 +537,16 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Box Office Mojo-style week-by-week run */}
+      {grossStats && grossStats.weeklyData.length > 0 && (
+        <WeeklyPerformanceTracker
+          weeklyData={grossStats.weeklyData}
+          weeklyByCountry={grossStats.weeklyByCountry}
+          releaseWeek={film.releaseWeek}
+          releaseYear={film.releaseYear}
+        />
       )}
 
       {/* Country Breakdown - Progress Bar Style with Opening & Gross */}
