@@ -5917,9 +5917,13 @@ export async function registerRoutes(
             const weeklyCapacity = Array.isArray(release.weeklyCapacityBreakdown)
               ? release.weeklyCapacityBreakdown
               : [];
+            const releaseTheaterCount = Math.round(
+              100 + context.campaign.awareness / 100 * 5000,
+            );
             const capacityEntry = {
               week: newWeek,
               year: newYear,
+              theaterCount: releaseTheaterCount,
               eventPotential: Math.round(territoryResult.eventPotential * 10) / 10,
               eventIntensity: Math.round(territoryResult.eventIntensity * 1000) / 1000,
               phenomenonPotential: Math.round(territoryResult.phenomenonPotential * 10) / 10,
@@ -5944,7 +5948,7 @@ export async function registerRoutes(
               weeksInRelease: context.weekNumber + 1,
               isReleased: true,
               openingExpectation: release.openingExpectation ?? context.campaign.expectation,
-              theaterCount: Math.round(100 + context.campaign.awareness / 100 * 5000),
+              theaterCount: releaseTheaterCount,
               ...nextCampaign,
             });
           }

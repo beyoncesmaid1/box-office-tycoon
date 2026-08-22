@@ -22,7 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useGame, formatMoney, genreLabels } from '@/lib/gameState';
-import type { Film, Studio, Talent, AwardNomination, FilmRole } from '@shared/schema';
+import type { Film, Studio, Talent, AwardNomination, FilmRole, FilmRelease } from '@shared/schema';
 import { MarketingCampaign } from './MarketingCampaign';
 
 interface FilmDetailProps {
@@ -73,107 +73,135 @@ function weeklyDomesticGross(byCountry?: Record<string, number>): number {
   );
 }
 
+function domesticGrossForFilmWeek(film: Film, weekIndex: number): number {
+  if (weekIndex < 0 || weekIndex >= (film.weeklyBoxOffice?.length || 0)) return 0;
+  const histories = Array.isArray(film.weeklyBoxOfficeByCountry)
+    ? film.weeklyBoxOfficeByCountry as Array<Record<string, number>>
+    : [];
+  const recorded = weeklyDomesticGross(histories[weekIndex]);
+  return recorded > 0
+    ? recorded
+    : Math.round(Number(film.weeklyBoxOffice?.[weekIndex] || 0) * 0.4);
+}
+
+function formatWeekendRange(week: number, year: number): string {
+  const start = new Date(year, 0, 1 + (week - 1) * 7);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  const startMonth = start.toLocaleDateString('en-US', { month: 'short' });
+  const endMonth = end.toLocaleDateString('en-US', { month: 'short' });
+  return startMonth === endMonth
+    ? `${startMonth} ${start.getDate()}-${end.getDate()}`
+    : `${startMonth} ${start.getDate()}-${endMonth} ${end.getDate()}`;
+}
+
+function exactMoney(amount: number): string {
+  return `$${Math.round(amount).toLocaleString('en-US')}`;
+}
+
 function WeeklyPerformanceTracker({
   weeklyData,
   weeklyByCountry,
   releaseWeek,
   releaseYear,
+  ranks,
+  theaterCounts,
 }: {
   weeklyData: number[];
   weeklyByCountry: Array<Record<string, number>>;
   releaseWeek?: number | null;
   releaseYear?: number | null;
+  ranks: Array<number | null>;
+  theaterCounts: Array<number | null>;
 }) {
-  const totalGross = weeklyData.reduce((sum, gross) => sum + Number(gross || 0), 0);
-  const largestWeek = Math.max(1, ...weeklyData.map(gross => Number(gross || 0)));
-  let cumulativeGross = 0;
+  const domesticWeeks = weeklyData.map((worldwideGross, index) => {
+    const recordedDomestic = weeklyDomesticGross(weeklyByCountry[index]);
+    return recordedDomestic > 0
+      ? recordedDomestic
+      : Math.round(Number(worldwideGross || 0) * 0.4);
+  });
+  let domesticToDate = 0;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <TrendingUp className="w-5 h-5" />
-          Weekly Performance
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto rounded-lg border">
-          <table className="w-full min-w-[780px] text-sm">
-            <thead className="bg-muted/60 text-xs uppercase tracking-wide text-muted-foreground">
+    <section className="overflow-hidden rounded-md border bg-background shadow-sm">
+      <div className="border-b bg-muted/20 px-3 py-2">
+        <h3 className="font-semibold">Domestic Weekend Performance</h3>
+        <p className="text-xs text-muted-foreground">Box-office run by release weekend</p>
+      </div>
+      <div className="overflow-x-auto">
+          <table className="w-full min-w-[900px] border-collapse text-[13px] tabular-nums">
+            <thead className="bg-background">
               <tr>
-                <th className="px-4 py-3 text-left font-medium">Week</th>
-                <th className="px-4 py-3 text-left font-medium">Date</th>
-                <th className="px-4 py-3 text-right font-medium">Worldwide Gross</th>
-                <th className="px-4 py-3 text-right font-medium">Change</th>
-                <th className="px-4 py-3 text-right font-medium">Domestic</th>
-                <th className="px-4 py-3 text-right font-medium">International</th>
-                <th className="px-4 py-3 text-right font-medium">Cumulative</th>
+                <th className="border-b px-3 py-2 text-left font-semibold text-orange-600">Date ↕</th>
+                <th className="border-b px-3 py-2 text-center font-semibold text-blue-700 dark:text-blue-400">Rank ↕</th>
+                <th className="border-b px-3 py-2 text-right font-semibold">Weekend</th>
+                <th className="border-b px-3 py-2 text-right font-semibold">%± LW</th>
+                <th className="border-b px-3 py-2 text-right font-semibold text-blue-700 dark:text-blue-400">Theaters ↕</th>
+                <th className="border-b px-3 py-2 text-right font-semibold">Change</th>
+                <th className="border-b px-3 py-2 text-right font-semibold text-blue-700 dark:text-blue-400">Avg ↕</th>
+                <th className="border-b px-3 py-2 text-right font-semibold text-blue-700 dark:text-blue-400">To Date ↕</th>
+                <th className="border-b px-3 py-2 text-right font-semibold">Weekend</th>
               </tr>
             </thead>
-            <tbody className="divide-y">
-              {weeklyData.map((rawGross, index) => {
-                const gross = Number(rawGross || 0);
-                const previousGross = index > 0 ? Number(weeklyData[index - 1] || 0) : 0;
-                const change = index > 0 && previousGross > 0
-                  ? ((gross - previousGross) / previousGross) * 100
+            <tbody>
+              {domesticWeeks.map((weekendGross, index) => {
+                const previousGross = index > 0 ? domesticWeeks[index - 1] : 0;
+                const grossChange = index > 0 && previousGross > 0
+                  ? ((weekendGross - previousGross) / previousGross) * 100
                   : null;
-                const domestic = weeklyDomesticGross(weeklyByCountry[index]);
-                const international = Math.max(0, gross - domestic);
-                cumulativeGross += gross;
+                const theaters = theaterCounts[index] ?? null;
+                const previousTheaters = index > 0 ? theaterCounts[index - 1] ?? null : null;
+                const theaterChange = theaters !== null && previousTheaters !== null
+                  ? theaters - previousTheaters
+                  : null;
+                const average = theaters && theaters > 0 ? weekendGross / theaters : null;
+                domesticToDate += weekendGross;
                 const calendar = releaseWeek && releaseYear
                   ? releaseCalendarWeek(releaseWeek, releaseYear, index)
                   : null;
-                const barWidth = Math.max(0, Math.min(100, gross / largestWeek * 100));
 
                 return (
-                  <tr key={index} className={index === 0 ? 'bg-primary/5' : 'hover:bg-muted/30'}>
-                    <td className="whitespace-nowrap px-4 py-3 font-medium">
-                      {index === 0 ? 'Opening' : `Week ${index + 1}`}
+                  <tr key={index} className="hover:bg-muted/30">
+                    <td className="whitespace-nowrap border-b px-3 py-1.5 font-medium text-blue-700 dark:text-blue-400">
+                      {calendar ? formatWeekendRange(calendar.week, calendar.year) : `Weekend ${index + 1}`}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
-                      {calendar
-                        ? `${formatReleaseDate(calendar.week, calendar.year)} · W${calendar.week}`
-                        : '—'}
+                    <td className="border-b px-3 py-1.5 text-center">
+                      {ranks[index] ?? '—'}
                     </td>
-                    <td className="relative min-w-[170px] px-4 py-3 text-right font-mono font-semibold">
-                      <div
-                        className="absolute inset-y-2 left-2 rounded bg-primary/10"
-                        style={{ width: `calc(${barWidth}% - 0.5rem)` }}
-                      />
-                      <span className="relative">{formatCompactMoney(gross)}</span>
+                    <td className="whitespace-nowrap border-b px-3 py-1.5 text-right font-medium">
+                      {exactMoney(weekendGross)}
                     </td>
-                    <td className={`whitespace-nowrap px-4 py-3 text-right font-mono ${
-                      change === null
+                    <td className={`whitespace-nowrap border-b px-3 py-1.5 text-right ${
+                      grossChange === null
                         ? 'text-muted-foreground'
-                        : change >= 0 ? 'text-green-600' : 'text-red-600'
+                        : grossChange >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600'
                     }`}>
-                      {change === null ? '—' : `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`}
+                      {grossChange === null ? '—' : `${grossChange >= 0 ? '+' : ''}${grossChange.toFixed(1)}%`}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right font-mono">
-                      {formatCompactMoney(domestic)}
+                    <td className="whitespace-nowrap border-b px-3 py-1.5 text-right">
+                      {theaters === null ? '—' : theaters.toLocaleString('en-US')}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right font-mono">
-                      {formatCompactMoney(international)}
+                    <td className={`whitespace-nowrap border-b px-3 py-1.5 text-right ${
+                      theaterChange === null
+                        ? 'text-muted-foreground'
+                        : theaterChange >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600'
+                    }`}>
+                      {theaterChange === null ? '—' : `${theaterChange >= 0 ? '+' : ''}${theaterChange.toLocaleString('en-US')}`}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right font-mono font-semibold">
-                      {formatCompactMoney(cumulativeGross)}
+                    <td className="whitespace-nowrap border-b px-3 py-1.5 text-right">
+                      {average === null ? '—' : exactMoney(average)}
                     </td>
+                    <td className="whitespace-nowrap border-b px-3 py-1.5 text-right font-medium">
+                      {exactMoney(domesticToDate)}
+                    </td>
+                    <td className="border-b px-3 py-1.5 text-right">{index + 1}</td>
                   </tr>
                 );
               })}
             </tbody>
-            <tfoot className="border-t bg-muted/40 font-semibold">
-              <tr>
-                <td className="px-4 py-3" colSpan={6}>Total after {weeklyData.length} week{weeklyData.length === 1 ? '' : 's'}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-right font-mono">
-                  {formatCompactMoney(totalGross)}
-                </td>
-              </tr>
-            </tfoot>
           </table>
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }
 
@@ -220,6 +248,7 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
   });
 
   const [actualMarketingBudget, setActualMarketingBudget] = useState<number>(0);
+  const [filmReleases, setFilmReleases] = useState<FilmRelease[]>([]);
 
   const film = useMemo(() => allFilms.find(f => f.id === filmId), [allFilms, filmId]);
 
@@ -228,13 +257,18 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
     if (film) {
       fetch(`/api/films/${film.id}/releases`)
         .then(res => res.json())
-        .then(releases => {
-          const releaseWithMarketing = releases.find((r: any) => r.marketingBudget && r.marketingBudget > 0);
+        .then((releases: FilmRelease[]) => {
+          setFilmReleases(releases);
+          const releaseWithMarketing = releases.find(r => r.marketingBudget && r.marketingBudget > 0);
           const marketingFromReleases = releaseWithMarketing?.marketingBudget || 0;
           setActualMarketingBudget(marketingFromReleases || film.marketingBudget || 0);
         })
-        .catch(() => setActualMarketingBudget(film.marketingBudget || 0));
+        .catch(() => {
+          setFilmReleases([]);
+          setActualMarketingBudget(film.marketingBudget || 0);
+        });
     } else {
+      setFilmReleases([]);
       setActualMarketingBudget(0);
     }
   }, [film]);
@@ -266,6 +300,53 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
       nominations: filmNoms.filter(n => !n.isWinner),
     };
   }, [film, nominations]);
+
+  const performanceContext = useMemo(() => {
+    const empty = {
+      ranks: [] as Array<number | null>,
+      theaterCounts: [] as Array<number | null>,
+    };
+    if (!film?.releaseWeek || !film.releaseYear || !film.weeklyBoxOffice?.length) return empty;
+
+    const targetRelease = film.releaseYear * 52 + film.releaseWeek - 1;
+    const domesticRelease = filmReleases.find(release =>
+      ['NA', 'North America', 'Domestic'].includes(release.territoryCode));
+    const capacityHistory = Array.isArray(domesticRelease?.weeklyCapacityBreakdown)
+      ? domesticRelease.weeklyCapacityBreakdown as Array<Record<string, unknown>>
+      : [];
+    const domesticWeeks = film.weeklyBoxOffice.map((_, index) =>
+      domesticGrossForFilmWeek(film, index));
+    const latestDomestic = Math.max(1, domesticWeeks[domesticWeeks.length - 1] || 0);
+    const latestTheaters = Math.max(
+      0,
+      Number(domesticRelease?.theaterCount || film.theaterCount || 0),
+    );
+    const theaterCounts = domesticWeeks.map((gross, index) => {
+      const recorded = Number(capacityHistory[index]?.theaterCount || 0);
+      if (recorded > 0) return recorded;
+      if (latestTheaters <= 0) return null;
+      // Older saves did not retain historical screen counts. Preserve their
+      // table with a conservative estimate; newly simulated weeks are exact.
+      return Math.max(50, Math.round(latestTheaters * Math.pow(
+        Math.max(0.02, gross / latestDomestic),
+        0.42,
+      )));
+    });
+    const ranks = film.weeklyBoxOffice.map((_, index) => {
+      const calendarWeek = targetRelease + index;
+      const market = allFilms.map(candidate => {
+        if (!candidate.releaseWeek || !candidate.releaseYear) return null;
+        const candidateRelease = candidate.releaseYear * 52 + candidate.releaseWeek - 1;
+        const candidateIndex = calendarWeek - candidateRelease;
+        const gross = domesticGrossForFilmWeek(candidate, candidateIndex);
+        return gross > 0 ? { id: candidate.id, gross } : null;
+      }).filter((entry): entry is { id: string; gross: number } => entry !== null)
+        .sort((left, right) => right.gross - left.gross);
+      const rank = market.findIndex(entry => entry.id === film.id);
+      return rank >= 0 ? rank + 1 : null;
+    });
+    return { ranks, theaterCounts };
+  }, [film, filmReleases, allFilms]);
 
   const grossStats = useMemo(() => {
     if (!film) return null;
@@ -546,6 +627,8 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
           weeklyByCountry={grossStats.weeklyByCountry}
           releaseWeek={film.releaseWeek}
           releaseYear={film.releaseYear}
+          ranks={performanceContext.ranks}
+          theaterCounts={performanceContext.theaterCounts}
         />
       )}
 
