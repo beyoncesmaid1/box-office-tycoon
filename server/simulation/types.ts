@@ -278,6 +278,8 @@ export interface TerritoryWeekInput {
   territoryMarketShare: number;
   genre: string;
   productionScale: number;
+  /** 0-1 share of budget-supported blockbuster infrastructure actually deployed. */
+  blockbusterDeployment?: number;
   commercialAppeal: number;
   launchHook: number;
   releaseTiming: number;

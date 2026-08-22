@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import {
   createStudioDecisionProfile,
   forecastAIFilmReturn,
+  getBlockbusterDeployment,
+  getBlockbusterScale,
   planAIFilmCommitment,
+  selectAIProductionBudget,
   selectAffordableAIFilmCommitment,
   type AIProductionBudgetPlan,
 } from "../server/simulation/aiDecision";
@@ -14,6 +17,28 @@ const profile = createStudioDecisionProfile({
   prestigeLevel: 2,
   strategy: "balanced",
 });
+
+assert.equal(getBlockbusterScale(100_000_000), 0);
+assert.ok(Math.abs(getBlockbusterScale(130_000_000) - 0.15625) < 0.00001);
+assert.equal(getBlockbusterScale(160_000_000), 0.5);
+assert.ok(Math.abs(getBlockbusterScale(190_000_000) - 0.84375) < 0.00001);
+assert.equal(getBlockbusterScale(220_000_000), 1);
+assert.ok(
+  getBlockbusterDeployment("action", 160_000_000, profile) >
+    getBlockbusterDeployment("drama", 160_000_000, profile),
+  "Equal budgets should support different release strategies by commercial profile",
+);
+
+const bridgeBudgets = Array.from({ length: 500 }, (_, index) =>
+  selectAIProductionBudget(
+    "action",
+    500_000_000,
+    profile,
+    createSeededRng(`blockbuster-bridge-${index}`).next,
+    true,
+  ).productionBudget);
+assert.ok(bridgeBudgets.some(budget => budget >= 130_000_000 && budget < 160_000_000));
+assert.ok(bridgeBudgets.some(budget => budget >= 160_000_000 && budget < 190_000_000));
 
 function production(productionBudget: number, isTentpole = false): AIProductionBudgetPlan {
   return { productionBudget, isTentpole };

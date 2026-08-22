@@ -40,9 +40,11 @@ import { generateFilmDescription } from "@shared/descriptionTemplates";
 import { getGenreHolidayModifier, getHolidayForWeek } from "@shared/holidays";
 import {
   calculateAIMarketingRatio,
+  createBlockbusterDecisionProfile,
   createStudioDecisionProfile,
-  createTentpoleDecisionProfile,
   forecastAIFilmReturn,
+  getBlockbusterDeployment,
+  getBlockbusterScale,
   isAITentpoleBudget,
   selectAIGenre,
   selectAffordableAIFilmCommitment,
@@ -417,10 +419,15 @@ async function hireAITalent(
     const talentUpdatePromises: Promise<unknown>[] = [];
     const roleUpdatePromises: Promise<unknown>[] = [];
     const baseProfile = createStudioDecisionProfile(aiStudio);
-    const isTentpole = isAITentpoleBudget(genre, film.productionBudget || 0);
-    const profile = isTentpole
-      ? createTentpoleDecisionProfile(baseProfile)
-      : baseProfile;
+    const blockbusterDeployment = getBlockbusterDeployment(
+      genre,
+      film.productionBudget || 0,
+      baseProfile,
+      film.prequelFilmId ? 0.8 : 0,
+    );
+    // Cast draw starts responding before release strategy and premium access.
+    const castResponse = Math.pow(blockbusterDeployment, 0.62);
+    const profile = createBlockbusterDecisionProfile(baseProfile, castResponse);
     const currentWeek = aiStudio.currentWeek || film.createdAtWeek || 1;
     const currentYear = aiStudio.currentYear || film.createdAtYear || 2025;
     const talentBudgetLimit = commitment?.talentBudgetLimit === undefined
@@ -432,9 +439,9 @@ async function hireAITalent(
         ),
       )
       : Math.max(0, commitment.talentBudgetLimit);
-    const directorEnvelope = talentBudgetLimit * (isTentpole ? 0.24 : 0.20);
-    const writerEnvelope = talentBudgetLimit * (isTentpole ? 0.13 : 0.15);
-    let castEnvelope = talentBudgetLimit * (isTentpole ? 0.55 : 0.56);
+    const directorEnvelope = talentBudgetLimit * (0.20 + 0.04 * castResponse);
+    const writerEnvelope = talentBudgetLimit * (0.15 - 0.02 * castResponse);
+    let castEnvelope = talentBudgetLimit * (0.56 - 0.01 * castResponse);
     const composerEnvelope = talentBudgetLimit - directorEnvelope - writerEnvelope - castEnvelope;
     
     // Talent is committed through principal photography. Post-production and
@@ -611,7 +618,7 @@ async function hireAITalent(
     if (filmStudio?.isAI) {
       const marketingRatio = calculateAIMarketingRatio(
         profile,
-        isTentpole,
+        blockbusterDeployment,
       );
       const newMarketingBudget = Math.floor(
         commitment?.marketingBudget ?? investmentBudget * marketingRatio,
@@ -2938,9 +2945,13 @@ async function runAutomatedCampaignForFilm(
 
   const remaining = Math.max(0, (film.campaignLimit || 0) - (film.campaignSpent || 0));
   const baseProfile = createStudioDecisionProfile(filmStudio);
-  const profile = isAITentpoleBudget(film.genre, film.productionBudget || 0)
-    ? createTentpoleDecisionProfile(baseProfile)
-    : baseProfile;
+  const blockbusterDeployment = getBlockbusterDeployment(
+    film.genre,
+    film.productionBudget || 0,
+    baseProfile,
+    film.prequelFilmId ? 0.8 : 0,
+  );
+  const profile = createBlockbusterDecisionProfile(baseProfile, blockbusterDeployment);
   const noisyShare = budgetShare * (
     0.78 + profile.riskTolerance * 0.42 +
     (createSeededRng(`auto-campaign-spend:${film.id}:${currentYear}:${currentWeek}`).next() - 0.5) *
@@ -3047,15 +3058,23 @@ async function runAIPremiumBookingForFilm(
     dolbySuitability: profile.dolbySuitability,
   });
   const baseDecision = createStudioDecisionProfile(filmStudio);
-  const decision = isAITentpoleBudget(film.genre, film.productionBudget || 0)
-    ? createTentpoleDecisionProfile(baseDecision)
-    : baseDecision;
+  const blockbusterDeployment = getBlockbusterDeployment(
+    film.genre,
+    film.productionBudget || 0,
+    baseDecision,
+    film.prequelFilmId ? 0.8 : 0,
+  );
+  const premiumProgress = Math.max(0, Math.min(1,
+    (blockbusterDeployment - 0.2) / 0.8));
+  const premiumResponse = premiumProgress * premiumProgress *
+    (3 - 2 * premiumProgress);
+  const decision = createBlockbusterDecisionProfile(baseDecision, premiumResponse);
   const launchHook = talentLaunchHook(film, talentPool);
   const preferredTerritories = [...releases]
     .sort((left, right) =>
       getTerritoryBasePercentage(right.territoryCode) -
       getTerritoryBasePercentage(left.territoryCode))
-    .slice(0, 5);
+    .slice(0, Math.round(3 + premiumResponse * 2));
   let totalFee = 0;
   const newBookings: Parameters<typeof storage.createPremiumBookings>[0] = [];
 
@@ -3073,10 +3092,11 @@ async function runAIPremiumBookingForFilm(
       if (estimatedSuitability < 42 && decision.valueDiscipline > 0.35) continue;
       let accessLevel: PremiumAccessLevel = "standard";
       let durationWeeks = 1;
-      if (estimatedSuitability >= 82 && launchHook >= 70 && decision.riskTolerance >= 0.55) {
+      if (premiumResponse >= 0.5 && estimatedSuitability >= 82 &&
+          launchHook >= 70 && decision.riskTolerance >= 0.55) {
         accessLevel = "exclusive";
         durationWeeks = format === "imax" && decision.riskTolerance > 0.72 ? 2 : 1;
-      } else if (estimatedSuitability >= 60) {
+      } else if (premiumResponse >= 0.16 && estimatedSuitability >= 60) {
         accessLevel = "priority";
       }
       const start = absoluteWeek(release.releaseWeek, release.releaseYear);
@@ -3664,9 +3684,17 @@ export async function registerRoutes(
           const productionPlan = plannedFilm.production;
           const commitmentPlan = plannedFilm.commitment;
           if (!commitmentPlan.isAffordable) continue;
-          const projectProfile = productionPlan.isTentpole
-            ? createTentpoleDecisionProfile(profile)
-            : profile;
+          const blockbusterDeployment = getBlockbusterDeployment(
+            genre,
+            productionPlan.productionBudget,
+            profile,
+          );
+          const castResponse = Math.pow(blockbusterDeployment, 0.62);
+          const castProfile = createBlockbusterDecisionProfile(profile, castResponse);
+          const projectProfile = createBlockbusterDecisionProfile(
+            profile,
+            blockbusterDeployment,
+          );
           const prodBudget = Math.floor(productionPlan.productionBudget);
           const setsBudget = Math.floor(commitmentPlan.setsBudget);
           const costumesBudget = Math.floor(commitmentPlan.costumesBudget);
@@ -3684,13 +3712,13 @@ export async function registerRoutes(
             availableAfterProduction,
             commitmentPlan.talentBudgetLimit,
           );
-          const directorEnvelope = talentPackageBudget * (productionPlan.isTentpole ? 0.24 : 0.20);
-          const writerEnvelope = talentPackageBudget * (productionPlan.isTentpole ? 0.13 : 0.15);
-          let castEnvelope = talentPackageBudget * (productionPlan.isTentpole ? 0.55 : 0.56);
+          const directorEnvelope = talentPackageBudget * (0.20 + 0.04 * castResponse);
+          const writerEnvelope = talentPackageBudget * (0.15 - 0.02 * castResponse);
+          let castEnvelope = talentPackageBudget * (0.56 - 0.01 * castResponse);
           const composerEnvelope = talentPackageBudget - directorEnvelope - writerEnvelope - castEnvelope;
-          const director = chooseTalent("director", "director", genre, projectProfile, directorEnvelope, usedTalent, creationAbsolute);
+          const director = chooseTalent("director", "director", genre, castProfile, directorEnvelope, usedTalent, creationAbsolute);
           if (director) usedTalent.add(director.id);
-          const writer = chooseTalent("writer", "writer", genre, projectProfile, writerEnvelope, usedTalent, creationAbsolute);
+          const writer = chooseTalent("writer", "writer", genre, castProfile, writerEnvelope, usedTalent, creationAbsolute);
           if (writer) usedTalent.add(writer.id);
           castEnvelope = Math.max(
             castEnvelope,
@@ -3706,13 +3734,13 @@ export async function registerRoutes(
               castEnvelope / Math.max(1, remainingRoles),
               Math.min(1_250_000, castEnvelope),
             );
-            const actor = chooseTalent("actor", "actor", genre, projectProfile, actorBudget, usedTalent, creationAbsolute);
+            const actor = chooseTalent("actor", "actor", genre, castProfile, actorBudget, usedTalent, creationAbsolute);
             if (!actor) break;
             cast.push(actor);
             usedTalent.add(actor.id);
             castEnvelope = Math.max(0, castEnvelope - Number(actor.askingPrice || 5_000_000));
           }
-          const composer = chooseTalent("composer", "composer", genre, projectProfile, composerEnvelope, usedTalent, creationAbsolute);
+          const composer = chooseTalent("composer", "composer", genre, castProfile, composerEnvelope, usedTalent, creationAbsolute);
           if (composer) usedTalent.add(composer.id);
           const hiredTalent = [director, writer, composer, ...cast].filter(Boolean) as typeof talentPool;
           const talentBudget = Math.max(0, Math.floor(hiredTalent.reduce(
@@ -3823,7 +3851,7 @@ export async function registerRoutes(
               marketingBudget,
               campaignLimit: marketingBudget,
               campaignSpent: marketingBudget,
-              campaignStrategy: productionPlan.isTentpole
+              campaignStrategy: blockbusterDeployment >= 0.72
                 ? "blockbuster"
                 : profile.riskTolerance > 0.68
                 ? "blockbuster"
@@ -5487,6 +5515,7 @@ export async function registerRoutes(
         release: FilmRelease;
         campaign: TerritoryCampaignState;
         productionScale: number;
+        blockbusterDeployment: number;
         commercialAppeal: number;
         launchHook: number;
         releaseTiming: number;
@@ -5530,6 +5559,13 @@ export async function registerRoutes(
           100 * (1 - Math.exp(-(candidateFilm.productionBudget || 0) /
             Math.max(1, genreBalance.viableBudget *
               DEFAULT_SIMULATION_CONFIG.exhibition.productionScaleHalfSaturation))));
+        const owner = allStudios.find(studio => studio.id === candidateFilm.studioId);
+        const blockbusterDeployment = getBlockbusterDeployment(
+          candidateFilm.genre,
+          candidateFilm.productionBudget || 0,
+          createStudioDecisionProfile(owner || { id: candidateFilm.studioId }),
+          candidateFilm.prequelFilmId ? 0.8 : 0,
+        );
         let launchHook = talentLaunchHook(candidateFilm, allTalent);
         if (candidateFilm.prequelFilmId) {
           const prequel = updatedSaveFilms.find(item => item.id === candidateFilm.prequelFilmId) ||
@@ -5574,6 +5610,7 @@ export async function registerRoutes(
             territoryMarketShare: getTerritoryBasePercentage(release.territoryCode),
             genre: candidateFilm.genre,
             productionScale,
+            blockbusterDeployment,
             commercialAppeal: genreBalance.baseCommercialAppeal,
             launchHook,
             releaseTiming,
@@ -5598,6 +5635,7 @@ export async function registerRoutes(
             release,
             campaign,
             productionScale,
+            blockbusterDeployment,
             commercialAppeal: genreBalance.baseCommercialAppeal,
             launchHook,
             releaseTiming,
@@ -5828,6 +5866,7 @@ export async function registerRoutes(
               territoryMarketShare: getTerritoryBasePercentage(release.territoryCode),
               genre: film.genre,
               productionScale: context.productionScale,
+              blockbusterDeployment: context.blockbusterDeployment,
               commercialAppeal: context.commercialAppeal,
               launchHook: context.launchHook,
               releaseTiming: context.releaseTiming,
@@ -6374,9 +6413,15 @@ export async function registerRoutes(
               Math.random,
               unreleasedTentpoleCount < 2,
             );
-            const candidateProfile = candidatePlan.production.isTentpole
-              ? createTentpoleDecisionProfile(decisionProfile)
-              : decisionProfile;
+            const candidateDeployment = getBlockbusterDeployment(
+              candidateGenre,
+              candidatePlan.production.productionBudget,
+              decisionProfile,
+            );
+            const candidateProfile = createBlockbusterDecisionProfile(
+              decisionProfile,
+              candidateDeployment,
+            );
             const forecast = forecastAIFilmReturn(
               candidateGenre,
               candidatePlan,
@@ -6400,9 +6445,15 @@ export async function registerRoutes(
           const productionPlan = plannedFilm.production;
           const commitmentPlan = plannedFilm.commitment;
           const prodBudget = productionPlan.productionBudget;
-          const projectProfile = productionPlan.isTentpole
-            ? createTentpoleDecisionProfile(decisionProfile)
-            : decisionProfile;
+          const blockbusterDeployment = getBlockbusterDeployment(
+            genre,
+            prodBudget,
+            decisionProfile,
+          );
+          const projectProfile = createBlockbusterDecisionProfile(
+            decisionProfile,
+            blockbusterDeployment,
+          );
           
           const setsBudget = commitmentPlan.setsBudget;
           const costumesBudget = commitmentPlan.costumesBudget;
@@ -6453,7 +6504,7 @@ export async function registerRoutes(
                 marketingBudget: 0,
                 campaignLimit: Math.floor(marketBudget),
                 campaignSpent: 0,
-                campaignStrategy: productionPlan.isTentpole
+                campaignStrategy: blockbusterDeployment >= 0.72
                   ? "blockbuster"
                   : decisionProfile.riskTolerance > 0.68
                   ? "blockbuster"
@@ -6480,6 +6531,12 @@ export async function registerRoutes(
                     comparableCount: forecast.comparableCount,
                     confidence: Math.round(forecast.confidence * 1000) / 1000,
                     explorationOverride: forecast.explorationOverride,
+                    blockbusterCapability: Math.round(
+                      getBlockbusterScale(prodBudget) * 1000,
+                    ) / 1000,
+                    blockbusterDeployment: Math.round(
+                      blockbusterDeployment * 1000,
+                    ) / 1000,
                   },
                 },
                 scriptQuality: Math.floor(60 + Math.random() * 30),

@@ -303,7 +303,13 @@ export function simulateTerritoryWeek(input: TerritoryWeekInput): TerritoryWeekR
   const phenomenonIntensity = rawPhenomenonIntensity *
     (1 - clamp(eventIntensity / 0.1, 0, 1));
 
-  const internationalReach = 1 +
+  // Broad international infrastructure grows gradually. This is deliberately
+  // outside eventPotential: budget/strategy can widen a release, but cannot
+  // make a film qualify as an event by itself.
+  const blockbusterDeployment = clamp(input.blockbusterDeployment ?? 0, 0, 1);
+  const infrastructureReach = 0.12 * Math.pow(blockbusterDeployment, 0.85) *
+    globalAccessibility * (input.territoryCode === "NA" ? 0.15 : 1);
+  const internationalReach = 1 + infrastructureReach +
     BALANCE.eventInternationalReachBoost * eventIntensity * globalAccessibility *
     (input.territoryCode === "NA" ? 0.15 : 1);
   const openingAddressableAdmissions =

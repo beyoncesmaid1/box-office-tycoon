@@ -18,8 +18,9 @@ import {
 } from "../server/simulation/index";
 import {
   calculateAIMarketingRatio,
+  createBlockbusterDecisionProfile,
   createStudioDecisionProfile,
-  createTentpoleDecisionProfile,
+  getBlockbusterDeployment,
   selectAIGenre,
   selectAIProductionBudget,
 } from "../server/simulation/aiDecision";
@@ -60,6 +61,7 @@ interface Plan {
   releaseTiming: number;
   competition: number;
   franchiseAwareness: number;
+  blockbusterDeployment?: number;
 }
 
 interface Observation {
@@ -513,6 +515,7 @@ function simulateCampaignRun(
         territoryMarketShare: territory.percentage,
         genre: plan.genre,
         productionScale,
+        blockbusterDeployment: plan.blockbusterDeployment ?? 0,
         commercialAppeal: plan.conceptCommerciality,
         launchHook,
         releaseTiming: plan.releaseTiming,
@@ -1322,30 +1325,38 @@ function generateLiveAIPlan(
   if (productionPlan.isTentpole) {
     activeDurations.push(Math.floor(uniform(rng, 6, 9)));
   }
-  const projectProfile = productionPlan.isTentpole
-    ? createTentpoleDecisionProfile(profile)
-    : profile;
+  const blockbusterDeployment = getBlockbusterDeployment(
+    genre,
+    productionPlan.productionBudget,
+    profile,
+  );
+  const castResponse = Math.pow(blockbusterDeployment, 0.62);
+  const projectProfile = createBlockbusterDecisionProfile(
+    profile,
+    blockbusterDeployment,
+  );
   const plan = makePlan(
     rng,
-    productionPlan.isTentpole ? skilledProfile : heuristicProfile,
+    heuristicProfile,
     genre,
   );
   plan.productionBudget = productionPlan.productionBudget;
+  plan.blockbusterDeployment = blockbusterDeployment;
   plan.departmentBudgets = departments(
     rng,
     plan.productionBudget,
-    productionPlan.isTentpole ? 0.75 : 0.35,
-    productionPlan.isTentpole ? 1.35 : 1.15,
+    0.35 + 0.40 * blockbusterDeployment,
+    1.15 + 0.20 * blockbusterDeployment,
   );
   const departmentSpend = Object.values(plan.departmentBudgets)
     .reduce((sum, amount) => sum + Number(amount || 0), 0);
   const approximateTalentSpend = plan.productionBudget *
-    (productionPlan.isTentpole ? 0.22 : 0.14);
+    (0.14 + 0.08 * castResponse);
   plan.marketingBudget = (
     plan.productionBudget + departmentSpend + approximateTalentSpend
   ) * calculateAIMarketingRatio(
     projectProfile,
-    productionPlan.isTentpole,
+    blockbusterDeployment,
     () => rng.next(),
   );
   // Live territory simulation uses the genre's real appeal rather than a
@@ -1353,15 +1364,19 @@ function generateLiveAIPlan(
   // scale, campaign, cast draw, timing, and premium readiness.
   plan.conceptCommerciality = resolveGenre(genre).baseCommercialAppeal;
   plan.franchiseAwareness = 0;
-  if (productionPlan.isTentpole) {
-    plan.cast = plan.cast.map(person => ({
-      ...person,
-      fame: uniform(rng, 68, 98),
-      popularity: uniform(rng, 66, 98),
-    }));
-    plan.releaseTiming = Math.max(plan.releaseTiming, uniform(rng, 58, 94));
-    plan.competition = Math.min(plan.competition, uniform(rng, 5, 58));
-  }
+  plan.cast = plan.cast.map(person => ({
+    ...person,
+    fame: Number(person.fame ?? 50) * (1 - castResponse) +
+      uniform(rng, 68, 98) * castResponse,
+    popularity: Number(person.popularity ?? 50) * (1 - castResponse) +
+      uniform(rng, 66, 98) * castResponse,
+  }));
+  const releaseResponse = blockbusterDeployment * blockbusterDeployment *
+    (3 - 2 * blockbusterDeployment);
+  const preferredTiming = Math.max(plan.releaseTiming, uniform(rng, 58, 94));
+  const preferredCompetition = Math.min(plan.competition, uniform(rng, 5, 58));
+  plan.releaseTiming += (preferredTiming - plan.releaseTiming) * releaseResponse;
+  plan.competition += (preferredCompetition - plan.competition) * releaseResponse;
   return { plan, isTentpole: productionPlan.isTentpole };
 }
 

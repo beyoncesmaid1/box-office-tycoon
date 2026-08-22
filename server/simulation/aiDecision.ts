@@ -83,6 +83,43 @@ export interface AIFilmReturnForecast {
 const TENTPOLE_GENRES = new Set(["action", "scifi", "fantasy", "animation"]);
 const TENTPOLE_BUDGET_FLOOR = 170_000_000;
 
+export function getBlockbusterScale(productionBudget: number): number {
+  const progress = Math.max(0, Math.min(1,
+    (Math.max(0, productionBudget) - 100_000_000) / 120_000_000));
+  return progress * progress * (3 - 2 * progress);
+}
+
+/** Budget supplies capability; genre and studio intent decide how much of that
+ * capability becomes blockbuster infrastructure. Event qualification remains
+ * separate in exhibition.ts and does not use this deployment score directly. */
+export function getBlockbusterDeployment(
+  genre: string,
+  productionBudget: number,
+  profile: AIStudioDecisionProfile,
+  franchiseStrength = 0,
+): number {
+  const genreKey = genre.toLowerCase();
+  const genreIntent: Record<string, number> = {
+    action: 1,
+    scifi: 1,
+    fantasy: 0.96,
+    animation: 0.96,
+    musicals: 0.82,
+    thriller: 0.72,
+    horror: 0.66,
+    comedy: 0.58,
+    romance: 0.56,
+    drama: 0.52,
+  };
+  const preferred = profile.preferredGenres.includes(genre) ? 0.08 : 0;
+  const strategicUse = Math.max(0.52, Math.min(1.08,
+    (genreIntent[genreKey] || 0.65) * 0.72 +
+    profile.riskTolerance * 0.17 + preferred +
+    Math.max(0, Math.min(1, franchiseStrength)) * 0.11));
+  return Math.max(0, Math.min(1,
+    getBlockbusterScale(productionBudget) * strategicUse));
+}
+
 /**
  * Choose the physical scale of an AI film. Most projects retain the existing
  * genre ranges. A small share of globally accessible projects can become real
@@ -108,9 +145,23 @@ export function selectAIProductionBudget(
 
   if (canAttemptTentpole && rng() < tentpoleChance) {
     return {
-      productionBudget: TENTPOLE_BUDGET_FLOOR +
-        rng() * (affordableTentpoleCeiling - TENTPOLE_BUDGET_FLOOR),
+      productionBudget: TENTPOLE_BUDGET_FLOOR + rng() *
+        (affordableTentpoleCeiling - TENTPOLE_BUDGET_FLOOR),
       isTentpole: true,
+    };
+  }
+
+  // Expanded studio films fill the former gap without replacing the full
+  // tentpoles above. Their behavior still changes continuously through the
+  // shared capability/deployment curve rather than through this label.
+  const bridgeCeiling = Math.min(TENTPOLE_BUDGET_FLOOR, affordableTentpoleCeiling);
+  const canAttemptBridge = allowTentpole && TENTPOLE_GENRES.has(genre) &&
+    bridgeCeiling >= 110_000_000;
+  if (canAttemptBridge && rng() < 0.48) {
+    return {
+      productionBudget: 100_000_000 + Math.pow(rng(), 0.9) *
+        (bridgeCeiling - 100_000_000),
+      isTentpole: false,
     };
   }
 
@@ -154,6 +205,11 @@ export function planAIFilmCommitment(
   rng: RandomSource = Math.random,
 ): AIFilmCommitmentPlan {
   const productionBudget = Math.max(0, productionPlan.productionBudget);
+  const blockbusterDeployment = getBlockbusterDeployment(
+    genre,
+    productionBudget,
+    profile,
+  );
   const isEffectsGenre = ["action", "scifi", "fantasy", "animation", "horror"]
     .includes(genre.toLowerCase());
   const variation = (minimum: number, maximum: number) =>
@@ -172,29 +228,38 @@ export function planAIFilmCommitment(
   const departmentBudget = setsBudget + costumesBudget + stuntsBudget +
     makeupBudget + practicalEffectsBudget + soundCrewBudget;
 
-  const talentRatio = productionPlan.isTentpole
-    ? 0.18 + profile.riskTolerance * 0.10 - profile.valueDiscipline * 0.035
-    : 0.25 + profile.riskTolerance * 0.12 - profile.valueDiscipline * 0.06;
+  const ordinaryTalentRatio = 0.25 + profile.riskTolerance * 0.12 -
+    profile.valueDiscipline * 0.06;
+  const fullTalentRatio = 0.18 + profile.riskTolerance * 0.10 -
+    profile.valueDiscipline * 0.035;
+  const castResponse = Math.pow(blockbusterDeployment, 0.62);
+  const talentRatio = ordinaryTalentRatio +
+    (fullTalentRatio - ordinaryTalentRatio) * castResponse;
   const talentNoise = variation(0.82, 1.18);
   let talentBudgetLimit = Math.max(
     Math.min(7_000_000, productionBudget * 0.65),
     productionBudget * talentRatio * talentNoise,
   );
 
-  const vfxBaseRatio: Record<string, number> = {
-    action: productionPlan.isTentpole ? 0.42 : 0.24,
-    scifi: productionPlan.isTentpole ? 0.50 : 0.34,
-    fantasy: productionPlan.isTentpole ? 0.46 : 0.30,
-    animation: productionPlan.isTentpole ? 0.48 : 0.32,
-    horror: productionPlan.isTentpole ? 0.24 : 0.14,
+  const vfxBaseRatio: Record<string, [number, number]> = {
+    action: [0.24, 0.42],
+    scifi: [0.34, 0.50],
+    fantasy: [0.30, 0.46],
+    animation: [0.32, 0.48],
+    horror: [0.14, 0.24],
   };
+  const [ordinaryVfxRatio, fullVfxRatio] = vfxBaseRatio[genre.toLowerCase()] || [0.2, 0.3];
+  const vfxResponse = Math.pow(blockbusterDeployment, 1.08);
   let vfxBudgetCeiling = isEffectsGenre
-    ? productionBudget * (vfxBaseRatio[genre.toLowerCase()] || 0.2) * variation(0.78, 1.22)
+    ? productionBudget * (ordinaryVfxRatio +
+      (fullVfxRatio - ordinaryVfxRatio) * vfxResponse) * variation(0.78, 1.22)
     : 0;
 
-  const marketingRatio = productionPlan.isTentpole
-    ? 0.58 + profile.riskTolerance * 0.28 + variation(-0.08, 0.12)
-    : 0.30 + profile.riskTolerance * 0.32 + variation(-0.08, 0.12);
+  const ordinaryMarketingRatio = 0.30 + profile.riskTolerance * 0.32;
+  const fullMarketingRatio = 0.58 + profile.riskTolerance * 0.28;
+  const marketingRatio = ordinaryMarketingRatio +
+    (fullMarketingRatio - ordinaryMarketingRatio) * blockbusterDeployment +
+    variation(-0.08, 0.12);
   let marketingBudget = productionBudget * Math.max(0.2, marketingRatio);
 
   // A minority of projects make an identifiable bad commitment: an excessive
@@ -435,25 +500,40 @@ function percentileMedian(values: number[]): number {
 export function createTentpoleDecisionProfile(
   profile: AIStudioDecisionProfile,
 ): AIStudioDecisionProfile {
+  return createBlockbusterDecisionProfile(profile, 1);
+}
+
+export function createBlockbusterDecisionProfile(
+  profile: AIStudioDecisionProfile,
+  deployment: number,
+): AIStudioDecisionProfile {
+  const scale = Math.max(0, Math.min(1, deployment));
+  const releaseStrategyResponse = scale * scale * (3 - 2 * scale);
   return {
     ...profile,
-    decisionQuality: Math.max(0.76, profile.decisionQuality),
-    explorationRate: Math.min(0.1, profile.explorationRate),
-    riskTolerance: Math.max(0.8, profile.riskTolerance),
-    valueDiscipline: Math.min(0.55, profile.valueDiscipline),
+    decisionQuality: profile.decisionQuality +
+      (Math.max(0.76, profile.decisionQuality) - profile.decisionQuality) * releaseStrategyResponse,
+    explorationRate: profile.explorationRate +
+      (Math.min(0.1, profile.explorationRate) - profile.explorationRate) * releaseStrategyResponse,
+    riskTolerance: profile.riskTolerance +
+      (Math.max(0.8, profile.riskTolerance) - profile.riskTolerance) * releaseStrategyResponse,
+    valueDiscipline: profile.valueDiscipline +
+      (Math.min(0.55, profile.valueDiscipline) - profile.valueDiscipline) * releaseStrategyResponse,
   };
 }
 
 export function calculateAIMarketingRatio(
   profile: AIStudioDecisionProfile,
-  isTentpole: boolean,
+  blockbusterScale: boolean | number,
   rng: RandomSource = Math.random,
 ): number {
-  if (isTentpole) {
-    return 0.72 + profile.riskTolerance * 0.12 + rng() * 0.16;
-  }
-  return 0.38 + profile.riskTolerance * 0.30 +
+  const scale = typeof blockbusterScale === "boolean"
+    ? (blockbusterScale ? 1 : 0)
+    : Math.max(0, Math.min(1, blockbusterScale));
+  const ordinary = 0.38 + profile.riskTolerance * 0.30 +
     rng() * (0.30 - profile.valueDiscipline * 0.10);
+  const full = 0.72 + profile.riskTolerance * 0.12 + rng() * 0.16;
+  return ordinary + (full - ordinary) * scale;
 }
 
 export function isAITentpoleBudget(genre: string, productionBudget: number): boolean {
