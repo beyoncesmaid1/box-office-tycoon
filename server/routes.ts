@@ -58,6 +58,7 @@ import {
   allocatePremiumFormat,
   applyCampaignAction,
   calculatePremiumSuitability,
+  calculateTerritoryTheaterCount,
   createInitialCampaignState,
   createSeededRng,
   estimatePremiumFormatDemand,
@@ -3222,6 +3223,7 @@ async function calculateHistoricalTerritoryRun(
     100 * (1 - Math.exp(-(film.productionBudget || 0) /
       Math.max(1, genreBalance.viableBudget *
         DEFAULT_SIMULATION_CONFIG.exhibition.productionScaleHalfSaturation))));
+  const blockbusterDeployment = getBlockbusterScale(film.productionBudget || 0);
   const launchHook = talentLaunchHook(film, talentPool);
   const premiumProfile = await calculateFilmPremiumProfile(film, talentPool);
 
@@ -3267,6 +3269,10 @@ async function calculateHistoricalTerritoryRun(
 
   const weeklyGrosses: number[] = [];
   const previousGrosses = new Map<string, number>();
+  const previousTheaterCounts = new Map<string, number>();
+  const theaterHistories = new Map<string, number[]>(
+    BOX_OFFICE_COUNTRIES.map(territory => [territory.code, []]),
+  );
   let peakEventPotential = 0;
   let peakEventIntensity = 0;
   let peakPhenomenonPotential = 0;
@@ -3281,6 +3287,7 @@ async function calculateHistoricalTerritoryRun(
         territoryMarketShare: territory.percentage,
         genre: film.genre,
         productionScale,
+        blockbusterDeployment,
         commercialAppeal: genreBalance.baseCommercialAppeal,
         launchHook,
         releaseTiming,
@@ -3317,6 +3324,23 @@ async function calculateHistoricalTerritoryRun(
       peakEventIntensity = Math.max(peakEventIntensity, result.eventIntensity);
       peakPhenomenonPotential = Math.max(peakPhenomenonPotential, result.phenomenonPotential);
       peakPhenomenonIntensity = Math.max(peakPhenomenonIntensity, result.phenomenonIntensity);
+      const theaterCount = calculateTerritoryTheaterCount({
+        territoryCode: territory.code,
+        weekNumber,
+        currentGross: result.gross,
+        previousGross: previousGrosses.get(territory.code) || 0,
+        previousTheaterCount: previousTheaterCounts.get(territory.code) || 0,
+        awareness: campaign.awareness,
+        interest: campaign.interest,
+        commercialAppeal: genreBalance.baseCommercialAppeal,
+        launchHook,
+        competition,
+        blockbusterDeployment,
+        eventIntensity: result.eventIntensity,
+        phenomenonIntensity: result.phenomenonIntensity,
+      });
+      theaterHistories.get(territory.code)!.push(theaterCount);
+      previousTheaterCounts.set(territory.code, theaterCount);
       previousGrosses.set(territory.code, result.gross);
       campaigns.set(territory.code, advanceCampaignWeek(campaign, {
         isReleased: true,
@@ -3334,7 +3358,8 @@ async function calculateHistoricalTerritoryRun(
     openingWeekend,
     totalGross,
     weeklyGrosses,
-    theaterCount: Math.round(2_500 + productionScale * 26),
+    theaterHistories,
+    theaterCount: theaterHistories.get("NA")?.[0] || 0,
     legsMultiplier: openingWeekend > 0 ? totalGross / openingWeekend : 0,
     breakdown: {
       modelVersion: 3,
@@ -3949,13 +3974,17 @@ export async function registerRoutes(
           weeklyBoxOffice,
           filmReleases.map(release => release.territoryCode),
         );
+        const northAmericaTheaterHistory = run.theaterHistories.get("NA") || [];
+        const currentNorthAmericaTheaters = northAmericaTheaterHistory[
+          Math.max(0, historyLength - 1)
+        ] || run.theaterCount;
         Object.assign(film, {
           weeklyBoxOffice,
           weeklyBoxOfficeByCountry: territoryHistory.weeklyByCountry,
           totalBoxOffice: weeklyBoxOffice.reduce((sum, gross) => sum + gross, 0),
           totalBoxOfficeByCountry: territoryHistory.totalByCountry,
           territoryPercentages: territoryHistory.territoryPercentages,
-          theaterCount: run.theaterCount,
+          theaterCount: currentNorthAmericaTheaters,
           boxOfficeBreakdown: {
             ...run.breakdown,
             projectedTotalGross: run.totalGross,
@@ -3985,10 +4014,22 @@ export async function registerRoutes(
         } as any);
         await storage.updateFilmReleaseWeeks(filmReleases.map(release => {
           const weeklyBoxOffice = territoryHistory.histories.get(release.territoryCode) || [];
+          const theaterHistory = (run.theaterHistories.get(release.territoryCode) || [])
+            .slice(0, weeklyBoxOffice.length);
+          const weeklyCapacityBreakdown = theaterHistory.map((theaterCount, index) => {
+            const calendar = absoluteWeek(release.releaseWeek, release.releaseYear) + index;
+            return {
+              week: ((calendar - 1) % 52) + 1,
+              year: Math.floor((calendar - 1) / 52),
+              theaterCount,
+            };
+          });
           return {
             ...release,
             weeklyBoxOffice,
+            weeklyCapacityBreakdown,
             totalBoxOffice: weeklyBoxOffice.reduce((sum, gross) => sum + gross, 0),
+            theaterCount: theaterHistory[theaterHistory.length - 1] || 0,
             weeksInRelease: weeklyBoxOffice.length,
             isReleased: true,
           };
@@ -5917,9 +5958,21 @@ export async function registerRoutes(
             const weeklyCapacity = Array.isArray(release.weeklyCapacityBreakdown)
               ? release.weeklyCapacityBreakdown
               : [];
-            const releaseTheaterCount = Math.round(
-              100 + context.campaign.awareness / 100 * 5000,
-            );
+            const releaseTheaterCount = calculateTerritoryTheaterCount({
+              territoryCode: release.territoryCode,
+              weekNumber: context.weekNumber,
+              currentGross: territoryResult.gross,
+              previousGross: context.previousWeekGross,
+              previousTheaterCount: release.theaterCount,
+              awareness: context.campaign.awareness,
+              interest: context.campaign.interest,
+              commercialAppeal: context.commercialAppeal,
+              launchHook: context.launchHook,
+              competition: context.competition,
+              blockbusterDeployment: context.blockbusterDeployment,
+              eventIntensity: territoryResult.eventIntensity,
+              phenomenonIntensity: territoryResult.phenomenonIntensity,
+            });
             const capacityEntry = {
               week: newWeek,
               year: newYear,
@@ -5977,6 +6030,14 @@ export async function registerRoutes(
             totalBoxOffice: newTotalBoxOffice,
             totalBoxOfficeByCountry: newTotalByCountry,
           };
+          const northAmericaRelease = filmReleases.find(
+            release => release.territoryCode === "NA",
+          );
+          filmUpdate.theaterCount = northAmericaRelease
+            ? boxOfficeReleaseUpdates.find(
+              update => update.id === northAmericaRelease.id,
+            )?.theaterCount || northAmericaRelease.theaterCount || 0
+            : 0;
           const previousBoxOfficeBreakdown = film.boxOfficeBreakdown &&
             typeof film.boxOfficeBreakdown === "object"
             ? film.boxOfficeBreakdown as Record<string, any>
@@ -6014,10 +6075,6 @@ export async function registerRoutes(
             filmUpdate.archivedYear = newYear;
           }
           if (isOpeningWeek) {
-            const northAmerica = filmReleases.find(release => release.territoryCode === "NA");
-            filmUpdate.theaterCount = northAmerica
-              ? Math.round(100 + (territoryContexts.get(northAmerica.id)?.campaign.awareness || 0) / 100 * 5000)
-              : 0;
             const averageRetention = retentionCount > 0
               ? retentionTotal / retentionCount
               : 0.5;

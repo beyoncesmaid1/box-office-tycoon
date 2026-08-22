@@ -339,21 +339,45 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
       : [];
     const domesticWeeks = film.weeklyBoxOffice.map((_, index) =>
       domesticGrossForFilmWeek(film, index));
-    const latestDomestic = Math.max(1, domesticWeeks[domesticWeeks.length - 1] || 0);
-    const latestTheaters = Math.max(
-      0,
-      Number(domesticRelease?.theaterCount || film.theaterCount || 0),
-    );
+    const maximumDomesticTheaters = 4_600;
+    let previousTheaters = 0;
     const theaterCounts = domesticWeeks.map((gross, index) => {
       const recorded = Number(capacityHistory[index]?.theaterCount || 0);
-      if (recorded > 0) return recorded;
-      if (latestTheaters <= 0) return null;
-      // Older saves did not retain historical screen counts. Preserve their
-      // table with a conservative estimate; newly simulated weeks are exact.
-      return Math.max(50, Math.round(latestTheaters * Math.pow(
-        Math.max(0.02, gross / latestDomestic),
-        0.42,
-      )));
+      if (recorded > 0) {
+        previousTheaters = Math.min(maximumDomesticTheaters, recorded);
+        return previousTheaters;
+      }
+
+      // Older saves did not retain theater history. Reconstruct it forward
+      // with the same performance principle as the live allocator, keeping
+      // the estimate inside the real North American theatrical range.
+      if (index === 0 || previousTheaters <= 0) {
+        previousTheaters = Math.round(Math.max(40, Math.min(
+          maximumDomesticTheaters,
+          500 + 4_000 * Math.sqrt(Math.max(0, gross) / 100_000_000),
+        )));
+        return previousTheaters;
+      }
+      const previousGross = Math.max(1, domesticWeeks[index - 1] || 0);
+      const grossPerTheater = gross / Math.max(1, previousTheaters);
+      const weeklyHold = Math.max(0, Math.min(1.5, gross / previousGross));
+      let multiplier = grossPerTheater >= 7_500 ? 1.04
+        : grossPerTheater >= 5_000 ? 1
+        : grossPerTheater >= 3_000 ? 0.94
+        : grossPerTheater >= 1_800 ? 0.86
+        : grossPerTheater >= 1_000 ? 0.76
+        : grossPerTheater >= 500 ? 0.64
+        : 0.48;
+      if (weeklyHold >= 0.72) multiplier += 0.05;
+      else if (weeklyHold < 0.32) multiplier -= 0.06;
+      multiplier -= Math.min(0.18, Math.max(0, index - 5) * 0.025);
+      const contractionFloor = previousTheaters * (index >= 10 ? 0.5 : 0.65);
+      previousTheaters = Math.round(Math.max(
+        40,
+        contractionFloor,
+        Math.min(maximumDomesticTheaters, previousTheaters * 1.12, previousTheaters * multiplier),
+      ));
+      return previousTheaters;
     });
     const ranks = film.weeklyBoxOffice.map((_, index) => {
       const calendarWeek = targetRelease + index;

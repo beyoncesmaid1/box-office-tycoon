@@ -22,10 +22,12 @@ export {
 } from "./campaign";
 export {
   allocatePremiumFormat,
+  calculateTerritoryTheaterCount,
   calculatePremiumSuitability,
   estimatePremiumFormatDemand,
   simulateTerritoryWeek,
 } from "./exhibition";
+export type { TheaterAllocationInput } from "./exhibition";
 export {
   chance,
   correlatedNormals,

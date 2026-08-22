@@ -14,6 +14,127 @@ const clamp = (value: number, minimum = 0, maximum = 100): number =>
   Math.max(minimum, Math.min(maximum, value));
 const BALANCE = DEFAULT_SIMULATION_CONFIG.exhibition;
 
+type TheaterMarketProfile = {
+  minimum: number;
+  maximum: number;
+  healthyOpeningAverage: number;
+};
+
+const THEATER_MARKET_PROFILES: Record<string, TheaterMarketProfile> = {
+  NA: { minimum: 40, maximum: 4_600, healthyOpeningAverage: 7_000 },
+  CN: { minimum: 80, maximum: 12_000, healthyOpeningAverage: 4_500 },
+  GB: { minimum: 20, maximum: 850, healthyOpeningAverage: 6_000 },
+  FR: { minimum: 20, maximum: 950, healthyOpeningAverage: 5_000 },
+  JP: { minimum: 20, maximum: 700, healthyOpeningAverage: 7_000 },
+  DE: { minimum: 20, maximum: 850, healthyOpeningAverage: 5_000 },
+  KR: { minimum: 20, maximum: 650, healthyOpeningAverage: 6_000 },
+  MX: { minimum: 20, maximum: 850, healthyOpeningAverage: 3_500 },
+  AU: { minimum: 15, maximum: 520, healthyOpeningAverage: 5_500 },
+  IN: { minimum: 40, maximum: 1_800, healthyOpeningAverage: 2_000 },
+  OTHER: { minimum: 80, maximum: 5_500, healthyOpeningAverage: 4_000 },
+};
+
+export interface TheaterAllocationInput {
+  territoryCode: string;
+  weekNumber: number;
+  currentGross: number;
+  previousGross?: number;
+  previousTheaterCount?: number;
+  awareness: number;
+  interest: number;
+  commercialAppeal: number;
+  launchHook: number;
+  competition: number;
+  blockbusterDeployment?: number;
+  eventIntensity?: number;
+  phenomenonIntensity?: number;
+}
+
+const smoothstep = (value: number): number => {
+  const progress = clamp(value, 0, 1);
+  return progress * progress * (3 - 2 * progress);
+};
+
+/**
+ * Estimates the number of physical theaters carrying a film in one territory.
+ * Opening width follows distribution strength, while later weeks respond to
+ * per-theater performance and shed locations gradually as demand declines.
+ */
+export function calculateTerritoryTheaterCount(input: TheaterAllocationInput): number {
+  const profile = THEATER_MARKET_PROFILES[input.territoryCode] ??
+    THEATER_MARKET_PROFILES.OTHER;
+  const currentGross = Math.max(0, input.currentGross);
+  const eventStrength = clamp((input.eventIntensity ?? 0) / BALANCE.eventMaximumIntensity) * 100;
+  const openingStrength =
+    clamp(input.awareness) * 0.34 +
+    clamp(input.interest) * 0.25 +
+    clamp(input.commercialAppeal) * 0.16 +
+    clamp(input.launchHook) * 0.1 +
+    clamp(input.blockbusterDeployment ?? 0, 0, 1) * 100 * 0.08 +
+    eventStrength * 0.05 +
+    (100 - clamp(input.competition)) * 0.02;
+  const openingProgress = smoothstep((openingStrength - 18) / 72);
+  const strategicOpening = profile.minimum +
+    (profile.maximum - profile.minimum) * openingProgress;
+  const grossSupportedOpening = clamp(
+    currentGross / profile.healthyOpeningAverage,
+    profile.minimum,
+    profile.maximum,
+  );
+  let openingTheaters = strategicOpening * 0.76 + grossSupportedOpening * 0.24;
+  if ((input.eventIntensity ?? 0) >= 0.1) {
+    openingTheaters = Math.max(
+      openingTheaters,
+      profile.maximum * (0.72 + 0.2 * clamp(eventStrength / 100, 0, 1)),
+    );
+  }
+  openingTheaters = clamp(openingTheaters, profile.minimum, profile.maximum);
+
+  if (input.weekNumber <= 0) return Math.round(openingTheaters);
+
+  const previousTheaters = clamp(
+    input.previousTheaterCount && input.previousTheaterCount > 0
+      ? input.previousTheaterCount
+      : openingTheaters,
+    profile.minimum,
+    profile.maximum,
+  );
+  const previousGross = Math.max(1, input.previousGross ?? 0);
+  const weeklyHold = clamp(currentGross / previousGross, 0, 1.5);
+  const grossPerTheater = currentGross / Math.max(1, previousTheaters);
+
+  let retentionMultiplier: number;
+  if (grossPerTheater >= 7_500) retentionMultiplier = 1.04;
+  else if (grossPerTheater >= 5_000) retentionMultiplier = 1;
+  else if (grossPerTheater >= 3_000) retentionMultiplier = 0.94;
+  else if (grossPerTheater >= 1_800) retentionMultiplier = 0.86;
+  else if (grossPerTheater >= 1_000) retentionMultiplier = 0.76;
+  else if (grossPerTheater >= 500) retentionMultiplier = 0.64;
+  else retentionMultiplier = 0.48;
+
+  if (weeklyHold >= 0.72) retentionMultiplier += 0.05;
+  else if (weeklyHold < 0.32) retentionMultiplier -= 0.06;
+  const lateRunPressure = Math.min(0.18, Math.max(0, input.weekNumber - 5) * 0.025);
+  const phenomenonExpansion = 0.1 * clamp(
+    (input.phenomenonIntensity ?? 0) / 1,
+    0,
+    1,
+  );
+  retentionMultiplier += phenomenonExpansion - lateRunPressure;
+
+  const desiredTheaters = previousTheaters * retentionMultiplier;
+  const maximumExpansion = previousTheaters * 1.12;
+  const maximumWeeklyContraction = previousTheaters *
+    (input.weekNumber >= 10 ? 0.5 : 0.65);
+  const minimumNeededForDemand = currentGross /
+    (profile.healthyOpeningAverage * 1.8);
+  return Math.round(clamp(
+    Math.max(desiredTheaters, minimumNeededForDemand),
+    Math.max(profile.minimum, maximumWeeklyContraction),
+    Math.min(profile.maximum, maximumExpansion),
+  ));
+}
+
 const normalizedGenre = (genre: string): string =>
   genre.toLowerCase().replace(/[\s-]/g, "");
 
