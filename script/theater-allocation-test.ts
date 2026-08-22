@@ -46,6 +46,52 @@ const strongHold = calculateTerritoryTheaterCount({
 assert.ok(strongHold >= 4_000 && strongHold <= 4_600,
   `A strong hold should retain its footprint; got ${strongHold}`);
 
+const secondFrame = calculateTerritoryTheaterCount({
+  territoryCode: "NA",
+  weekNumber: 1,
+  currentGross: 60_000_000,
+  previousGross: 95_000_000,
+  previousTheaterCount: wideOpening,
+  awareness: 88,
+  interest: 84,
+  commercialAppeal: 82,
+  launchHook: 78,
+  competition: 35,
+  blockbusterDeployment: 0.8,
+});
+const thirdFrame = calculateTerritoryTheaterCount({
+  territoryCode: "NA",
+  weekNumber: 2,
+  currentGross: 40_000_000,
+  previousGross: 60_000_000,
+  previousTheaterCount: secondFrame,
+  awareness: 86,
+  interest: 82,
+  commercialAppeal: 82,
+  launchHook: 78,
+  competition: 38,
+  blockbusterDeployment: 0.8,
+});
+const fourthFrame = calculateTerritoryTheaterCount({
+  territoryCode: "NA",
+  weekNumber: 3,
+  currentGross: 27_000_000,
+  previousGross: 40_000_000,
+  previousTheaterCount: thirdFrame,
+  awareness: 84,
+  interest: 80,
+  commercialAppeal: 82,
+  launchHook: 78,
+  competition: 42,
+  blockbusterDeployment: 0.8,
+});
+assert.ok(secondFrame <= Math.round(wideOpening * 1.03),
+  `A second frame should only expand slightly; got ${wideOpening} -> ${secondFrame}`);
+assert.ok(thirdFrame <= Math.round(secondFrame * 1.02),
+  `A third frame should only expand slightly; got ${secondFrame} -> ${thirdFrame}`);
+assert.ok(fourthFrame < thirdFrame,
+  `An ordinary fourth frame should begin contracting; got ${thirdFrame} -> ${fourthFrame}`);
+
 const weakHold = calculateTerritoryTheaterCount({
   territoryCode: "NA",
   weekNumber: 4,
@@ -78,4 +124,13 @@ const lateRun = calculateTerritoryTheaterCount({
 assert.ok(lateRun < 600 && lateRun >= 40,
   `A late run should shed theaters meaningfully; got ${lateRun}`);
 
-console.log({ wideOpening, modestOpening, strongHold, weakHold, lateRun });
+console.log({
+  wideOpening,
+  modestOpening,
+  strongHold,
+  secondFrame,
+  thirdFrame,
+  fourthFrame,
+  weakHold,
+  lateRun,
+});

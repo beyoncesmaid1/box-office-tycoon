@@ -82,6 +82,10 @@ export function calculateTerritoryTheaterCount(input: TheaterAllocationInput): n
     profile.maximum,
   );
   let openingTheaters = strategicOpening * 0.76 + grossSupportedOpening * 0.24;
+  // Actual opening demand is the strongest evidence of how broadly exhibitors
+  // should have booked a film. This floor prevents a huge opening from starting
+  // artificially narrow and then adding hundreds of theaters for several weeks.
+  openingTheaters = Math.max(openingTheaters, grossSupportedOpening * 0.9);
   if ((input.eventIntensity ?? 0) >= 0.1) {
     openingTheaters = Math.max(
       openingTheaters,
@@ -104,26 +108,44 @@ export function calculateTerritoryTheaterCount(input: TheaterAllocationInput): n
   const grossPerTheater = currentGross / Math.max(1, previousTheaters);
 
   let retentionMultiplier: number;
-  if (grossPerTheater >= 7_500) retentionMultiplier = 1.04;
-  else if (grossPerTheater >= 5_000) retentionMultiplier = 1;
-  else if (grossPerTheater >= 3_000) retentionMultiplier = 0.94;
-  else if (grossPerTheater >= 1_800) retentionMultiplier = 0.86;
-  else if (grossPerTheater >= 1_000) retentionMultiplier = 0.76;
-  else if (grossPerTheater >= 500) retentionMultiplier = 0.64;
-  else retentionMultiplier = 0.48;
+  if (grossPerTheater >= 12_000) retentionMultiplier = 1;
+  else if (grossPerTheater >= 8_000) retentionMultiplier = 0.98;
+  else if (grossPerTheater >= 5_000) retentionMultiplier = 0.94;
+  else if (grossPerTheater >= 3_000) retentionMultiplier = 0.88;
+  else if (grossPerTheater >= 1_800) retentionMultiplier = 0.8;
+  else if (grossPerTheater >= 1_000) retentionMultiplier = 0.7;
+  else if (grossPerTheater >= 500) retentionMultiplier = 0.6;
+  else retentionMultiplier = 0.46;
 
-  if (weeklyHold >= 0.72) retentionMultiplier += 0.05;
+  if (weeklyHold >= 0.72) retentionMultiplier += 0.02;
   else if (weeklyHold < 0.32) retentionMultiplier -= 0.06;
   const lateRunPressure = Math.min(0.18, Math.max(0, input.weekNumber - 5) * 0.025);
-  const phenomenonExpansion = 0.1 * clamp(
+  const phenomenonStrength = clamp(
     (input.phenomenonIntensity ?? 0) / 1,
     0,
     1,
   );
+  const phenomenonExpansion = 0.08 * phenomenonStrength;
   retentionMultiplier += phenomenonExpansion - lateRunPressure;
 
   const desiredTheaters = previousTheaters * retentionMultiplier;
-  const maximumExpansion = previousTheaters * 1.12;
+  // Real wide releases may add a few locations in frames two or three, but
+  // ordinary films begin shedding screens in frame four. Only a genuine
+  // sleeper phenomenon can override that age-based ceiling.
+  const ordinaryAgeCeiling = input.weekNumber === 1
+    ? 1.03
+    : input.weekNumber === 2
+      ? 1.02
+      : input.weekNumber === 3
+        ? 0.96
+        : input.weekNumber <= 5
+          ? 0.97
+          : input.weekNumber <= 9
+            ? 0.94
+            : 0.9;
+  const ageCeiling = Math.min(1.08,
+    ordinaryAgeCeiling + 0.12 * phenomenonStrength);
+  const maximumExpansion = previousTheaters * ageCeiling;
   const maximumWeeklyContraction = previousTheaters *
     (input.weekNumber >= 10 ? 0.5 : 0.65);
   const minimumNeededForDemand = currentGross /

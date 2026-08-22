@@ -140,12 +140,97 @@ function territoryGross(
   return Number(week[territory?.name || territoryCode] ?? week[territoryCode] ?? 0);
 }
 
+const BOX_OFFICE_DAYS = ['Fri', 'Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu'] as const;
+
+type DailyPerformanceProfile = 'family' | 'fan' | 'adult' | 'general';
+
+function dailyPerformanceProfile(
+  genre: string,
+  isSequel: boolean,
+  eventIntensity: number,
+): DailyPerformanceProfile {
+  const normalized = genre.toLowerCase().replace(/[\s-]/g, '');
+  if (normalized === 'animation') return 'family';
+  if (normalized === 'horror' || eventIntensity >= 0.1 ||
+      (isSequel && ['action', 'scifi', 'fantasy'].includes(normalized))) return 'fan';
+  if (['drama', 'romance', 'musicals'].includes(normalized)) return 'adult';
+  return 'general';
+}
+
+function stableDailyVariation(filmId: string, weekIndex: number, dayIndex: number): number {
+  let hash = 2166136261;
+  const value = `${filmId}:${weekIndex}:${dayIndex}`;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return ((hash >>> 0) / 0xffffffff - 0.5) * 0.08;
+}
+
+/**
+ * The engine advances in weeks, so daily results are a display breakdown of
+ * that authoritative total. Profiles mirror common domestic patterns:
+ * preview-heavy opening Fridays, family Saturdays, Sunday declines, Monday
+ * drops, Tuesday discounts, and the Friday/Saturday holdover rebound.
+ */
+function distributeWeeklyGrossAcrossDays(input: {
+  filmId: string;
+  weeklyGross: number;
+  weekIndex: number;
+  previousWeeklyGross: number;
+  profile: DailyPerformanceProfile;
+  audienceScore: number;
+}): number[] {
+  const openingWeights: Record<DailyPerformanceProfile, number[]> = {
+    family: [1, 0.81, 0.62, 0.35, 0.45, 0.4, 0.31],
+    fan: [1, 0.58, 0.48, 0.2, 0.21, 0.16, 0.15],
+    adult: [1, 0.8, 0.7, 0.38, 0.36, 0.31, 0.28],
+    general: [1, 0.78, 0.62, 0.3, 0.37, 0.3, 0.27],
+  };
+  const holdoverWeights: Record<DailyPerformanceProfile, number[]> = {
+    family: [0.195, 0.248, 0.203, 0.083, 0.118, 0.082, 0.071],
+    fan: [0.154, 0.211, 0.167, 0.134, 0.139, 0.106, 0.099],
+    adult: [0.18, 0.3, 0.2, 0.063, 0.086, 0.075, 0.091],
+    general: [0.19, 0.27, 0.19, 0.075, 0.105, 0.085, 0.085],
+  };
+  const weights = [...(input.weekIndex === 0
+    ? openingWeights[input.profile]
+    : holdoverWeights[input.profile])];
+  const weeklyHold = input.previousWeeklyGross > 0
+    ? input.weeklyGross / input.previousWeeklyGross
+    : 0;
+  const weekdayStrength = Math.max(0, Math.min(0.08,
+    (input.audienceScore - 65) / 400));
+
+  weights.forEach((weight, dayIndex) => {
+    let adjustment = 1 + stableDailyVariation(input.filmId, input.weekIndex, dayIndex);
+    if (dayIndex >= 3) adjustment += weekdayStrength;
+    if (input.weekIndex > 0 && weeklyHold >= 0.65 && dayIndex >= 3) adjustment += 0.04;
+    if (input.weekIndex > 0 && weeklyHold < 0.4 && dayIndex <= 2) adjustment += 0.04;
+    weights[dayIndex] = Math.max(0.001, weight * adjustment);
+  });
+
+  const weightTotal = weights.reduce((sum, weight) => sum + weight, 0);
+  let assigned = 0;
+  return weights.map((weight, dayIndex) => {
+    const gross = dayIndex === weights.length - 1
+      ? Math.max(0, Math.round(input.weeklyGross) - assigned)
+      : Math.round(input.weeklyGross * weight / weightTotal);
+    assigned += gross;
+    return gross;
+  });
+}
+
 function WeeklyPerformanceTracker({
   filmId,
   weeklyData,
   weeklyByCountry,
   filmReleases,
   allFilms,
+  genre,
+  audienceScore,
+  isSequel,
+  eventIntensity,
   releaseWeek,
   releaseYear,
   ranks,
@@ -156,6 +241,10 @@ function WeeklyPerformanceTracker({
   weeklyByCountry: Array<Record<string, number>>;
   filmReleases: FilmRelease[];
   allFilms: Film[];
+  genre: string;
+  audienceScore: number;
+  isSequel: boolean;
+  eventIntensity: number;
   releaseWeek?: number | null;
   releaseYear?: number | null;
   ranks: Array<number | null>;
@@ -180,7 +269,19 @@ function WeeklyPerformanceTracker({
   [territoryCode, weeklyData, weeklyByCountry]);
 
   const selectedTheaterCounts = useMemo(() => {
-    if (territoryCode === 'ALL' || territoryCode === 'NA') return theaterCounts;
+    if (territoryCode === 'NA') return theaterCounts;
+    if (territoryCode === 'ALL') {
+      return selectedWeeks.map((_, index) => {
+        const worldwideCount = filmReleases.reduce((total, release) => {
+          const history = Array.isArray(release.weeklyCapacityBreakdown)
+            ? release.weeklyCapacityBreakdown as Array<Record<string, unknown>>
+            : [];
+          const count = Number(history[index]?.theaterCount || 0);
+          return total + Math.max(0, count);
+        }, 0);
+        return worldwideCount > 0 ? worldwideCount : theaterCounts[index] ?? null;
+      });
+    }
     const release = filmReleases.find(item => item.territoryCode === territoryCode);
     const history = Array.isArray(release?.weeklyCapacityBreakdown)
       ? release.weeklyCapacityBreakdown as Array<Record<string, unknown>>
@@ -235,18 +336,17 @@ function WeeklyPerformanceTracker({
         ? selectedTheaterCounts[weekIndex - 1] ?? null
         : null;
       const rank = selectedRanks[weekIndex] ?? null;
+      const dailyGrosses = distributeWeeklyGrossAcrossDays({
+        filmId,
+        weeklyGross,
+        weekIndex,
+        previousWeeklyGross: weekIndex > 0 ? selectedWeeks[weekIndex - 1] || 0 : 0,
+        profile: dailyPerformanceProfile(genre, isSequel, eventIntensity),
+        audienceScore,
+      });
 
       if (view === 'daily') {
-        const opening = weekIndex === 0;
-        const shares = opening
-          ? [0.22, 0.28, 0.18, 0.07, 0.07, 0.08, 0.10]
-          : [0.20, 0.25, 0.17, 0.08, 0.08, 0.10, 0.12];
-        let assigned = 0;
-        shares.forEach((share, dayIndex) => {
-          const gross = dayIndex === shares.length - 1
-            ? Math.max(0, Math.round(weeklyGross) - assigned)
-            : Math.round(weeklyGross * share);
-          assigned += gross;
+        dailyGrosses.forEach((gross, dayIndex) => {
           runningGross += gross;
           const date = calendar
             ? dateForReleaseDay(calendar.week, calendar.year, dayIndex)
@@ -261,9 +361,7 @@ function WeeklyPerformanceTracker({
             rank,
             theaters,
             previousTheaters,
-            periodLabel: date
-              ? date.toLocaleDateString('en-US', { weekday: 'short' })
-              : `D${dayIndex + 1}`,
+            periodLabel: BOX_OFFICE_DAYS[dayIndex],
             weekNumber: weekIndex + 1,
             isPeriodStart: dayIndex === 0,
           });
@@ -271,11 +369,13 @@ function WeeklyPerformanceTracker({
         return;
       }
 
-      // The simulation stores one authoritative gross per game week. Keep
-      // that number unchanged in both summary views; Daily is the only view
-      // that apportions it into smaller display periods.
-      const gross = Math.round(weeklyGross);
-      runningGross += gross;
+      const gross = view === 'weekend'
+        ? dailyGrosses.slice(0, 3).reduce((sum, dayGross) => sum + dayGross, 0)
+        : Math.round(weeklyGross);
+      const grossToDate = view === 'weekend'
+        ? runningGross + gross
+        : runningGross + Math.round(weeklyGross);
+      runningGross += Math.round(weeklyGross);
       generated.push({
         key: `${weekIndex}`,
         date: calendar
@@ -284,7 +384,7 @@ function WeeklyPerformanceTracker({
             : formatFullWeekRange(calendar.week, calendar.year)
           : `${view === 'weekend' ? 'Weekend' : 'Week'} ${weekIndex + 1}`,
         gross,
-        grossToDate: runningGross,
+        grossToDate,
         rank,
         theaters,
         previousTheaters,
@@ -294,7 +394,8 @@ function WeeklyPerformanceTracker({
       });
     });
     return generated;
-  }, [releaseWeek, releaseYear, selectedRanks, selectedTheaterCounts, selectedWeeks, view]);
+  }, [audienceScore, eventIntensity, filmId, genre, isSequel, releaseWeek, releaseYear,
+    selectedRanks, selectedTheaterCounts, selectedWeeks, view]);
 
   const title = view === 'weekend'
     ? 'Weekend Box Office'
@@ -927,6 +1028,14 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
           weeklyByCountry={grossStats.weeklyByCountry}
           filmReleases={filmReleases}
           allFilms={allFilms}
+          genre={film.genre}
+          audienceScore={(film.audienceScore || 0) <= 10
+            ? (film.audienceScore || 0) * 10
+            : film.audienceScore || 0}
+          isSequel={film.isSequel}
+          eventIntensity={Number(
+            (film.boxOfficeBreakdown as Record<string, unknown> | null)?.peakEventIntensity || 0,
+          )}
           releaseWeek={film.releaseWeek}
           releaseYear={film.releaseYear}
           ranks={performanceContext.ranks}
