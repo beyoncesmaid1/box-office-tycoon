@@ -123,24 +123,20 @@ function WeeklyPerformanceTracker({
   let domesticToDate = 0;
 
   return (
-    <Card className="overflow-hidden border-primary/15">
-      <CardHeader className="border-b bg-gradient-to-r from-primary/10 via-card to-card px-5 py-4">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <CardTitle className="font-display text-2xl tracking-wide">
-              Weekend Performance
-            </CardTitle>
-            <p className="mt-0.5 text-xs text-muted-foreground">Domestic theatrical run</p>
-          </div>
-          <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary">
-            {weeklyData.length} WEEK{weeklyData.length === 1 ? '' : 'S'}
-          </Badge>
-        </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <TrendingUp className="h-5 w-5" />
+          Weekend Performance
+          <span className="ml-1 text-sm font-normal text-muted-foreground">
+            ({weeklyData.length} week{weeklyData.length === 1 ? '' : 's'})
+          </span>
+        </CardTitle>
       </CardHeader>
-      <CardContent className="p-0">
-        <div className="overflow-x-auto">
+      <CardContent>
+        <div className="overflow-x-auto rounded-lg border">
           <table className="w-full min-w-[900px] border-collapse text-[13px] tabular-nums">
-            <thead className="bg-muted/45 text-[11px] uppercase tracking-wider text-muted-foreground">
+            <thead className="bg-muted/35 text-[11px] uppercase tracking-wider text-muted-foreground">
               <tr>
                 <th className="border-b px-4 py-3 text-left font-semibold text-foreground">Date</th>
                 <th className="border-b px-3 py-3 text-center font-semibold">Rank</th>
@@ -149,7 +145,7 @@ function WeeklyPerformanceTracker({
                 <th className="border-b px-3 py-3 text-right font-semibold">Theaters</th>
                 <th className="border-b px-3 py-3 text-right font-semibold">Change</th>
                 <th className="border-b px-3 py-3 text-right font-semibold">Avg</th>
-                <th className="border-b px-3 py-3 text-right font-semibold text-primary">To Date</th>
+                <th className="border-b px-3 py-3 text-right font-semibold text-foreground">To Date</th>
                 <th className="border-b px-4 py-3 text-right font-semibold">Wknd</th>
               </tr>
             </thead>
@@ -174,16 +170,16 @@ function WeeklyPerformanceTracker({
                 return (
                   <tr
                     key={index}
-                    className="even:bg-muted/15 hover:bg-primary/5 transition-colors"
+                    className="even:bg-muted/10 hover:bg-muted/40 transition-colors"
                   >
-                    <td className="whitespace-nowrap border-b px-4 py-2.5 font-medium text-primary">
+                    <td className="whitespace-nowrap border-b px-4 py-2.5 font-medium">
                       {calendar ? formatWeekendRange(calendar.week, calendar.year) : `Weekend ${index + 1}`}
                     </td>
                     <td className="border-b px-3 py-2.5 text-center">
                       {rank === null ? '—' : (
                         <span className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 font-display text-sm ${
                           rank <= 3
-                            ? 'bg-primary text-primary-foreground'
+                            ? 'bg-foreground text-background'
                             : 'bg-muted text-muted-foreground'
                         }`}>
                           {rank}
@@ -213,13 +209,11 @@ function WeeklyPerformanceTracker({
                     <td className="whitespace-nowrap border-b px-3 py-2.5 text-right text-muted-foreground">
                       {average === null ? '—' : exactMoney(average)}
                     </td>
-                    <td className="whitespace-nowrap border-b px-3 py-2.5 text-right font-mono font-semibold text-primary">
+                    <td className="whitespace-nowrap border-b px-3 py-2.5 text-right font-mono font-semibold">
                       {exactMoney(domesticToDate)}
                     </td>
                     <td className="border-b px-4 py-2.5 text-right">
-                      <Badge variant="secondary" className="h-6 min-w-7 justify-center rounded-sm px-1.5 font-mono text-[11px]">
-                        {index + 1}
-                      </Badge>
+                      <span className="text-muted-foreground">{index + 1}</span>
                     </td>
                   </tr>
                 );
