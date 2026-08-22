@@ -149,11 +149,10 @@ type DailyPerformanceProfile = 'family' | 'fan' | 'adult' | 'general';
 function dailyPerformanceProfile(
   genre: string,
   isSequel: boolean,
-  eventIntensity: number,
 ): DailyPerformanceProfile {
   const normalized = genre.toLowerCase().replace(/[\s-]/g, '');
   if (normalized === 'animation') return 'family';
-  if (normalized === 'horror' || eventIntensity >= 0.1 ||
+  if (normalized === 'horror' ||
       (isSequel && ['action', 'scifi', 'fantasy'].includes(normalized))) return 'fan';
   if (['drama', 'romance', 'musicals'].includes(normalized)) return 'adult';
   return 'general';
@@ -189,8 +188,11 @@ export function distributeWeeklyGrossAcrossDays(input: {
   weeklyGross: number;
   weekIndex: number;
   previousWeeklyGross: number;
+  openingWeeklyGross?: number;
   profile: DailyPerformanceProfile;
   audienceScore: number;
+  eventIntensity?: number;
+  calendarWeek?: number;
 }): number[] {
   type DailyRatioRanges = {
     saturday: readonly [number, number];
@@ -211,6 +213,18 @@ export function distributeWeeklyGrossAcrossDays(input: {
     fan: { saturday: [1.1, 1.48], sunday: [0.6, 0.82], monday: [0.31, 0.55], tuesday: [1.08, 1.48], wednesday: [0.66, 0.96], thursday: [0.68, 1] },
     adult: { saturday: [1.35, 1.9], sunday: [0.6, 0.82], monday: [0.3, 0.54], tuesday: [1.12, 1.52], wednesday: [0.7, 1], thursday: [0.72, 1.04] },
     general: { saturday: [1.2, 1.65], sunday: [0.6, 0.83], monday: [0.32, 0.56], tuesday: [1.12, 1.55], wednesday: [0.68, 0.98], thursday: [0.7, 1.02] },
+  };
+  const openingWeekendShares: Record<DailyPerformanceProfile, readonly [number, number]> = {
+    family: [0.59, 0.64],
+    fan: [0.67, 0.72],
+    adult: [0.61, 0.66],
+    general: [0.6, 0.65],
+  };
+  const holdoverWeekendShares: Record<DailyPerformanceProfile, readonly [number, number]> = {
+    family: [0.61, 0.66],
+    fan: [0.63, 0.68],
+    adult: [0.62, 0.67],
+    general: [0.6, 0.65],
   };
   const ratios = input.weekIndex === 0
     ? openingRatios[input.profile]
@@ -238,17 +252,41 @@ export function distributeWeeklyGrossAcrossDays(input: {
     saturday * sunday * monday * tuesday * wednesday * thursday,
   ];
 
-  // A strong hold tends to spread more business into weekdays; a sharp hold
-  // concentrates what remains into the weekend. This also changes the next
-  // Friday comparison instead of repeating the same seven percentages.
-  if (input.weekIndex > 0 && weeklyHold >= 0.65) {
-    for (let dayIndex = 3; dayIndex < weights.length; dayIndex += 1) {
-      weights[dayIndex] *= 1.05;
-    }
-  } else if (input.weekIndex > 0 && weeklyHold < 0.4) {
-    for (let dayIndex = 0; dayIndex < 3; dayIndex += 1) {
-      weights[dayIndex] *= 1.06;
-    }
+  // Genre sets the baseline split. Event demand concentrates fan turnout into
+  // the weekend, while strong legs and summer family availability broaden the
+  // weekday audience. As total demand burns off, the remaining run becomes
+  // increasingly weekend-dependent.
+  const weekendShareRange = input.weekIndex === 0
+    ? openingWeekendShares[input.profile]
+    : holdoverWeekendShares[input.profile];
+  let targetWeekendShare = stableDailyRange(
+    input.filmId,
+    input.weekIndex,
+    'weekend-share',
+    weekendShareRange,
+  );
+  const eventStrength = Math.max(0, Math.min(1, (input.eventIntensity ?? 0) / 0.18));
+  targetWeekendShare += eventStrength * (input.profile === 'fan' ? 0.025 : 0.015);
+  if (input.weekIndex > 0 && weeklyHold >= 0.7) targetWeekendShare -= 0.01;
+  else if (input.weekIndex > 0 && weeklyHold < 0.5) targetWeekendShare += 0.012;
+
+  const openingWeeklyGross = Math.max(1, input.openingWeeklyGross ?? input.weeklyGross);
+  const remainingDemand = Math.max(0, Math.min(1, input.weeklyGross / openingWeeklyGross));
+  if (input.weekIndex > 0) {
+    targetWeekendShare += 0.035 * Math.max(0, Math.min(1,
+      (0.25 - remainingDemand) / 0.22));
+  }
+  const isSummerFamilyWeek = input.profile === 'family' &&
+    (input.calendarWeek ?? 0) >= 22 && (input.calendarWeek ?? 0) <= 34;
+  if (isSummerFamilyWeek) targetWeekendShare -= 0.015;
+  targetWeekendShare = Math.max(0.56, Math.min(0.77, targetWeekendShare));
+
+  const rawWeekendWeight = weights.slice(0, 3).reduce((sum, weight) => sum + weight, 0);
+  const rawWeekdayWeight = weights.slice(3).reduce((sum, weight) => sum + weight, 0);
+  for (let dayIndex = 0; dayIndex < weights.length; dayIndex += 1) {
+    weights[dayIndex] *= dayIndex < 3
+      ? targetWeekendShare / rawWeekendWeight
+      : (1 - targetWeekendShare) / rawWeekdayWeight;
   }
 
   const weightTotal = weights.reduce((sum, weight) => sum + weight, 0);
@@ -384,8 +422,11 @@ function WeeklyPerformanceTracker({
         weeklyGross,
         weekIndex,
         previousWeeklyGross: weekIndex > 0 ? selectedWeeks[weekIndex - 1] || 0 : 0,
-        profile: dailyPerformanceProfile(genre, isSequel, eventIntensity),
+        openingWeeklyGross: selectedWeeks[0] || weeklyGross,
+        profile: dailyPerformanceProfile(genre, isSequel),
         audienceScore,
+        eventIntensity,
+        calendarWeek: calendar?.week,
       });
 
       if (view === 'daily') {
