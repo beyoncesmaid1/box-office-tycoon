@@ -242,6 +242,7 @@ function ScoreCircle({ score, label, type }: { score: number; label: string; typ
 export function FilmDetail({ filmId }: FilmDetailProps) {
   const { state } = useGame();
   const [showCampaign, setShowCampaign] = useState(false);
+  const [showAllMarkets, setShowAllMarkets] = useState(false);
 
   const { data: allFilms = [] } = useQuery<Film[]>({
     queryKey: ['/api/all-films', state.studioId],
@@ -269,6 +270,10 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
   const [filmReleases, setFilmReleases] = useState<FilmRelease[]>([]);
 
   const film = useMemo(() => allFilms.find(f => f.id === filmId), [allFilms, filmId]);
+
+  useEffect(() => {
+    setShowAllMarkets(false);
+  }, [filmId]);
 
   // Fetch marketing budget from releases (same as FilmLibrary)
   useEffect(() => {
@@ -652,46 +657,68 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
         />
       )}
 
-      {/* Country Breakdown - Progress Bar Style with Opening & Gross */}
+      {/* Compact, expandable international market breakdown */}
       {grossStats && grossStats.countryBreakdown.length > 0 && (
         <Card>
-          <CardHeader>
+          <CardHeader className="p-5 pb-3">
             <CardTitle className="flex items-center gap-2">
               <Globe className="w-5 h-5" />
               International Breakdown
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {grossStats.countryBreakdown.map(({ country, gross, opening, percent }) => (
-                <div key={country} className="flex items-center gap-4">
-                  <div className="w-32 text-sm font-medium truncate">{country}</div>
-                  <div className="flex-1">
-                    <div className="h-6 bg-muted rounded-full overflow-hidden relative">
-                      <div 
-                        className="h-full bg-gradient-to-r from-primary/80 to-primary rounded-full transition-all" 
-                        style={{ width: `${Math.min(percent, 100)}%` }}
-                      />
-                      <span className="absolute inset-0 flex items-center justify-center text-xs font-medium">
-                        {percent.toFixed(1)}%
-                      </span>
-                    </div>
+          <CardContent className="p-5 pt-0">
+            {(() => {
+              const collapsedMarketCount = 12;
+              const allMarkets = grossStats.countryBreakdown;
+              const hiddenMarkets = allMarkets.slice(collapsedMarketCount);
+              const visibleMarkets = showAllMarkets
+                ? allMarkets
+                : allMarkets.slice(0, collapsedMarketCount);
+              const hiddenMarketGross = hiddenMarkets.reduce((total, market) => total + market.gross, 0);
+
+              return (
+                <>
+                  <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
+                    {visibleMarkets.map(({ country, gross, opening, percent }, index) => (
+                      <div
+                        key={country}
+                        className="relative flex min-h-14 items-center justify-between overflow-hidden rounded-md bg-muted/25 px-4 py-2.5 pl-5"
+                      >
+                        <span
+                          className={`absolute inset-y-2 left-0 w-1.5 rounded-full ${index === 0 ? 'bg-primary' : 'bg-primary/35'}`}
+                          aria-hidden="true"
+                        />
+                        <span className="truncate pr-3 text-sm font-medium">{country}</span>
+                        <div className="shrink-0 text-right">
+                          <div className="text-sm font-semibold">
+                            {formatCompactMoney(gross)}
+                            <span className="ml-1 font-normal text-muted-foreground">
+                              ({percent.toFixed(1)}%)
+                            </span>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            OW: {formatCompactMoney(opening)}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div className="w-24 text-right font-mono text-sm text-muted-foreground">
-                    {formatCompactMoney(opening)}
-                  </div>
-                  <div className="w-24 text-right font-mono text-sm font-medium">
-                    {formatCompactMoney(gross)}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="flex items-center gap-4 mt-4 pt-3 border-t text-xs text-muted-foreground">
-              <div className="w-32"></div>
-              <div className="flex-1 text-center">% of Worldwide</div>
-              <div className="w-24 text-right">Opening</div>
-              <div className="w-24 text-right">Total Gross</div>
-            </div>
+
+                  {hiddenMarkets.length > 0 && (
+                    <button
+                      type="button"
+                      className="mt-4 w-full border-t pt-4 text-center text-sm text-muted-foreground transition-colors hover:text-foreground"
+                      onClick={() => setShowAllMarkets(current => !current)}
+                      aria-expanded={showAllMarkets}
+                    >
+                      {showAllMarkets
+                        ? 'Show fewer markets'
+                        : `+ ${hiddenMarkets.length} more markets (${formatCompactMoney(hiddenMarketGross)} total)`}
+                    </button>
+                  )}
+                </>
+              );
+            })()}
           </CardContent>
         </Card>
       )}
