@@ -221,6 +221,7 @@ function WeeklyPerformanceTracker({
       theaters: number | null;
       previousTheaters: number | null;
       periodLabel: string;
+      weekNumber: number;
       isPeriodStart: boolean;
     }> = [];
     let runningGross = 0;
@@ -263,6 +264,7 @@ function WeeklyPerformanceTracker({
             periodLabel: date
               ? date.toLocaleDateString('en-US', { weekday: 'short' })
               : `D${dayIndex + 1}`,
+            weekNumber: weekIndex + 1,
             isPeriodStart: dayIndex === 0,
           });
         });
@@ -287,6 +289,7 @@ function WeeklyPerformanceTracker({
         theaters,
         previousTheaters,
         periodLabel: `${weekIndex + 1}`,
+        weekNumber: weekIndex + 1,
         isPeriodStart: true,
       });
     });
@@ -297,7 +300,7 @@ function WeeklyPerformanceTracker({
     ? 'Weekend Box Office'
     : view === 'weekly' ? 'Weekly Box Office' : 'Daily Box Office';
   const grossHeading = view === 'weekend' ? 'Weekend' : view === 'weekly' ? 'Week' : 'Daily';
-  const comparisonHeading = view === 'daily' ? '%± YD' : '%± LW';
+  const comparisonHeading = view === 'daily' ? '%± Prev' : '%± LW';
 
   return (
     <Card className="overflow-hidden">
@@ -348,21 +351,32 @@ function WeeklyPerformanceTracker({
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] border-collapse text-[13px] tabular-nums">
+          <table className={`w-full border-collapse text-[13px] tabular-nums ${
+            view === 'daily' ? 'min-w-[680px]' : 'min-w-[900px]'
+          }`}>
             <thead className="text-muted-foreground">
-              <tr>
-                <th className="border-b px-2 py-2.5 text-left font-medium">Date</th>
-                <th className="border-b px-3 py-2.5 text-center font-medium">Rank</th>
-                <th className="border-b px-3 py-2.5 text-right font-medium">{grossHeading}</th>
-                <th className="border-b px-3 py-2.5 text-right font-medium">{comparisonHeading}</th>
-                <th className="border-b px-3 py-2.5 text-right font-medium">Theaters</th>
-                <th className="border-b px-3 py-2.5 text-right font-medium">Change</th>
-                <th className="border-b px-3 py-2.5 text-right font-medium">Avg</th>
-                <th className="border-b px-3 py-2.5 text-right font-medium">To Date</th>
-                <th className="border-b px-2 py-2.5 text-center font-medium">
-                  {view === 'daily' ? 'Day' : 'Week'}
-                </th>
-              </tr>
+              {view === 'daily' ? (
+                <tr>
+                  <th className="border-b px-2 py-2.5 text-left font-medium">Date</th>
+                  <th className="border-b px-3 py-2.5 text-center font-medium">Day</th>
+                  <th className="border-b px-3 py-2.5 text-right font-medium">Daily</th>
+                  <th className="border-b px-3 py-2.5 text-right font-medium">{comparisonHeading}</th>
+                  <th className="border-b px-3 py-2.5 text-right font-medium">To Date</th>
+                  <th className="border-b px-2 py-2.5 text-center font-medium">Week</th>
+                </tr>
+              ) : (
+                <tr>
+                  <th className="border-b px-2 py-2.5 text-left font-medium">Date</th>
+                  <th className="border-b px-3 py-2.5 text-center font-medium">Rank</th>
+                  <th className="border-b px-3 py-2.5 text-right font-medium">{grossHeading}</th>
+                  <th className="border-b px-3 py-2.5 text-right font-medium">{comparisonHeading}</th>
+                  <th className="border-b px-3 py-2.5 text-right font-medium">Theaters</th>
+                  <th className="border-b px-3 py-2.5 text-right font-medium">Change</th>
+                  <th className="border-b px-3 py-2.5 text-right font-medium">Avg</th>
+                  <th className="border-b px-3 py-2.5 text-right font-medium">To Date</th>
+                  <th className="border-b px-2 py-2.5 text-center font-medium">Week</th>
+                </tr>
+              )}
             </thead>
             <tbody>
               {rows.map((row, index) => {
@@ -374,6 +388,42 @@ function WeeklyPerformanceTracker({
                   ? row.theaters - row.previousTheaters
                   : null;
                 const average = row.theaters && row.theaters > 0 ? row.gross / row.theaters : null;
+
+                if (view === 'daily') {
+                  const weekendDay = row.periodLabel === 'Fri'
+                    ? 'bg-purple-500/20 text-purple-300'
+                    : row.periodLabel === 'Sat' || row.periodLabel === 'Sun'
+                      ? 'bg-blue-500/20 text-blue-300'
+                      : 'bg-muted text-muted-foreground';
+                  return (
+                    <tr key={row.key} className="transition-colors hover:bg-muted/20">
+                      <td className="whitespace-nowrap border-b px-2 py-3 font-semibold text-primary">
+                        {row.date}
+                      </td>
+                      <td className="border-b px-3 py-3 text-center">
+                        <span className={`inline-flex min-w-8 justify-center rounded px-2 py-1 text-xs font-medium ${weekendDay}`}>
+                          {row.periodLabel}
+                        </span>
+                      </td>
+                      <td className="whitespace-nowrap border-b px-3 py-3 text-right font-semibold">
+                        {exactMoney(row.gross)}
+                      </td>
+                      <td className={`whitespace-nowrap border-b px-3 py-3 text-right ${
+                        grossChange === null
+                          ? 'text-muted-foreground'
+                          : grossChange >= 0 ? 'text-green-500' : 'text-red-500'
+                      }`}>
+                        {grossChange === null ? '—' : `${grossChange >= 0 ? '+' : ''}${grossChange.toFixed(1)}%`}
+                      </td>
+                      <td className="whitespace-nowrap border-b px-3 py-3 text-right font-semibold">
+                        {exactMoney(row.grossToDate)}
+                      </td>
+                      <td className="border-b px-2 py-3 text-center">
+                        {row.weekNumber}
+                      </td>
+                    </tr>
+                  );
+                }
 
                 return (
                   <tr key={row.key} className="hover:bg-muted/20 transition-colors">
