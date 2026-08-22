@@ -159,14 +159,23 @@ function dailyPerformanceProfile(
   return 'general';
 }
 
-function stableDailyVariation(filmId: string, weekIndex: number, dayIndex: number): number {
+function stableDailyUnit(filmId: string, weekIndex: number, salt: string): number {
   let hash = 2166136261;
-  const value = `${filmId}:${weekIndex}:${dayIndex}`;
+  const value = `${filmId}:${weekIndex}:${salt}`;
   for (let index = 0; index < value.length; index += 1) {
     hash ^= value.charCodeAt(index);
     hash = Math.imul(hash, 16777619);
   }
-  return ((hash >>> 0) / 0xffffffff - 0.5) * 0.08;
+  return (hash >>> 0) / 0xffffffff;
+}
+
+function stableDailyRange(
+  filmId: string,
+  weekIndex: number,
+  salt: string,
+  [minimum, maximum]: readonly [number, number],
+): number {
+  return minimum + (maximum - minimum) * stableDailyUnit(filmId, weekIndex, salt);
 }
 
 /**
@@ -175,7 +184,7 @@ function stableDailyVariation(filmId: string, weekIndex: number, dayIndex: numbe
  * preview-heavy opening Fridays, family Saturdays, Sunday declines, Monday
  * drops, Tuesday discounts, and the Friday/Saturday holdover rebound.
  */
-function distributeWeeklyGrossAcrossDays(input: {
+export function distributeWeeklyGrossAcrossDays(input: {
   filmId: string;
   weeklyGross: number;
   weekIndex: number;
@@ -183,34 +192,64 @@ function distributeWeeklyGrossAcrossDays(input: {
   profile: DailyPerformanceProfile;
   audienceScore: number;
 }): number[] {
-  const openingWeights: Record<DailyPerformanceProfile, number[]> = {
-    family: [1, 0.81, 0.62, 0.35, 0.45, 0.4, 0.31],
-    fan: [1, 0.58, 0.48, 0.2, 0.21, 0.16, 0.15],
-    adult: [1, 0.8, 0.7, 0.38, 0.36, 0.31, 0.28],
-    general: [1, 0.78, 0.62, 0.3, 0.37, 0.3, 0.27],
+  type DailyRatioRanges = {
+    saturday: readonly [number, number];
+    sunday: readonly [number, number];
+    monday: readonly [number, number];
+    tuesday: readonly [number, number];
+    wednesday: readonly [number, number];
+    thursday: readonly [number, number];
   };
-  const holdoverWeights: Record<DailyPerformanceProfile, number[]> = {
-    family: [0.195, 0.248, 0.203, 0.083, 0.118, 0.082, 0.071],
-    fan: [0.154, 0.211, 0.167, 0.134, 0.139, 0.106, 0.099],
-    adult: [0.18, 0.3, 0.2, 0.063, 0.086, 0.075, 0.091],
-    general: [0.19, 0.27, 0.19, 0.075, 0.105, 0.085, 0.085],
+  const openingRatios: Record<DailyPerformanceProfile, DailyRatioRanges> = {
+    family: { saturday: [0.72, 0.96], sunday: [0.72, 0.9], monday: [0.36, 0.58], tuesday: [1.15, 1.5], wednesday: [0.76, 1.04], thursday: [0.68, 0.98] },
+    fan: { saturday: [0.48, 0.7], sunday: [0.72, 0.9], monday: [0.3, 0.5], tuesday: [0.95, 1.3], wednesday: [0.72, 0.98], thursday: [0.68, 0.96] },
+    adult: { saturday: [0.72, 0.92], sunday: [0.78, 0.95], monday: [0.38, 0.6], tuesday: [0.9, 1.25], wednesday: [0.78, 1.05], thursday: [0.74, 1] },
+    general: { saturday: [0.65, 0.88], sunday: [0.72, 0.91], monday: [0.34, 0.55], tuesday: [1.05, 1.45], wednesday: [0.75, 1.02], thursday: [0.7, 0.98] },
   };
-  const weights = [...(input.weekIndex === 0
-    ? openingWeights[input.profile]
-    : holdoverWeights[input.profile])];
+  const holdoverRatios: Record<DailyPerformanceProfile, DailyRatioRanges> = {
+    family: { saturday: [1.15, 1.55], sunday: [0.62, 0.84], monday: [0.34, 0.58], tuesday: [1.18, 1.58], wednesday: [0.68, 0.98], thursday: [0.7, 1.02] },
+    fan: { saturday: [1.1, 1.48], sunday: [0.6, 0.82], monday: [0.31, 0.55], tuesday: [1.08, 1.48], wednesday: [0.66, 0.96], thursday: [0.68, 1] },
+    adult: { saturday: [1.35, 1.9], sunday: [0.6, 0.82], monday: [0.3, 0.54], tuesday: [1.12, 1.52], wednesday: [0.7, 1], thursday: [0.72, 1.04] },
+    general: { saturday: [1.2, 1.65], sunday: [0.6, 0.83], monday: [0.32, 0.56], tuesday: [1.12, 1.55], wednesday: [0.68, 0.98], thursday: [0.7, 1.02] },
+  };
+  const ratios = input.weekIndex === 0
+    ? openingRatios[input.profile]
+    : holdoverRatios[input.profile];
   const weeklyHold = input.previousWeeklyGross > 0
     ? input.weeklyGross / input.previousWeeklyGross
     : 0;
-  const weekdayStrength = Math.max(0, Math.min(0.08,
-    (input.audienceScore - 65) / 400));
+  const weekdayStrength = Math.max(-0.04, Math.min(0.07,
+    (input.audienceScore - 65) / 350));
+  const sampledRatio = (day: keyof DailyRatioRanges): number =>
+    stableDailyRange(input.filmId, input.weekIndex, day, ratios[day]);
+  const saturday = sampledRatio('saturday');
+  const sunday = sampledRatio('sunday');
+  const monday = Math.max(0.25, sampledRatio('monday') + weekdayStrength);
+  const tuesday = sampledRatio('tuesday');
+  const wednesday = sampledRatio('wednesday');
+  const thursday = sampledRatio('thursday');
+  const weights = [
+    1,
+    saturday,
+    saturday * sunday,
+    saturday * sunday * monday,
+    saturday * sunday * monday * tuesday,
+    saturday * sunday * monday * tuesday * wednesday,
+    saturday * sunday * monday * tuesday * wednesday * thursday,
+  ];
 
-  weights.forEach((weight, dayIndex) => {
-    let adjustment = 1 + stableDailyVariation(input.filmId, input.weekIndex, dayIndex);
-    if (dayIndex >= 3) adjustment += weekdayStrength;
-    if (input.weekIndex > 0 && weeklyHold >= 0.65 && dayIndex >= 3) adjustment += 0.04;
-    if (input.weekIndex > 0 && weeklyHold < 0.4 && dayIndex <= 2) adjustment += 0.04;
-    weights[dayIndex] = Math.max(0.001, weight * adjustment);
-  });
+  // A strong hold tends to spread more business into weekdays; a sharp hold
+  // concentrates what remains into the weekend. This also changes the next
+  // Friday comparison instead of repeating the same seven percentages.
+  if (input.weekIndex > 0 && weeklyHold >= 0.65) {
+    for (let dayIndex = 3; dayIndex < weights.length; dayIndex += 1) {
+      weights[dayIndex] *= 1.05;
+    }
+  } else if (input.weekIndex > 0 && weeklyHold < 0.4) {
+    for (let dayIndex = 0; dayIndex < 3; dayIndex += 1) {
+      weights[dayIndex] *= 1.06;
+    }
+  }
 
   const weightTotal = weights.reduce((sum, weight) => sum + weight, 0);
   let assigned = 0;
