@@ -183,7 +183,7 @@ function WeeklyPerformanceTracker({
                     <td className="border-b px-3 py-3 text-center">
                       {ranks[index] ?? '—'}
                     </td>
-                    <td className="whitespace-nowrap border-b px-3 py-3 text-right font-mono font-semibold">
+                    <td className="whitespace-nowrap border-b px-3 py-3 text-right font-semibold">
                       {exactMoney(weekendGross)}
                     </td>
                     <td className={`whitespace-nowrap border-b px-3 py-3 text-right ${
@@ -206,7 +206,7 @@ function WeeklyPerformanceTracker({
                     <td className="whitespace-nowrap border-b px-3 py-3 text-right">
                       {average === null ? '—' : exactMoney(average)}
                     </td>
-                    <td className="whitespace-nowrap border-b px-3 py-3 text-right font-mono font-semibold">
+                    <td className="whitespace-nowrap border-b px-3 py-3 text-right font-semibold">
                       {exactMoney(grossToDate)}
                     </td>
                     <td className="border-b px-2 py-3 text-center">
