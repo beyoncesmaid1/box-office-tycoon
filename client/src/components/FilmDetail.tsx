@@ -123,24 +123,34 @@ function WeeklyPerformanceTracker({
   let domesticToDate = 0;
 
   return (
-    <section className="overflow-hidden rounded-md border bg-background shadow-sm">
-      <div className="border-b bg-muted/20 px-3 py-2">
-        <h3 className="font-semibold">Domestic Weekend Performance</h3>
-        <p className="text-xs text-muted-foreground">Box-office run by release weekend</p>
-      </div>
-      <div className="overflow-x-auto">
+    <Card className="overflow-hidden border-primary/15">
+      <CardHeader className="border-b bg-gradient-to-r from-primary/10 via-card to-card px-5 py-4">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <CardTitle className="font-display text-2xl tracking-wide">
+              Weekend Performance
+            </CardTitle>
+            <p className="mt-0.5 text-xs text-muted-foreground">Domestic theatrical run</p>
+          </div>
+          <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary">
+            {weeklyData.length} WEEK{weeklyData.length === 1 ? '' : 'S'}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
           <table className="w-full min-w-[900px] border-collapse text-[13px] tabular-nums">
-            <thead className="bg-background">
+            <thead className="bg-muted/45 text-[11px] uppercase tracking-wider text-muted-foreground">
               <tr>
-                <th className="border-b px-3 py-2 text-left font-semibold text-orange-600">Date ↕</th>
-                <th className="border-b px-3 py-2 text-center font-semibold text-blue-700 dark:text-blue-400">Rank ↕</th>
-                <th className="border-b px-3 py-2 text-right font-semibold">Weekend</th>
-                <th className="border-b px-3 py-2 text-right font-semibold">%± LW</th>
-                <th className="border-b px-3 py-2 text-right font-semibold text-blue-700 dark:text-blue-400">Theaters ↕</th>
-                <th className="border-b px-3 py-2 text-right font-semibold">Change</th>
-                <th className="border-b px-3 py-2 text-right font-semibold text-blue-700 dark:text-blue-400">Avg ↕</th>
-                <th className="border-b px-3 py-2 text-right font-semibold text-blue-700 dark:text-blue-400">To Date ↕</th>
-                <th className="border-b px-3 py-2 text-right font-semibold">Weekend</th>
+                <th className="border-b px-4 py-3 text-left font-semibold text-foreground">Date</th>
+                <th className="border-b px-3 py-3 text-center font-semibold">Rank</th>
+                <th className="border-b px-3 py-3 text-right font-semibold text-foreground">Weekend</th>
+                <th className="border-b px-3 py-3 text-right font-semibold">%± LW</th>
+                <th className="border-b px-3 py-3 text-right font-semibold">Theaters</th>
+                <th className="border-b px-3 py-3 text-right font-semibold">Change</th>
+                <th className="border-b px-3 py-3 text-right font-semibold">Avg</th>
+                <th className="border-b px-3 py-3 text-right font-semibold text-primary">To Date</th>
+                <th className="border-b px-4 py-3 text-right font-semibold">Wknd</th>
               </tr>
             </thead>
             <tbody>
@@ -159,49 +169,66 @@ function WeeklyPerformanceTracker({
                 const calendar = releaseWeek && releaseYear
                   ? releaseCalendarWeek(releaseWeek, releaseYear, index)
                   : null;
+                const rank = ranks[index] ?? null;
 
                 return (
-                  <tr key={index} className="hover:bg-muted/30">
-                    <td className="whitespace-nowrap border-b px-3 py-1.5 font-medium text-blue-700 dark:text-blue-400">
+                  <tr
+                    key={index}
+                    className="even:bg-muted/15 hover:bg-primary/5 transition-colors"
+                  >
+                    <td className="whitespace-nowrap border-b px-4 py-2.5 font-medium text-primary">
                       {calendar ? formatWeekendRange(calendar.week, calendar.year) : `Weekend ${index + 1}`}
                     </td>
-                    <td className="border-b px-3 py-1.5 text-center">
-                      {ranks[index] ?? '—'}
+                    <td className="border-b px-3 py-2.5 text-center">
+                      {rank === null ? '—' : (
+                        <span className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 font-display text-sm ${
+                          rank <= 3
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-muted-foreground'
+                        }`}>
+                          {rank}
+                        </span>
+                      )}
                     </td>
-                    <td className="whitespace-nowrap border-b px-3 py-1.5 text-right font-medium">
+                    <td className="whitespace-nowrap border-b px-3 py-2.5 text-right font-mono font-semibold">
                       {exactMoney(weekendGross)}
                     </td>
-                    <td className={`whitespace-nowrap border-b px-3 py-1.5 text-right ${
+                    <td className={`whitespace-nowrap border-b px-3 py-2.5 text-right font-medium ${
                       grossChange === null
                         ? 'text-muted-foreground'
-                        : grossChange >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600'
+                        : grossChange >= 0 ? 'text-green-500' : 'text-red-500'
                     }`}>
                       {grossChange === null ? '—' : `${grossChange >= 0 ? '+' : ''}${grossChange.toFixed(1)}%`}
                     </td>
-                    <td className="whitespace-nowrap border-b px-3 py-1.5 text-right">
+                    <td className="whitespace-nowrap border-b px-3 py-2.5 text-right text-muted-foreground">
                       {theaters === null ? '—' : theaters.toLocaleString('en-US')}
                     </td>
-                    <td className={`whitespace-nowrap border-b px-3 py-1.5 text-right ${
+                    <td className={`whitespace-nowrap border-b px-3 py-2.5 text-right ${
                       theaterChange === null
                         ? 'text-muted-foreground'
-                        : theaterChange >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600'
+                        : theaterChange >= 0 ? 'text-green-500' : 'text-red-500'
                     }`}>
                       {theaterChange === null ? '—' : `${theaterChange >= 0 ? '+' : ''}${theaterChange.toLocaleString('en-US')}`}
                     </td>
-                    <td className="whitespace-nowrap border-b px-3 py-1.5 text-right">
+                    <td className="whitespace-nowrap border-b px-3 py-2.5 text-right text-muted-foreground">
                       {average === null ? '—' : exactMoney(average)}
                     </td>
-                    <td className="whitespace-nowrap border-b px-3 py-1.5 text-right font-medium">
+                    <td className="whitespace-nowrap border-b px-3 py-2.5 text-right font-mono font-semibold text-primary">
                       {exactMoney(domesticToDate)}
                     </td>
-                    <td className="border-b px-3 py-1.5 text-right">{index + 1}</td>
+                    <td className="border-b px-4 py-2.5 text-right">
+                      <Badge variant="secondary" className="h-6 min-w-7 justify-center rounded-sm px-1.5 font-mono text-[11px]">
+                        {index + 1}
+                      </Badge>
+                    </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
-      </div>
-    </section>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
