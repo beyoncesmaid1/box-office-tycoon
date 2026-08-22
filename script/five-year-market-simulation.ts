@@ -137,7 +137,8 @@ async function main() {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ weeks: 52 }),
     });
-    assert.equal(preloadResponse.status, 200);
+    const preloadBody = await preloadResponse.text();
+    assert.equal(preloadResponse.status, 200, preloadBody);
 
     const initialStudios = await fetch(
       `${baseUrl}/api/all-studios?deviceId=five-year-test`,
@@ -243,7 +244,7 @@ async function main() {
       );
     }
     console.log("\nMedian spending components by tier:");
-    console.log("Tier                   departments    talent       VFX  marketing");
+    console.log("Tier                   departments    talent       VFX  marketing  cast  critic/aud");
     for (const tier of budgetTiers) {
       const tierFilms = economics.filter(item =>
         item.productionBudget >= tier.minimum && item.productionBudget < tier.maximum);
@@ -252,7 +253,10 @@ async function main() {
         `${money(median(tierFilms.map(item => item.departmentSpend))).padStart(11)} ` +
         `${money(median(tierFilms.map(item => item.talentSpend))).padStart(9)} ` +
         `${money(median(tierFilms.map(item => item.vfxSpend))).padStart(9)} ` +
-        `${money(median(tierFilms.map(item => item.marketingSpend))).padStart(10)}`,
+        `${money(median(tierFilms.map(item => item.marketingSpend))).padStart(10)} ` +
+        `${median(tierFilms.map(item => Array.isArray(item.film.castIds) ? item.film.castIds.length : 0)).toFixed(1).padStart(5)} ` +
+        `${median(tierFilms.map(item => Number(item.film.criticScore || 0))).toFixed(0).padStart(6)}/` +
+        `${median(tierFilms.map(item => Number(item.film.audienceScore || 0))).toFixed(1)}`,
       );
     }
 

@@ -44,7 +44,7 @@ import {
   createTentpoleDecisionProfile,
   isAITentpoleBudget,
   selectAIGenre,
-  selectAIProductionBudget,
+  selectAffordableAIFilmCommitment,
   selectTalentCandidate,
   selectVFXStudio,
 } from "./simulation/aiDecision";
@@ -403,6 +403,7 @@ async function hireAITalent(
   cachedFilm?: Film,
   cachedTalent?: Awaited<ReturnType<typeof storage.getAllTalent>>,
   cachedRoles?: Awaited<ReturnType<typeof storage.getFilmRolesByFilm>>,
+  commitment?: { talentBudgetLimit?: number; marketingBudget?: number },
 ): Promise<number> {
   let totalTalentCost = 0;
   try {
@@ -421,20 +422,26 @@ async function hireAITalent(
       : baseProfile;
     const currentWeek = aiStudio.currentWeek || film.createdAtWeek || 1;
     const currentYear = aiStudio.currentYear || film.createdAtYear || 2025;
-    const talentBudgetLimit = Math.max(
-      5000000,
-      Math.min(
-        (aiStudio.budget || 0) * 0.35,
-        Math.max(12000000, (film.productionBudget || 0) * 0.65),
-      ),
-    );
-    let remainingTalentBudget = talentBudgetLimit;
+    const talentBudgetLimit = commitment?.talentBudgetLimit === undefined
+      ? Math.max(
+        5000000,
+        Math.min(
+          (aiStudio.budget || 0) * 0.35,
+          Math.max(12000000, (film.productionBudget || 0) * 0.65),
+        ),
+      )
+      : Math.max(0, commitment.talentBudgetLimit);
+    const directorEnvelope = talentBudgetLimit * (isTentpole ? 0.24 : 0.20);
+    const writerEnvelope = talentBudgetLimit * (isTentpole ? 0.13 : 0.15);
+    let castEnvelope = talentBudgetLimit * (isTentpole ? 0.55 : 0.56);
+    const composerEnvelope = talentBudgetLimit - directorEnvelope - writerEnvelope - castEnvelope;
     
-    // Calculate when talent will be busy until (production end + a buffer)
-    const totalProductionWeeks = (film.developmentDurationWeeks || 0) + 
-                                 (film.preProductionDurationWeeks || 0) + 
-                                 (film.productionDurationWeeks || 0) + 
-                                 (film.postProductionDurationWeeks || 0) + 2;
+    // Talent is committed through principal photography. Post-production and
+    // release-calendar delays do not keep an entire cast off the market.
+    const totalProductionWeeks = (film.developmentDurationWeeks || 0) +
+                                 1 +
+                                 (film.preProductionDurationWeeks || 0) +
+                                 (film.productionDurationWeeks || 0);
     let busyUntilWeek = film.createdAtWeek + totalProductionWeeks;
     let busyUntilYear = film.createdAtYear;
     while (busyUntilWeek > 52) {
@@ -458,14 +465,13 @@ async function hireAITalent(
         role: "director",
         currentWeek,
         currentYear,
-        remainingBudget: remainingTalentBudget,
+        remainingBudget: directorEnvelope,
         profile,
       });
       if (director) {
         directorId = director.id;
         directorCost = director.askingPrice || 5000000;
         totalTalentCost += directorCost;
-        remainingTalentBudget = Math.max(0, remainingTalentBudget - directorCost);
         Object.assign(director, { currentFilmId: filmId, busyUntilWeek, busyUntilYear });
         talentUpdatePromises.push(storage.updateTalent(director.id, { currentFilmId: filmId, busyUntilWeek, busyUntilYear }));
       }
@@ -478,14 +484,13 @@ async function hireAITalent(
         role: "writer",
         currentWeek,
         currentYear,
-        remainingBudget: remainingTalentBudget,
+        remainingBudget: writerEnvelope,
         profile,
       });
       if (writer) {
         writerId = writer.id;
         writerCost = writer.askingPrice || 5000000;
         totalTalentCost += writerCost;
-        remainingTalentBudget = Math.max(0, remainingTalentBudget - writerCost);
         scriptQuality = calculateScriptQualityFromWriter(writer);
         Object.assign(writer, { currentFilmId: filmId, busyUntilWeek, busyUntilYear });
         talentUpdatePromises.push(storage.updateTalent(writer.id, { currentFilmId: filmId, busyUntilWeek, busyUntilYear }));
@@ -513,6 +518,10 @@ async function hireAITalent(
       const importanceOrder: Record<string, number> = { lead: 0, supporting: 1, minor: 2 };
       return (importanceOrder[a.importance] || 2) - (importanceOrder[b.importance] || 2);
     });
+    castEnvelope = Math.max(
+      castEnvelope,
+      talentBudgetLimit - totalTalentCost - composerEnvelope,
+    );
     
     for (const role of sortedRoles) {
       if (role.isCast) continue;
@@ -528,18 +537,22 @@ async function hireAITalent(
       }
       
       if (matchingActors.length > 0) {
+        const remainingRoles = Math.max(1, sortedRoles.length - castActorIds.length);
         const actor = selectTalentCandidate(matchingActors, {
           genre,
           role: "actor",
           currentWeek,
           currentYear,
-          remainingBudget: remainingTalentBudget,
+          remainingBudget: Math.max(
+            castEnvelope / remainingRoles,
+            Math.min(1_250_000, castEnvelope),
+          ),
           profile,
         });
         if (actor) {
           const actorCost = actor.askingPrice || 5000000;
           actorsCost += actorCost;
-          remainingTalentBudget = Math.max(0, remainingTalentBudget - actorCost);
+          castEnvelope = Math.max(0, castEnvelope - actorCost);
           Object.assign(role, { actorId: actor.id, isCast: true });
           Object.assign(actor, { currentFilmId: filmId, busyUntilWeek, busyUntilYear });
           roleUpdatePromises.push(storage.updateFilmRole(role.id, { actorId: actor.id, isCast: true }));
@@ -563,14 +576,13 @@ async function hireAITalent(
         role: "composer",
         currentWeek,
         currentYear,
-        remainingBudget: remainingTalentBudget,
+        remainingBudget: composerEnvelope,
         profile,
       });
       if (composer) {
         composerId = composer.id;
         composerCost = composer.askingPrice || 3000000;
         totalTalentCost += composerCost;
-        remainingTalentBudget = Math.max(0, remainingTalentBudget - composerCost);
         Object.assign(composer, { currentFilmId: filmId, busyUntilWeek, busyUntilYear });
         talentUpdatePromises.push(storage.updateTalent(composer.id, { currentFilmId: filmId, busyUntilWeek, busyUntilYear }));
       }
@@ -600,7 +612,9 @@ async function hireAITalent(
         profile,
         isTentpole,
       );
-      const newMarketingBudget = Math.floor(investmentBudget * marketingRatio);
+      const newMarketingBudget = Math.floor(
+        commitment?.marketingBudget ?? investmentBudget * marketingRatio,
+      );
       filmUpdateData.marketingBudget = newMarketingBudget;
       filmUpdateData.totalBudget = investmentBudget + newMarketingBudget;
       console.log(`[AI-TALENT-HIRED] ${film.title}: talent=$${Math.round(totalTalentCost/1000000)}M, investment=$${Math.round(investmentBudget/1000000)}M, newMarketing=$${Math.round(newMarketingBudget/1000000)}M, ratio=${(marketingRatio*100).toFixed(1)}%`);
@@ -1232,13 +1246,13 @@ async function processAIStreamingAcquisitions(
             isActive: true,
           });
           filmsWithDeals.add(film.id);
-          
+
           // Add license fee to AI studio budget
           await storage.updateStudio(aiStudio.id, {
             budget: aiStudio.budget + licenseFee,
             totalEarnings: aiStudio.totalEarnings + licenseFee,
           });
-          
+
           dealsCreated++;
         } catch (dealError) {
           console.error(`[AI-STREAMING] Failed to create deal for "${film.title}":`, dealError);
@@ -3606,86 +3620,106 @@ export async function registerRoutes(
           if (Math.random() >= 0.25 || availableBudget <= 30_000_000) continue;
 
           const profile = createStudioDecisionProfile({ ...aiStudio, budget: availableBudget } as Studio);
-          const genre = selectAIGenre(GENRES, profile);
+          const unreleasedTentpoleCount = plans.filter(plan =>
+            plan.studio.id === aiStudio.id &&
+            plan.releaseAbsolute > creationAbsolute &&
+            isAITentpoleBudget(plan.filmData.genre, plan.filmData.productionBudget)
+          ).length;
+          const reserveFlagshipOpportunity = unreleasedTentpoleCount === 0 &&
+            availableBudget >= 650_000_000;
+          const genre = selectAIGenre(
+            reserveFlagshipOpportunity
+              ? ["action", "scifi", "fantasy", "animation"]
+              : GENRES,
+            profile,
+          );
           const titleList = filmTitles[genre] || filmTitles.drama;
           let title = titleList[Math.floor(Math.random() * titleList.length)];
           let duplicateNumber = 2;
           while (usedTitles.has(title)) title = `${titleList[Math.floor(Math.random() * titleList.length)]} ${duplicateNumber++}`;
           usedTitles.add(title);
 
-          const unreleasedTentpoleCount = plans.filter(plan =>
-            plan.studio.id === aiStudio.id &&
-            plan.releaseAbsolute > creationAbsolute &&
-            isAITentpoleBudget(plan.filmData.genre, plan.filmData.productionBudget)
-          ).length;
-          const productionPlan = selectAIProductionBudget(
+          const plannedFilm = selectAffordableAIFilmCommitment(
             genre,
             availableBudget,
             profile,
             Math.random,
             unreleasedTentpoleCount < 2,
           );
+          const productionPlan = plannedFilm.production;
+          const commitmentPlan = plannedFilm.commitment;
+          if (!commitmentPlan.isAffordable) continue;
           const projectProfile = productionPlan.isTentpole
             ? createTentpoleDecisionProfile(profile)
             : profile;
-          let prodBudget = productionPlan.productionBudget;
-          const productionBudgetShare = productionPlan.isTentpole ? 0.58 : 0.55;
-          prodBudget = Math.floor(Math.min(
-            prodBudget,
-            Math.max(5_000_000, availableBudget * productionBudgetShare),
-          ));
-
-          const setsBudget = Math.floor(prodBudget * (0.08 + Math.random() * 0.12));
-          const costumesBudget = Math.floor(prodBudget * (0.02 + Math.random() * 0.03));
-          const stuntsBudget = Math.floor(prodBudget * (
-            ["action", "scifi", "fantasy"].includes(genre)
-              ? 0.04 + Math.random() * 0.06
-              : 0.01 + Math.random() * 0.03
-          ));
-          const makeupBudget = Math.floor(prodBudget * (0.01 + Math.random() * 0.02));
-          const practicalEffectsBudget = Math.floor(prodBudget * (0.02 + Math.random() * 0.04));
-          const soundCrewBudget = Math.floor(prodBudget * (0.01 + Math.random() * 0.02));
+          const prodBudget = Math.floor(productionPlan.productionBudget);
+          const setsBudget = Math.floor(commitmentPlan.setsBudget);
+          const costumesBudget = Math.floor(commitmentPlan.costumesBudget);
+          const stuntsBudget = Math.floor(commitmentPlan.stuntsBudget);
+          const makeupBudget = Math.floor(commitmentPlan.makeupBudget);
+          const practicalEffectsBudget = Math.floor(commitmentPlan.practicalEffectsBudget);
+          const soundCrewBudget = Math.floor(commitmentPlan.soundCrewBudget);
           const departmentBudget = setsBudget + costumesBudget + stuntsBudget + makeupBudget +
             practicalEffectsBudget + soundCrewBudget;
 
           const castCount = genre === "action" ? 6 : genre === "animation" ? 5 : 4;
           const usedTalent = new Set<string>();
           const availableAfterProduction = Math.max(0, availableBudget - prodBudget - departmentBudget);
-          const plannedTalentBudget = Math.max(
-            12_000_000 + castCount * 4_000_000,
-            Math.min(availableBudget * 0.22, Math.max(30_000_000, prodBudget * 0.65)),
+          const talentPackageBudget = Math.min(
+            availableAfterProduction,
+            commitmentPlan.talentBudgetLimit,
           );
-          let remainingTalentBudget = Math.min(availableAfterProduction, plannedTalentBudget);
-          const director = chooseTalent("director", "director", genre, projectProfile, remainingTalentBudget * 0.32, usedTalent, creationAbsolute);
-          if (director) { usedTalent.add(director.id); remainingTalentBudget -= Number(director.askingPrice || 5_000_000); }
-          const writer = chooseTalent("writer", "writer", genre, projectProfile, remainingTalentBudget * 0.20, usedTalent, creationAbsolute);
-          if (writer) { usedTalent.add(writer.id); remainingTalentBudget -= Number(writer.askingPrice || 5_000_000); }
+          const directorEnvelope = talentPackageBudget * (productionPlan.isTentpole ? 0.24 : 0.20);
+          const writerEnvelope = talentPackageBudget * (productionPlan.isTentpole ? 0.13 : 0.15);
+          let castEnvelope = talentPackageBudget * (productionPlan.isTentpole ? 0.55 : 0.56);
+          const composerEnvelope = talentPackageBudget - directorEnvelope - writerEnvelope - castEnvelope;
+          const director = chooseTalent("director", "director", genre, projectProfile, directorEnvelope, usedTalent, creationAbsolute);
+          if (director) usedTalent.add(director.id);
+          const writer = chooseTalent("writer", "writer", genre, projectProfile, writerEnvelope, usedTalent, creationAbsolute);
+          if (writer) usedTalent.add(writer.id);
+          castEnvelope = Math.max(
+            castEnvelope,
+            talentPackageBudget -
+              Number(director?.askingPrice || 0) -
+              Number(writer?.askingPrice || 0) -
+              composerEnvelope,
+          );
           const cast: typeof talentPool = [];
           for (let castIndex = 0; castIndex < castCount; castIndex += 1) {
             const remainingRoles = castCount - castIndex;
-            const actorBudget = remainingTalentBudget / Math.max(1, remainingRoles + 1);
+            const actorBudget = Math.max(
+              castEnvelope / Math.max(1, remainingRoles),
+              Math.min(1_250_000, castEnvelope),
+            );
             const actor = chooseTalent("actor", "actor", genre, projectProfile, actorBudget, usedTalent, creationAbsolute);
             if (!actor) break;
             cast.push(actor);
             usedTalent.add(actor.id);
-            remainingTalentBudget -= Number(actor.askingPrice || 5_000_000);
+            castEnvelope = Math.max(0, castEnvelope - Number(actor.askingPrice || 5_000_000));
           }
-          const composer = chooseTalent("composer", "composer", genre, projectProfile, remainingTalentBudget, usedTalent, creationAbsolute);
-          if (composer) { usedTalent.add(composer.id); remainingTalentBudget -= Number(composer.askingPrice || 3_000_000); }
+          const composer = chooseTalent("composer", "composer", genre, projectProfile, composerEnvelope, usedTalent, creationAbsolute);
+          if (composer) usedTalent.add(composer.id);
           const hiredTalent = [director, writer, composer, ...cast].filter(Boolean) as typeof talentPool;
           const talentBudget = Math.max(0, Math.floor(hiredTalent.reduce(
             (sum, candidate) => sum + Number(candidate.askingPrice || 0), 0,
           )));
           const investmentBudget = prodBudget + departmentBudget + talentBudget;
-          const marketingRatio = calculateAIMarketingRatio(projectProfile, productionPlan.isTentpole);
-          const marketingBudget = Math.floor(investmentBudget * marketingRatio);
+          const marketingBudget = Math.floor(commitmentPlan.marketingBudget);
 
           const vfxRequired = ["action", "scifi", "fantasy", "animation", "horror"].includes(genre);
           const selectedVFX = vfxRequired
-            ? selectVFXStudio(vfxStudios, genre, Math.max(0, availableBudget - investmentBudget), projectProfile)
+            ? selectVFXStudio(
+              vfxStudios,
+              genre,
+              Math.max(0, Math.min(
+                commitmentPlan.vfxBudgetCeiling,
+                availableBudget - investmentBudget - marketingBudget,
+              )),
+              projectProfile,
+            )
             : undefined;
           const vfxCost = Number(selectedVFX?.cost || 0);
-          const projectCost = investmentBudget + vfxCost;
+          const projectCost = investmentBudget + vfxCost + marketingBudget;
           if (projectCost > availableBudget) continue;
 
           const { devWeeks, preWeeks, prodWeeks, postWeeks } = calculatePhaseDurations(genre, prodBudget, vfxRequired);
@@ -3885,6 +3919,14 @@ export async function registerRoutes(
             projectedLegsMultiplier: run.legsMultiplier,
           },
         });
+        // Preload deducts each historical film's complete spend while planning.
+        // Credit the revenue that has actually arrived by the end of the
+        // preloaded period so studios start live play with an economic history,
+        // rather than only the cost side of their slate.
+        studioBudgets.set(
+          film.studioId,
+          Math.floor((studioBudgets.get(film.studioId) || 0) + film.totalBoxOffice * 0.7),
+        );
         await storage.updateFilm(film.id, {
           criticScore: film.criticScore,
           audienceScore: film.audienceScore,
@@ -4768,7 +4810,7 @@ export async function registerRoutes(
       return await runWithStorage(weekCache, async () => {
       // Load the small shared tables first. Films are fetched only for this save;
       // the global film table can be tens of megabytes in long-running databases.
-      const [studio, initialStudios, allTalent] = await Promise.all([
+      const [studio, initialStudios, sharedTalent] = await Promise.all([
         storage.getStudio(id),
         storage.getAllStudios(),
         storage.getAllTalent(),
@@ -4841,6 +4883,12 @@ export async function registerRoutes(
       }
       const studioFilms = initialFilms.filter(f => f.studioId === id);
       const allFilms = initialFilms;
+      const allTalent = applySaveTalentAvailability(
+        sharedTalent,
+        allFilms,
+        newWeek,
+        newYear,
+      );
       // Advance only this save/session. The previous global filter could progress
       // unrelated games and contaminate release competition.
       const saveFilms = allFilms.filter(f =>
@@ -6252,48 +6300,53 @@ export async function registerRoutes(
               genreReturns[candidateGenre] = Math.max(-0.25, Math.min(0.25, (averageReturn - 1.5) / 6));
             }
           }
-          const genre = selectAIGenre(GENRES, decisionProfile, genreReturns) as keyof typeof filmTitles;
-          
-          const titleList = filmTitles[genre];
-          const title = titleList[Math.floor(Math.random() * titleList.length)];
-          
           const unreleasedTentpoleCount = previousStudioFilms.filter(film =>
             film.phase !== "released" &&
             film.status !== "archived" &&
             isAITentpoleBudget(film.genre, film.productionBudget || 0)
           ).length;
-          const productionPlan = selectAIProductionBudget(
+          const reserveFlagshipOpportunity = unreleasedTentpoleCount === 0 &&
+            updatedBudget >= 650_000_000;
+          const genre = selectAIGenre(
+            reserveFlagshipOpportunity
+              ? ["action", "scifi", "fantasy", "animation"]
+              : GENRES,
+            decisionProfile,
+            genreReturns,
+          ) as keyof typeof filmTitles;
+
+          const titleList = filmTitles[genre];
+          const title = titleList[Math.floor(Math.random() * titleList.length)];
+
+          const reservedCampaignBudget = previousStudioFilms
+            .filter(film => film.status !== "archived")
+            .reduce((sum, film) => sum + Math.max(
+              0,
+              Number(film.campaignLimit || 0) - Number(film.campaignSpent || 0),
+            ), 0);
+          const planningBudget = Math.max(0, updatedBudget - reservedCampaignBudget);
+          const plannedFilm = selectAffordableAIFilmCommitment(
             genre,
-            updatedBudget,
+            planningBudget,
             decisionProfile,
             Math.random,
             unreleasedTentpoleCount < 2,
           );
+          const productionPlan = plannedFilm.production;
+          const commitmentPlan = plannedFilm.commitment;
           const prodBudget = productionPlan.productionBudget;
           const projectProfile = productionPlan.isTentpole
             ? createTentpoleDecisionProfile(decisionProfile)
             : decisionProfile;
           
-          // Roll department budgets based on genre and production budget
-          const setsBudget = prodBudget * (0.08 + Math.random() * 0.12); // 8-20%
-          const costumesBudget = prodBudget * (0.02 + Math.random() * 0.03); // 2-5%
-          const stuntsBudget = (genre === 'action' || genre === 'scifi' || genre === 'fantasy') 
-            ? prodBudget * (0.04 + Math.random() * 0.06) // 4-10% for heavy action
-            : prodBudget * (0.01 + Math.random() * 0.03); // 1-4% for others
-          const makeupBudget = prodBudget * (0.01 + Math.random() * 0.02); // 1-3%
-          const practicalEffectsBudget = prodBudget * (0.02 + Math.random() * 0.04); // 2-6%
-          const soundCrewBudget = prodBudget * (0.01 + Math.random() * 0.02); // 1-3%
-          
-          const departmentBudgetTotal = setsBudget + costumesBudget + stuntsBudget + makeupBudget + practicalEffectsBudget + soundCrewBudget;
-          
-          // Calculate marketing budget based on total investment (production + departments)
-          // Studio-specific, imperfect marketing plan; high spend no longer scales linearly.
-          const investmentBudget = prodBudget + departmentBudgetTotal;
-          const marketingRatio = calculateAIMarketingRatio(
-            projectProfile,
-            productionPlan.isTentpole,
-          );
-          const marketBudget = investmentBudget * marketingRatio;
+          const setsBudget = commitmentPlan.setsBudget;
+          const costumesBudget = commitmentPlan.costumesBudget;
+          const stuntsBudget = commitmentPlan.stuntsBudget;
+          const makeupBudget = commitmentPlan.makeupBudget;
+          const practicalEffectsBudget = commitmentPlan.practicalEffectsBudget;
+          const soundCrewBudget = commitmentPlan.soundCrewBudget;
+          const departmentBudgetTotal = commitmentPlan.departmentBudget;
+          const marketBudget = commitmentPlan.marketingBudget;
           
           // Marketing is now a campaign ceiling; cash is charged as actions run.
           const totalCost = prodBudget + departmentBudgetTotal;
@@ -6302,7 +6355,7 @@ export async function registerRoutes(
           const totalBudgetForDisplay = prodBudget + departmentBudgetTotal; // This is what we show as "budget"
           console.log(`[AI-FILM-CREATE] ${title} (${genre}): prod=$${Math.round(prodBudget/1000000)}M, depts=$${Math.round(departmentBudgetTotal/1000000)}M, marketing=$${Math.round(marketBudget/1000000)}M, totalBudget=$${Math.round(totalBudgetForDisplay/1000000)}M`);
 
-          if (aiStudio.budget >= totalCost) {
+          if (commitmentPlan.isAffordable && updatedBudget >= totalCost) {
             // Generate phase durations based on genre and production needs
             const phaseDurations = calculatePhaseDurations(genre, Math.floor(prodBudget), false);
             const { devWeeks, preWeeks, prodWeeks, postWeeks } = phaseDurations;
@@ -6365,18 +6418,21 @@ export async function registerRoutes(
               });
 
               // Generate roles and hire talent for the AI film
+              let talentCost = 0;
               try {
                 const createdRoles = await generateFilmRoles(newFilm.id, genre, prodBudget);
-                const talentCost = await hireAITalent(
+                talentCost = await hireAITalent(
                   newFilm.id,
                   genre,
                   aiStudio,
                   newFilm,
                   allTalent,
                   createdRoles,
+                  {
+                    talentBudgetLimit: commitmentPlan.talentBudgetLimit,
+                    marketingBudget: marketBudget,
+                  },
                 );
-                // Deduct talent cost from AI studio budget
-                aiStudioBudgetChanges.set(aiStudio.id, (aiStudioBudgetChanges.get(aiStudio.id) || 0) - talentCost);
                 
                 // Generate synopsis after talent is assigned
                 const synopsis = await generateAIFilmSynopsis(
@@ -6394,25 +6450,26 @@ export async function registerRoutes(
 
               // AI films with VFX-heavy genres pick a VFX studio (skip drama, comedy, romance, etc.)
               const vfxRequiredGenres = ['action', 'scifi', 'fantasy', 'animation', 'horror'];
+              let vfxCost = 0;
+              let selectedVFXStudio: typeof vfxStudios[number] | undefined;
               if (vfxRequiredGenres.includes(genre)) {
-                const selectedVFXStudio = selectVFXStudio(
+                selectedVFXStudio = selectVFXStudio(
                   vfxStudios,
                   genre,
-                  Math.max(0, aiStudio.budget - totalCost),
+                  Math.max(0, Math.min(
+                    commitmentPlan.vfxBudgetCeiling,
+                    updatedBudget - totalCost - talentCost,
+                  )),
                   projectProfile,
                 );
                 if (selectedVFXStudio) {
-                  const vfxCost = selectedVFXStudio.cost || 0;
-                  
-                  await storage.updateFilm(newFilm.id, {
-                    vfxStudioId: selectedVFXStudio.id,
-                    totalBudget: Math.floor(totalCost + vfxCost),
-                  });
-                  
-                  // Track VFX cost in budget changes
-                  aiStudioBudgetChanges.set(aiStudio.id, (aiStudioBudgetChanges.get(aiStudio.id) || 0) - vfxCost);
+                  vfxCost = selectedVFXStudio.cost || 0;
                 }
               }
+              await storage.updateFilm(newFilm.id, {
+                ...(selectedVFXStudio ? { vfxStudioId: selectedVFXStudio.id } : {}),
+                totalBudget: Math.floor(totalCost + talentCost + vfxCost + marketBudget),
+              });
 
               // Create territory releases immediately for the new AI film (BATCHED for performance)
               // ALL AI films release in ALL territories globally
@@ -6441,7 +6498,7 @@ export async function registerRoutes(
                   weeksInRelease: 0,
                 })));
               await storage.updateStudio(aiStudio.id, {
-                budget: aiStudio.budget - Math.floor(totalCost),
+                budget: updatedBudget - Math.floor(totalCost + talentCost + vfxCost),
               });
             } catch (err) {
               console.error(`[AI-FILM-ERROR] Failed to create film for ${aiStudio.name}:`, err);

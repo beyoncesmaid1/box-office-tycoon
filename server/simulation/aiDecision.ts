@@ -32,6 +32,33 @@ export interface AIProductionBudgetPlan {
   isTentpole: boolean;
 }
 
+export interface AIDepartmentBudgetPlan {
+  setsBudget: number;
+  costumesBudget: number;
+  stuntsBudget: number;
+  makeupBudget: number;
+  practicalEffectsBudget: number;
+  soundCrewBudget: number;
+}
+
+export interface AIFilmCommitmentPlan extends AIDepartmentBudgetPlan {
+  departmentBudget: number;
+  talentBudgetLimit: number;
+  vfxBudgetCeiling: number;
+  marketingBudget: number;
+  contingencyReserve: number;
+  plannedAllIn: number;
+  projectedAllIn: number;
+  commitmentLimit: number;
+  isAffordable: boolean;
+  planningError: number;
+}
+
+export interface AIPlannedFilmCommitment {
+  production: AIProductionBudgetPlan;
+  commitment: AIFilmCommitmentPlan;
+}
+
 const TENTPOLE_GENRES = new Set(["action", "scifi", "fantasy", "animation"]);
 const TENTPOLE_BUDGET_FLOOR = 170_000_000;
 
@@ -90,6 +117,180 @@ export function selectAIProductionBudget(
   }
 
   return { productionBudget, isTentpole: false };
+}
+
+/**
+ * Estimate the complete commitment before an AI studio greenlights a film.
+ * The categories share the production target as their anchor, so an inexpensive
+ * film cannot independently choose blockbuster talent, VFX, and marketing.
+ * Forecast noise and rare underestimates preserve imperfect studio behavior.
+ */
+export function planAIFilmCommitment(
+  genre: string,
+  productionPlan: AIProductionBudgetPlan,
+  availableBudget: number,
+  profile: AIStudioDecisionProfile,
+  rng: RandomSource = Math.random,
+): AIFilmCommitmentPlan {
+  const productionBudget = Math.max(0, productionPlan.productionBudget);
+  const isEffectsGenre = ["action", "scifi", "fantasy", "animation", "horror"]
+    .includes(genre.toLowerCase());
+  const variation = (minimum: number, maximum: number) =>
+    minimum + rng() * (maximum - minimum);
+
+  const setsBudget = productionBudget * variation(0.08, 0.20);
+  const costumesBudget = productionBudget * variation(0.02, 0.05);
+  const stuntsBudget = productionBudget * (
+    ["action", "scifi", "fantasy"].includes(genre.toLowerCase())
+      ? variation(0.04, 0.10)
+      : variation(0.01, 0.04)
+  );
+  const makeupBudget = productionBudget * variation(0.01, 0.03);
+  const practicalEffectsBudget = productionBudget * variation(0.02, 0.06);
+  const soundCrewBudget = productionBudget * variation(0.01, 0.03);
+  const departmentBudget = setsBudget + costumesBudget + stuntsBudget +
+    makeupBudget + practicalEffectsBudget + soundCrewBudget;
+
+  const talentRatio = productionPlan.isTentpole
+    ? 0.18 + profile.riskTolerance * 0.10 - profile.valueDiscipline * 0.035
+    : 0.25 + profile.riskTolerance * 0.12 - profile.valueDiscipline * 0.06;
+  const talentNoise = variation(0.82, 1.18);
+  let talentBudgetLimit = Math.max(
+    Math.min(7_000_000, productionBudget * 0.65),
+    productionBudget * talentRatio * talentNoise,
+  );
+
+  const vfxBaseRatio: Record<string, number> = {
+    action: productionPlan.isTentpole ? 0.42 : 0.24,
+    scifi: productionPlan.isTentpole ? 0.50 : 0.34,
+    fantasy: productionPlan.isTentpole ? 0.46 : 0.30,
+    animation: productionPlan.isTentpole ? 0.48 : 0.32,
+    horror: productionPlan.isTentpole ? 0.24 : 0.14,
+  };
+  let vfxBudgetCeiling = isEffectsGenre
+    ? productionBudget * (vfxBaseRatio[genre.toLowerCase()] || 0.2) * variation(0.78, 1.22)
+    : 0;
+
+  const marketingRatio = productionPlan.isTentpole
+    ? 0.58 + profile.riskTolerance * 0.28 + variation(-0.08, 0.12)
+    : 0.30 + profile.riskTolerance * 0.32 + variation(-0.08, 0.12);
+  let marketingBudget = productionBudget * Math.max(0.2, marketingRatio);
+
+  // A minority of projects make an identifiable bad commitment: an excessive
+  // package, effects escalation, or panic-sized campaign. This is deliberately
+  // stochastic rather than a permanent rule for any budget tier.
+  const mistakeChance = 0.035 + profile.explorationRate * 0.09 +
+    profile.riskTolerance * 0.025;
+  if (rng() < mistakeChance) {
+    const overrun = variation(1.18, 1.55);
+    const category = Math.floor(rng() * 3);
+    if (category === 0) talentBudgetLimit *= overrun;
+    else if (category === 1 && isEffectsGenre) vfxBudgetCeiling *= overrun;
+    else marketingBudget *= overrun;
+  }
+
+  const plannedAllIn = productionBudget + departmentBudget + talentBudgetLimit +
+    vfxBudgetCeiling + marketingBudget;
+  const contingencyRate = 0.055 + (1 - profile.valueDiscipline) * 0.075 +
+    profile.riskTolerance * 0.025;
+  const contingencyReserve = plannedAllIn * contingencyRate;
+  const forecastSigma = 0.035 + (1 - profile.decisionQuality) * 0.09;
+  let planningError = Math.max(0.78, Math.min(1.18,
+    1 + normalNoise(rng) * forecastSigma));
+  if (rng() < mistakeChance * 0.45) planningError *= variation(0.78, 0.92);
+  const projectedAllIn = (plannedAllIn + contingencyReserve) * planningError;
+  const commitmentShare = 0.78 + profile.valueDiscipline * 0.09 +
+    profile.riskTolerance * 0.055;
+  const commitmentLimit = Math.max(0, availableBudget) * Math.min(0.94, commitmentShare);
+
+  return {
+    setsBudget,
+    costumesBudget,
+    stuntsBudget,
+    makeupBudget,
+    practicalEffectsBudget,
+    soundCrewBudget,
+    departmentBudget,
+    talentBudgetLimit,
+    vfxBudgetCeiling,
+    marketingBudget,
+    contingencyReserve,
+    plannedAllIn,
+    projectedAllIn,
+    commitmentLimit,
+    isAffordable: projectedAllIn <= commitmentLimit,
+    planningError,
+  };
+}
+
+export function selectAffordableAIFilmCommitment(
+  genre: string,
+  availableBudget: number,
+  profile: AIStudioDecisionProfile,
+  rng: RandomSource = Math.random,
+  allowTentpole = true,
+): AIPlannedFilmCommitment {
+  let production = selectAIProductionBudget(
+    genre,
+    availableBudget,
+    profile,
+    rng,
+    allowTentpole,
+  );
+  let commitment = planAIFilmCommitment(
+    genre,
+    production,
+    availableBudget,
+    profile,
+    rng,
+  );
+  if (!commitment.isAffordable && production.isTentpole) {
+    production = selectAIProductionBudget(
+      genre,
+      availableBudget,
+      profile,
+      rng,
+      false,
+    );
+    commitment = planAIFilmCommitment(
+      genre,
+      production,
+      availableBudget,
+      profile,
+      rng,
+    );
+  }
+
+  const minimumProductionByGenre: Record<string, number> = {
+    action: 15_000_000,
+    scifi: 18_000_000,
+    fantasy: 18_000_000,
+    animation: 20_000_000,
+    thriller: 8_000_000,
+    comedy: 4_000_000,
+    romance: 4_000_000,
+    musicals: 12_000_000,
+    horror: 2_000_000,
+    drama: 2_000_000,
+  };
+  const minimumProduction = minimumProductionByGenre[genre.toLowerCase()] || 4_000_000;
+  for (let attempt = 0; attempt < 3 && !commitment.isAffordable; attempt += 1) {
+    const scale = Math.max(0.35, Math.min(
+      0.9,
+      commitment.commitmentLimit / Math.max(1, commitment.projectedAllIn) * 0.94,
+    ));
+    const nextBudget = Math.max(minimumProduction, production.productionBudget * scale);
+    if (nextBudget >= production.productionBudget * 0.98) break;
+    production = { productionBudget: nextBudget, isTentpole: false };
+    commitment = planAIFilmCommitment(
+      genre,
+      production,
+      availableBudget,
+      profile,
+      rng,
+    );
+  }
+  return { production, commitment };
 }
 
 export function createTentpoleDecisionProfile(
