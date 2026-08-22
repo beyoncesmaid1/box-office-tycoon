@@ -3209,15 +3209,6 @@ async function calculateHistoricalTerritoryRun(
 ) {
   const releaseWeek = film.releaseWeek || 1;
   const releaseYear = film.releaseYear || 2025;
-  const sameWeekReleases = calendarFilms.filter(other =>
-    other.id !== film.id &&
-    other.releaseWeek === releaseWeek &&
-    other.releaseYear === releaseYear
-  );
-  const directCompetitors = sameWeekReleases.filter(other => other.genre === film.genre).length;
-  const competition = Math.min(100, 10 + sameWeekReleases.length * 10 + directCompetitors * 16);
-  const holidayFit = getGenreHolidayModifier(releaseWeek, film.genre);
-  const releaseTiming = Math.max(0, Math.min(100, 52 + (holidayFit - 1) * 62));
   const genreBalance = resolveGenre(film.genre);
   const productionScale = Math.min(100,
     100 * (1 - Math.exp(-(film.productionBudget || 0) /
@@ -3278,6 +3269,26 @@ async function calculateHistoricalTerritoryRun(
   let peakPhenomenonPotential = 0;
   let peakPhenomenonIntensity = 0;
   for (let weekNumber = 0; weekNumber < 16; weekNumber += 1) {
+    const calendar = absoluteWeek(releaseWeek, releaseYear) + weekNumber;
+    const calendarWeek = ((calendar - 1) % 52) + 1;
+    const calendarYear = Math.floor((calendar - 1) / 52);
+    const weeklyOpeners = calendarFilms.filter(other =>
+      other.id !== film.id &&
+      other.releaseWeek && other.releaseYear &&
+      absoluteWeek(other.releaseWeek, other.releaseYear) === calendar
+    );
+    const sameGenreOpeners = weeklyOpeners.filter(other =>
+      other.genre === film.genre).length;
+    const weeklyCompetition = Math.min(100,
+      10 + weeklyOpeners.length * 10 + sameGenreOpeners * 16);
+    const weeklyHolidayFit = getGenreHolidayModifier(calendarWeek, film.genre);
+    const weeklyReleaseTiming = Math.max(0, Math.min(100,
+      52 + (weeklyHolidayFit - 1) * 62));
+    const globalDemandVariance = Math.exp(
+      0.13 * normal(createSeededRng(
+        `historical-weekly-demand:${film.id}:${calendarYear}:${calendarWeek}`,
+      )) - (0.13 ** 2) / 2,
+    );
     let worldwideGross = 0;
     for (const territory of BOX_OFFICE_COUNTRIES) {
       const exhibition = getTerritoryExhibitionProfile(territory.code);
@@ -3290,8 +3301,8 @@ async function calculateHistoricalTerritoryRun(
         blockbusterDeployment,
         commercialAppeal: genreBalance.baseCommercialAppeal,
         launchHook,
-        releaseTiming,
-        competition,
+        releaseTiming: weeklyReleaseTiming,
+        competition: weeklyCompetition,
         audienceExperience: intrinsicAudienceExperience(film),
         campaign,
         openingExpectation: openingExpectations.get(territory.code) ?? campaign.expectation,
@@ -3303,10 +3314,10 @@ async function calculateHistoricalTerritoryRun(
         regularCapacityAdmissions: exhibition.regularOpeningAdmissions,
         imaxSuitability: premiumProfile.imaxSuitability,
         dolbySuitability: premiumProfile.dolbySuitability,
-        demandVariance: Math.exp(
-          0.16 * normal(createSeededRng(
-            `historical-demand:${film.id}:${territory.code}:${weekNumber}`,
-          )) - (0.16 ** 2) / 2,
+        demandVariance: globalDemandVariance * Math.exp(
+          0.07 * normal(createSeededRng(
+            `historical-demand:${film.id}:${territory.code}:${calendarYear}:${calendarWeek}`,
+          )) - (0.07 ** 2) / 2,
         ),
       };
       const preliminary = simulateTerritoryWeek({
@@ -3334,7 +3345,7 @@ async function calculateHistoricalTerritoryRun(
         interest: campaign.interest,
         commercialAppeal: genreBalance.baseCommercialAppeal,
         launchHook,
-        competition,
+        competition: weeklyCompetition,
         blockbusterDeployment,
         eventIntensity: result.eventIntensity,
         phenomenonIntensity: result.phenomenonIntensity,
@@ -5620,6 +5631,17 @@ export async function registerRoutes(
           }
         }
 
+        // Most weekly demand movement is shared across a film's markets
+        // (news, conversation, holidays, and audience urgency), with a smaller
+        // territory-specific component. A fully independent shock per market
+        // would average away and make worldwide holds unnaturally smooth.
+        const globalDemandRng = createSeededRng(
+          `weekly-demand:${candidateFilm.id}:${newYear}:${newWeek}`,
+        );
+        const globalDemandVariance = Math.exp(
+          0.13 * normal(globalDemandRng) - (0.13 ** 2) / 2,
+        );
+
         for (const release of filmReleasesMap.get(candidateFilm.id) || []) {
           if (absoluteWeek(release.releaseWeek, release.releaseYear) >
               absoluteWeek(newWeek, newYear)) continue;
@@ -5632,7 +5654,7 @@ export async function registerRoutes(
             item.film.genre === candidateFilm.genre).length;
           const competition = Math.min(100,
             10 + directOpeners.length * 10 + sameGenreOpeners * 16);
-          const holidayFit = getGenreHolidayModifier(release.releaseWeek, candidateFilm.genre);
+          const holidayFit = getGenreHolidayModifier(newWeek, candidateFilm.genre);
           const releaseTiming = Math.max(0, Math.min(100, 52 + (holidayFit - 1) * 62));
           const campaign = campaignStateFromRelease(release);
           const openingExpectation = Number(
@@ -5641,7 +5663,10 @@ export async function registerRoutes(
           const rng = createSeededRng(
             `territory-demand:${candidateFilm.id}:${release.territoryCode}:${newYear}:${newWeek}`,
           );
-          const demandVariance = Math.exp(0.16 * normal(rng) - (0.16 ** 2) / 2);
+          const localDemandVariance = Math.exp(
+            0.07 * normal(rng) - (0.07 ** 2) / 2,
+          );
+          const demandVariance = globalDemandVariance * localDemandVariance;
           const previousWeekGross = release.weeklyBoxOffice?.[
             release.weeklyBoxOffice.length - 1
           ] || 0;

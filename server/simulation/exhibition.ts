@@ -502,8 +502,15 @@ export function simulateTerritoryWeek(input: TerritoryWeekInput): TerritoryWeekR
   );
   const previousAdmissions = Math.max(0, input.previousWeekGross ?? 0) /
     Math.max(1, input.baseTicketPrice * 1.08);
+  const holdoverCompetitionMultiplier = 0.82 + competitionOpportunity * 0.18;
+  const weeklyDemandMomentum = clamp(
+    variance * timing * holdoverCompetitionMultiplier,
+    0.6,
+    1.45,
+  );
   const holdoverDemand = previousAdmissions * retention *
-    (0.94 + awareness * 0.03 + interest * 0.03);
+    (0.94 + awareness * 0.03 + interest * 0.03) *
+    weeklyDemandMomentum;
   const discoveryDecay = Math.exp(-Math.max(0, input.weekNumber - 1) / 8);
   const organicDiscoveryDemand = openingAddressableAdmissions *
     BALANCE.phenomenonDiscoveryShare * phenomenonIntensity * discoveryDecay *
