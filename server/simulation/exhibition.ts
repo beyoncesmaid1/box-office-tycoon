@@ -483,13 +483,20 @@ export function simulateTerritoryWeek(input: TerritoryWeekInput): TerritoryWeekR
     eventDemandMultiplier *
     variance;
 
+  const earlyRunStabilization = Math.min(0.04, input.weekNumber * 0.012);
+  const lateRunPressure = Math.min(0.22,
+    Math.max(0, input.weekNumber - 6) * 0.016);
+  const phenomenonRetentionDecay = Math.exp(
+    -Math.max(0, input.weekNumber - 4) / 6,
+  );
   const retention = clamp(
     BALANCE.retentionBase +
     absoluteAudienceRetentionAdjustment(audienceExperience) +
     womDelta * 0.006 +
     input.campaign.buzz * 0.0012 +
-    Math.min(0.08, input.weekNumber * 0.012) +
-    BALANCE.phenomenonRetentionBoost * phenomenonIntensity,
+    earlyRunStabilization -
+    lateRunPressure +
+    BALANCE.phenomenonRetentionBoost * phenomenonIntensity * phenomenonRetentionDecay,
     0.22,
     0.86,
   );

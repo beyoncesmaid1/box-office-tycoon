@@ -87,3 +87,30 @@ console.log({
   overhypedLovedRetention: overhypedLoved,
   sleeperLovedRetention: sleeperLoved,
 });
+
+function lateRunRetention(weekNumber: number): number {
+  return simulateTerritoryWeek({
+    ...openingInput,
+    audienceExperience: 92,
+    openingExpectation: 78,
+    campaign: createInitialCampaignState(92, 90, 78),
+    weekNumber,
+    previousWeekGross: 20_000_000,
+  }).retention;
+}
+
+const earlyAcclaimRetention = lateRunRetention(4);
+const middleAcclaimRetention = lateRunRetention(12);
+const lateAcclaimRetention = lateRunRetention(20);
+assert.ok(middleAcclaimRetention < earlyAcclaimRetention - 0.05,
+  `Run age should weaken retention by the middle of a run`);
+assert.ok(lateAcclaimRetention < middleAcclaimRetention - 0.08,
+  `A film should continue aging instead of stabilizing forever`);
+assert.ok(lateAcclaimRetention <= 0.55,
+  `Even an acclaimed film should shed demand late in its run; got ${lateAcclaimRetention}`);
+
+console.log({
+  earlyAcclaimRetention,
+  middleAcclaimRetention,
+  lateAcclaimRetention,
+});
