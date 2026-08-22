@@ -285,7 +285,7 @@ export const DEFAULT_SIMULATION_CONFIG: SimulationBalanceConfig = {
     retentionBase: 0.51,
     eventThreshold: 67,
     eventRange: 18,
-    eventCurveExponent: 2.2,
+    eventCurveExponent: 1.7,
     eventMaximumIntensity: 0.3,
     eventDemandBoost: 3.4,
     eventCapacityBoost: 6,

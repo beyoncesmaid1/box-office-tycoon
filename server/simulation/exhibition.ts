@@ -262,17 +262,17 @@ export function simulateTerritoryWeek(input: TerritoryWeekInput): TerritoryWeekR
     premiumReadiness,
     globalAccessibility,
   ]) * 100);
-  const eventIntensity = Math.min(
-    BALANCE.eventMaximumIntensity,
-    Math.pow(
-      clamp(
-        (eventPotential - BALANCE.eventThreshold) / BALANCE.eventRange,
-        0,
-        1,
-      ),
-      BALANCE.eventCurveExponent,
-    ),
+  const eventProgress = clamp(
+    (eventPotential - BALANCE.eventThreshold) / BALANCE.eventRange,
+    0,
+    1,
   );
+  // Smoothstep has zero slope at both ends. It preserves the event gate while
+  // avoiding both an abrupt post-threshold acceleration and a pile-up at a
+  // hard-clipped maximum intensity.
+  const smoothEventProgress = eventProgress * eventProgress * (3 - 2 * eventProgress);
+  const eventIntensity = BALANCE.eventMaximumIntensity *
+    Math.pow(smoothEventProgress, BALANCE.eventCurveExponent);
   const eventDemandMultiplier = 1 + BALANCE.eventDemandBoost * eventIntensity;
 
   const womDelta = audienceExperience - clamp(input.openingExpectation);

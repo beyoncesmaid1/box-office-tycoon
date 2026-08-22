@@ -17,6 +17,13 @@ import {
   type TalentLike,
 } from "../server/simulation/index";
 import {
+  calculateAIMarketingRatio,
+  createStudioDecisionProfile,
+  createTentpoleDecisionProfile,
+  selectAIGenre,
+  selectAIProductionBudget,
+} from "../server/simulation/aiDecision";
+import {
   BOX_OFFICE_COUNTRIES,
   GENRE_TERRITORY_FACTORS,
   getTerritoryExhibitionProfile,
@@ -57,6 +64,8 @@ interface Plan {
 
 interface Observation {
   genre: SimulationGenre;
+  productionBudget: number;
+  isTentpole: boolean;
   critic: number;
   audience: number;
   audienceExperience: number;
@@ -67,6 +76,7 @@ interface Observation {
   structuralGap: number;
   randomGap: number;
   gross: number;
+  internationalShare: number;
   opening: number;
   legs: number;
   spend: number;
@@ -451,6 +461,7 @@ function simulateCampaignRun(
   phenomenonIntensity: number;
   openingDemandAdmissions: number;
   openingAdmissions: number;
+  domesticGross: number;
 } {
   const genreBalance = resolveGenre(plan.genre);
   const productionScale = clamp(
@@ -490,6 +501,7 @@ function simulateCampaignRun(
   let peakPhenomenonIntensity = 0;
   let openingDemandAdmissions = 0;
   let openingAdmissions = 0;
+  let domesticGross = 0;
   const previousGrosses = new Map<string, number>();
   for (let weekNumber = 0; weekNumber < 16; weekNumber += 1) {
     let worldwideGross = 0;
@@ -552,6 +564,7 @@ function simulateCampaignRun(
         dolbyAllocationAdmissions: dolbyAllocation,
       });
       worldwideGross += result.gross;
+      if (territory.code === "NA") domesticGross += result.gross;
       imaxGross += result.imaxGross;
       dolbyGross += result.dolbyGross;
       peakEventPotential = Math.max(peakEventPotential, result.eventPotential);
@@ -596,6 +609,7 @@ function simulateCampaignRun(
     phenomenonIntensity: peakPhenomenonIntensity,
     openingDemandAdmissions,
     openingAdmissions,
+    domesticGross,
   };
 }
 
@@ -624,8 +638,11 @@ function qualityInputForPlan(
   };
 }
 
-function runFilm(cohort: CohortName, rng: RandomSource): Observation {
-  const plan = generatePlan(cohort, rng);
+function observePlan(
+  plan: Plan,
+  rng: RandomSource,
+  isTentpole = false,
+): Observation {
   const prepared = prepareCampaign(plan, rng);
   const quality = simulateFilmQuality(
     qualityInputForPlan(plan, prepared.marketWeightedExpectation),
@@ -643,6 +660,8 @@ function runFilm(cohort: CohortName, rng: RandomSource): Observation {
   const profit = boxOffice.totalGross * 0.7 - spend;
   return {
     genre: plan.genre,
+    productionBudget: plan.productionBudget,
+    isTentpole,
     critic: quality.criticScore,
     audience: quality.audienceScore100,
     audienceExperience: quality.audienceExperienceScore100,
@@ -657,6 +676,9 @@ function runFilm(cohort: CohortName, rng: RandomSource): Observation {
     structuralGap: quality.expectedCriticScore - quality.expectedAudienceScore,
     randomGap: quality.uncertainty.randomGap,
     gross: boxOffice.totalGross,
+    internationalShare: boxOffice.totalGross > 0
+      ? 1 - boxOffice.domesticGross / boxOffice.totalGross
+      : 0,
     opening: boxOffice.openingWeekend,
     legs: boxOffice.legsMultiplier,
     spend,
@@ -674,6 +696,10 @@ function runFilm(cohort: CohortName, rng: RandomSource): Observation {
     openingDemandAdmissions: boxOffice.openingDemandAdmissions,
     openingAdmissions: boxOffice.openingAdmissions,
   };
+}
+
+function runFilm(cohort: CohortName, rng: RandomSource): Observation {
+  return observePlan(generatePlan(cohort, rng), rng);
 }
 
 const mean = (values: readonly number[]): number =>
@@ -1246,6 +1272,205 @@ function reportEventScenarios(seed: string): void {
   );
 }
 
+const liveStudioProfiles = [
+  { id: "universal", name: "Universal Pictures", strategy: "balanced" },
+  { id: "disney", name: "The Walt Disney Company", strategy: "animation" },
+  { id: "warner", name: "Warner Bros. Discovery", strategy: "action" },
+  { id: "paramount", name: "Paramount Pictures", strategy: "balanced" },
+  { id: "sony", name: "Sony Pictures", strategy: "comedy" },
+  { id: "netflix", name: "Netflix Studios", strategy: "drama" },
+  { id: "amazon", name: "Amazon Studios", strategy: "scifi" },
+] as const;
+
+interface LiveSlateState {
+  projectIndex: number;
+  activeTentpoleDurations: number[][];
+}
+
+function generateLiveAIPlan(
+  rng: RandomSource,
+  state: LiveSlateState,
+): { plan: Plan; isTentpole: boolean } {
+  const studioIndex = state.projectIndex % liveStudioProfiles.length;
+  state.projectIndex += 1;
+  const studio = liveStudioProfiles[studioIndex];
+  const activeDurations = state.activeTentpoleDurations[studioIndex]
+    .map(duration => duration - 1)
+    .filter(duration => duration > 0);
+  state.activeTentpoleDurations[studioIndex] = activeDurations;
+
+  const profile = createStudioDecisionProfile({
+    ...studio,
+    prestigeLevel: 1,
+  });
+  const genre = selectAIGenre(
+    [...SIMULATION_GENRES],
+    profile,
+    {},
+    () => rng.next(),
+  ) as SimulationGenre;
+  // Mature AI studios span the cash positions seen in long-running live saves.
+  // The lower tail naturally fails the affordability gate for $170M productions.
+  const availableBudget = uniform(rng, 260_000_000, 1_000_000_000);
+  const productionPlan = selectAIProductionBudget(
+    genre,
+    availableBudget,
+    profile,
+    () => rng.next(),
+    activeDurations.length < 2,
+  );
+  if (productionPlan.isTentpole) {
+    activeDurations.push(Math.floor(uniform(rng, 6, 9)));
+  }
+  const projectProfile = productionPlan.isTentpole
+    ? createTentpoleDecisionProfile(profile)
+    : profile;
+  const plan = makePlan(
+    rng,
+    productionPlan.isTentpole ? skilledProfile : heuristicProfile,
+    genre,
+  );
+  plan.productionBudget = productionPlan.productionBudget;
+  plan.departmentBudgets = departments(
+    rng,
+    plan.productionBudget,
+    productionPlan.isTentpole ? 0.75 : 0.35,
+    productionPlan.isTentpole ? 1.35 : 1.15,
+  );
+  const departmentSpend = Object.values(plan.departmentBudgets)
+    .reduce((sum, amount) => sum + Number(amount || 0), 0);
+  const approximateTalentSpend = plan.productionBudget *
+    (productionPlan.isTentpole ? 0.22 : 0.14);
+  plan.marketingBudget = (
+    plan.productionBudget + departmentSpend + approximateTalentSpend
+  ) * calculateAIMarketingRatio(
+    projectProfile,
+    productionPlan.isTentpole,
+    () => rng.next(),
+  );
+  // Live territory simulation uses the genre's real appeal rather than a
+  // synthetic premise score. Tentpoles primarily distinguish themselves via
+  // scale, campaign, cast draw, timing, and premium readiness.
+  plan.conceptCommerciality = resolveGenre(genre).baseCommercialAppeal;
+  plan.franchiseAwareness = 0;
+  if (productionPlan.isTentpole) {
+    plan.cast = plan.cast.map(person => ({
+      ...person,
+      fame: uniform(rng, 68, 98),
+      popularity: uniform(rng, 66, 98),
+    }));
+    plan.releaseTiming = Math.max(plan.releaseTiming, uniform(rng, 58, 94));
+    plan.competition = Math.min(plan.competition, uniform(rng, 5, 58));
+  }
+  return { plan, isTentpole: productionPlan.isTentpole };
+}
+
+interface NumericBucket {
+  label: string;
+  minimum: number;
+  maximum: number;
+}
+
+function inBucket(value: number, bucket: NumericBucket): boolean {
+  return value >= bucket.minimum && value < bucket.maximum;
+}
+
+function reportUpperTailDiagnostics(observations: readonly Observation[]): void {
+  const grossBuckets: NumericBucket[] = [
+    { label: "<$100M", minimum: 0, maximum: 100_000_000 },
+    { label: "$100–250M", minimum: 100_000_000, maximum: 250_000_000 },
+    { label: "$250–500M", minimum: 250_000_000, maximum: 500_000_000 },
+    { label: "$500–750M", minimum: 500_000_000, maximum: 750_000_000 },
+    { label: "$750M–$1B", minimum: 750_000_000, maximum: 1_000_000_000 },
+    { label: "$1–1.25B", minimum: 1_000_000_000, maximum: 1_250_000_000 },
+    { label: "$1.25–1.5B", minimum: 1_250_000_000, maximum: 1_500_000_000 },
+    { label: "$1.5–2B", minimum: 1_500_000_000, maximum: 2_000_000_000 },
+    { label: "$2–2.5B", minimum: 2_000_000_000, maximum: 2_500_000_000 },
+    { label: "$2.5B+", minimum: 2_500_000_000, maximum: Infinity },
+  ];
+  console.log(`\nLIVE AI UPPER-TAIL DIAGNOSTICS (${observations.length.toLocaleString()} films)`);
+  console.log("Gross bucket       n       share   event>0  event≥.10 tentpole  intensity med/p90  opening med/p90  intl  legs med/p90");
+  for (const bucket of grossBuckets) {
+    const items = observations.filter(item => inBucket(item.gross, bucket));
+    const eventTransition = rate(items, item => item.eventIntensity > 0);
+    const qualifiedEvents = rate(items, item => item.eventIntensity >= 0.1);
+    console.log(
+      `${bucket.label.padEnd(16)} ${String(items.length).padStart(7)} ` +
+      `${percent(items.length / observations.length).padStart(8)} ` +
+      `${percent(eventTransition).padStart(8)} ${percent(qualifiedEvents).padStart(9)} ` +
+      `${percent(rate(items, item => item.isTentpole)).padStart(8)} ` +
+      `${percentile(items.map(item => item.eventIntensity), 0.5).toFixed(3)}/` +
+      `${percentile(items.map(item => item.eventIntensity), 0.9).toFixed(3)} ` +
+      `${money(percentile(items.map(item => item.opening), 0.5))}/` +
+      `${money(percentile(items.map(item => item.opening), 0.9))} ` +
+      `${percent(percentile(items.map(item => item.internationalShare), 0.5))} ` +
+      `${percentile(items.map(item => item.legs), 0.5).toFixed(2)}/` +
+      `${percentile(items.map(item => item.legs), 0.9).toFixed(2)}`,
+    );
+  }
+
+  const intensityBuckets: NumericBucket[] = [
+    { label: "0", minimum: 0, maximum: Number.EPSILON },
+    { label: "0–.025", minimum: Number.EPSILON, maximum: 0.025 },
+    { label: ".025–.05", minimum: 0.025, maximum: 0.05 },
+    { label: ".05–.10", minimum: 0.05, maximum: 0.1 },
+    { label: ".10–.15", minimum: 0.1, maximum: 0.15 },
+    { label: ".15–.20", minimum: 0.15, maximum: 0.2 },
+    { label: ".20–.25", minimum: 0.2, maximum: 0.25 },
+    { label: ".25–.30", minimum: 0.25, maximum: 0.3 },
+    { label: ".30 cap", minimum: 0.3, maximum: Infinity },
+  ];
+  console.log("\nEvent transition by intensity");
+  console.log("Intensity       n      potential med/p90  gross med/p90     opening med  intl   legs  $500M+  $1B+");
+  for (const bucket of intensityBuckets) {
+    const items = observations.filter(item => inBucket(item.eventIntensity, bucket));
+    console.log(
+      `${bucket.label.padEnd(12)} ${String(items.length).padStart(7)} ` +
+      `${percentile(items.map(item => item.eventPotential), 0.5).toFixed(1)}/` +
+      `${percentile(items.map(item => item.eventPotential), 0.9).toFixed(1)} ` +
+      `${money(percentile(items.map(item => item.gross), 0.5))}/` +
+      `${money(percentile(items.map(item => item.gross), 0.9))} ` +
+      `${money(percentile(items.map(item => item.opening), 0.5))} ` +
+      `${percent(percentile(items.map(item => item.internationalShare), 0.5))} ` +
+      `${percentile(items.map(item => item.legs), 0.5).toFixed(2)} ` +
+      `${percent(rate(items, item => item.gross >= 500_000_000))} ` +
+      `${percent(rate(items, item => item.gross >= 1_000_000_000))}`,
+    );
+  }
+
+  const openingBuckets: NumericBucket[] = [
+    { label: "<$25M", minimum: 0, maximum: 25_000_000 },
+    { label: "$25–50M", minimum: 25_000_000, maximum: 50_000_000 },
+    { label: "$50–100M", minimum: 50_000_000, maximum: 100_000_000 },
+    { label: "$100–200M", minimum: 100_000_000, maximum: 200_000_000 },
+    { label: "$200–300M", minimum: 200_000_000, maximum: 300_000_000 },
+    { label: "$300–500M", minimum: 300_000_000, maximum: 500_000_000 },
+    { label: "$500M+", minimum: 500_000_000, maximum: Infinity },
+  ];
+  console.log("\nOpening-weekend distribution");
+  for (const bucket of openingBuckets) {
+    const items = observations.filter(item => inBucket(item.opening, bucket));
+    console.log(
+      `${bucket.label.padEnd(12)} ${String(items.length).padStart(7)} ` +
+      `${percent(items.length / observations.length).padStart(8)} | ` +
+      `event≥.10 ${percent(rate(items, item => item.eventIntensity >= 0.1))} | ` +
+      `gross median ${money(percentile(items.map(item => item.gross), 0.5))}`,
+    );
+  }
+
+  console.log("\nUpper-tail continuity ($100M slices)");
+  for (let minimum = 400_000_000; minimum < 2_000_000_000; minimum += 100_000_000) {
+    const maximum = minimum + 100_000_000;
+    const items = observations.filter(item => item.gross >= minimum && item.gross < maximum);
+    console.log(
+      `${money(minimum).padStart(9)}–${money(maximum).padEnd(9)} ` +
+      `${String(items.length).padStart(6)} ${percent(items.length / observations.length).padStart(8)} ` +
+      `event>0 ${percent(rate(items, item => item.eventIntensity > 0)).padStart(8)} ` +
+      `event≥.10 ${percent(rate(items, item => item.eventIntensity >= 0.1)).padStart(8)}`,
+    );
+  }
+}
+
 function main(): void {
   const count = parseCount();
   const seedArgument = process.argv.find((argument) => argument.startsWith("--seed="));
@@ -1297,6 +1522,24 @@ function main(): void {
       `Skilled optimizer vs heuristic AI: ${(skilled.critic - heuristic.critic).toFixed(1)} critic points, ` +
       `${money(skilled.gross - heuristic.gross)} average gross`,
     );
+  }
+  const liveSlateArgument = process.argv.find(argument =>
+    argument.startsWith("--live-slate-count="));
+  const liveSlateCount = Math.max(0, Math.floor(Number(
+    liveSlateArgument?.slice("--live-slate-count=".length) || 0,
+  )));
+  if (liveSlateCount > 0) {
+    const rng = createSeededRng(`${seed}:live-ai-upper-tail`);
+    const state: LiveSlateState = {
+      projectIndex: 0,
+      activeTentpoleDurations: liveStudioProfiles.map(() => []),
+    };
+    const observations: Observation[] = [];
+    for (let index = 0; index < liveSlateCount; index += 1) {
+      const generated = generateLiveAIPlan(rng, state);
+      observations.push(observePlan(generated.plan, rng, generated.isTentpole));
+    }
+    reportUpperTailDiagnostics(observations);
   }
 }
 
