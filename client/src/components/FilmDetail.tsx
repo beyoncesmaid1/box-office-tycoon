@@ -310,7 +310,7 @@ function WeeklyPerformanceTracker({
             <Calendar className="h-5 w-5" />
             {title}
           </CardTitle>
-          <div className="flex flex-wrap items-center gap-2 text-[11px]">
+          <div className="flex flex-nowrap items-center gap-2 whitespace-nowrap text-[11px]">
             <div className="flex items-center rounded-md border bg-muted/20 p-0.5">
               {(['weekend', 'weekly', 'daily'] as const).map(option => (
                 <button
@@ -332,7 +332,7 @@ function WeeklyPerformanceTracker({
             <Select value={territoryCode} onValueChange={setTerritoryCode}>
               <SelectTrigger
                 aria-label="Box office territory"
-                className="h-[31px] min-w-36 bg-muted/20 text-[11px]"
+                className="h-[31px] w-36 min-w-0 bg-muted/20 text-[11px]"
               >
                 <Globe className="mr-1 h-3.5 w-3.5" />
                 <SelectValue />
