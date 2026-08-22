@@ -87,12 +87,12 @@ function domesticGrossForFilmWeek(film: Film, weekIndex: number): number {
 function formatWeekendRange(week: number, year: number): string {
   const start = new Date(year, 0, 1 + (week - 1) * 7);
   const end = new Date(start);
-  end.setDate(start.getDate() + 6);
+  end.setDate(start.getDate() + 2);
   const startMonth = start.toLocaleDateString('en-US', { month: 'short' });
   const endMonth = end.toLocaleDateString('en-US', { month: 'short' });
   return startMonth === endMonth
-    ? `${startMonth} ${start.getDate()}-${end.getDate()}`
-    : `${startMonth} ${start.getDate()}-${endMonth} ${end.getDate()}`;
+    ? `${startMonth} ${start.getDate()}-${end.getDate()}, ${end.getFullYear()}`
+    : `${startMonth} ${start.getDate()}-${endMonth} ${end.getDate()}, ${end.getFullYear()}`;
 }
 
 function exactMoney(amount: number): string {
@@ -114,44 +114,53 @@ function WeeklyPerformanceTracker({
   ranks: Array<number | null>;
   theaterCounts: Array<number | null>;
 }) {
-  const domesticWeeks = weeklyData.map((worldwideGross, index) => {
-    const recordedDomestic = weeklyDomesticGross(weeklyByCountry[index]);
-    return recordedDomestic > 0
-      ? recordedDomestic
-      : Math.round(Number(worldwideGross || 0) * 0.4);
-  });
-  let domesticToDate = 0;
+  const displayedWeeks = weeklyData.map(gross => Number(gross || 0));
+  let grossToDate = 0;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <TrendingUp className="h-5 w-5" />
-          Weekend Performance
-          <span className="ml-1 text-sm font-normal text-muted-foreground">
-            ({weeklyData.length} week{weeklyData.length === 1 ? '' : 's'})
-          </span>
-        </CardTitle>
+    <Card className="overflow-hidden">
+      <CardHeader className="pb-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Weekend Box Office
+          </CardTitle>
+          <div className="flex flex-wrap items-center gap-2 text-[11px]">
+            <div className="flex items-center rounded-md border bg-muted/20 p-0.5">
+              <span className="rounded bg-primary px-3 py-1.5 font-medium text-primary-foreground">
+                Weekend
+              </span>
+              <span className="px-3 py-1.5 text-muted-foreground">Weekly</span>
+              <span className="px-3 py-1.5 text-muted-foreground">Daily</span>
+            </div>
+            <div className="h-6 w-px bg-border" />
+            <div className="flex min-w-36 items-center gap-2 rounded-md border bg-muted/20 px-3 py-1.5">
+              <Globe className="h-3.5 w-3.5" />
+              <span>Worldwide</span>
+              <span className="ml-auto text-muted-foreground">⌄</span>
+            </div>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto rounded-lg border">
+        <div className="overflow-x-auto">
           <table className="w-full min-w-[900px] border-collapse text-[13px] tabular-nums">
-            <thead className="bg-muted/35 text-[11px] uppercase tracking-wider text-muted-foreground">
+            <thead className="text-muted-foreground">
               <tr>
-                <th className="border-b px-4 py-3 text-left font-semibold text-foreground">Date</th>
-                <th className="border-b px-3 py-3 text-center font-semibold">Rank</th>
-                <th className="border-b px-3 py-3 text-right font-semibold text-foreground">Weekend</th>
-                <th className="border-b px-3 py-3 text-right font-semibold">%± LW</th>
-                <th className="border-b px-3 py-3 text-right font-semibold">Theaters</th>
-                <th className="border-b px-3 py-3 text-right font-semibold">Change</th>
-                <th className="border-b px-3 py-3 text-right font-semibold">Avg</th>
-                <th className="border-b px-3 py-3 text-right font-semibold text-foreground">To Date</th>
-                <th className="border-b px-4 py-3 text-right font-semibold">Wknd</th>
+                <th className="border-b px-2 py-2.5 text-left font-medium">Date</th>
+                <th className="border-b px-3 py-2.5 text-center font-medium">Rank</th>
+                <th className="border-b px-3 py-2.5 text-right font-medium">Weekend</th>
+                <th className="border-b px-3 py-2.5 text-right font-medium">%± LW</th>
+                <th className="border-b px-3 py-2.5 text-right font-medium">Theaters</th>
+                <th className="border-b px-3 py-2.5 text-right font-medium">Change</th>
+                <th className="border-b px-3 py-2.5 text-right font-medium">Avg</th>
+                <th className="border-b px-3 py-2.5 text-right font-medium">To Date</th>
+                <th className="border-b px-2 py-2.5 text-center font-medium">Week</th>
               </tr>
             </thead>
             <tbody>
-              {domesticWeeks.map((weekendGross, index) => {
-                const previousGross = index > 0 ? domesticWeeks[index - 1] : 0;
+              {displayedWeeks.map((weekendGross, index) => {
+                const previousGross = index > 0 ? displayedWeeks[index - 1] : 0;
                 const grossChange = index > 0 && previousGross > 0
                   ? ((weekendGross - previousGross) / previousGross) * 100
                   : null;
@@ -161,59 +170,47 @@ function WeeklyPerformanceTracker({
                   ? theaters - previousTheaters
                   : null;
                 const average = theaters && theaters > 0 ? weekendGross / theaters : null;
-                domesticToDate += weekendGross;
+                grossToDate += weekendGross;
                 const calendar = releaseWeek && releaseYear
                   ? releaseCalendarWeek(releaseWeek, releaseYear, index)
                   : null;
-                const rank = ranks[index] ?? null;
 
                 return (
-                  <tr
-                    key={index}
-                    className="even:bg-muted/10 hover:bg-muted/40 transition-colors"
-                  >
-                    <td className="whitespace-nowrap border-b px-4 py-2.5 font-medium">
+                  <tr key={index} className="hover:bg-muted/20 transition-colors">
+                    <td className="whitespace-nowrap border-b px-2 py-3 font-semibold text-primary">
                       {calendar ? formatWeekendRange(calendar.week, calendar.year) : `Weekend ${index + 1}`}
                     </td>
-                    <td className="border-b px-3 py-2.5 text-center">
-                      {rank === null ? '—' : (
-                        <span className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 font-display text-sm ${
-                          rank <= 3
-                            ? 'bg-foreground text-background'
-                            : 'bg-muted text-muted-foreground'
-                        }`}>
-                          {rank}
-                        </span>
-                      )}
+                    <td className="border-b px-3 py-3 text-center">
+                      {ranks[index] ?? '—'}
                     </td>
-                    <td className="whitespace-nowrap border-b px-3 py-2.5 text-right font-mono font-semibold">
+                    <td className="whitespace-nowrap border-b px-3 py-3 text-right font-mono font-semibold">
                       {exactMoney(weekendGross)}
                     </td>
-                    <td className={`whitespace-nowrap border-b px-3 py-2.5 text-right font-medium ${
+                    <td className={`whitespace-nowrap border-b px-3 py-3 text-right ${
                       grossChange === null
                         ? 'text-muted-foreground'
                         : grossChange >= 0 ? 'text-green-500' : 'text-red-500'
                     }`}>
                       {grossChange === null ? '—' : `${grossChange >= 0 ? '+' : ''}${grossChange.toFixed(1)}%`}
                     </td>
-                    <td className="whitespace-nowrap border-b px-3 py-2.5 text-right text-muted-foreground">
+                    <td className="whitespace-nowrap border-b px-3 py-3 text-right">
                       {theaters === null ? '—' : theaters.toLocaleString('en-US')}
                     </td>
-                    <td className={`whitespace-nowrap border-b px-3 py-2.5 text-right ${
+                    <td className={`whitespace-nowrap border-b px-3 py-3 text-right ${
                       theaterChange === null
                         ? 'text-muted-foreground'
                         : theaterChange >= 0 ? 'text-green-500' : 'text-red-500'
                     }`}>
                       {theaterChange === null ? '—' : `${theaterChange >= 0 ? '+' : ''}${theaterChange.toLocaleString('en-US')}`}
                     </td>
-                    <td className="whitespace-nowrap border-b px-3 py-2.5 text-right text-muted-foreground">
+                    <td className="whitespace-nowrap border-b px-3 py-3 text-right">
                       {average === null ? '—' : exactMoney(average)}
                     </td>
-                    <td className="whitespace-nowrap border-b px-3 py-2.5 text-right font-mono font-semibold">
-                      {exactMoney(domesticToDate)}
+                    <td className="whitespace-nowrap border-b px-3 py-3 text-right font-mono font-semibold">
+                      {exactMoney(grossToDate)}
                     </td>
-                    <td className="border-b px-4 py-2.5 text-right">
-                      <span className="text-muted-foreground">{index + 1}</span>
+                    <td className="border-b px-2 py-3 text-center">
+                      {index + 1}
                     </td>
                   </tr>
                 );
@@ -359,7 +356,9 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
         if (!candidate.releaseWeek || !candidate.releaseYear) return null;
         const candidateRelease = candidate.releaseYear * 52 + candidate.releaseWeek - 1;
         const candidateIndex = calendarWeek - candidateRelease;
-        const gross = domesticGrossForFilmWeek(candidate, candidateIndex);
+        const gross = candidateIndex >= 0 && candidateIndex < (candidate.weeklyBoxOffice?.length || 0)
+          ? Number(candidate.weeklyBoxOffice?.[candidateIndex] || 0)
+          : 0;
         return gross > 0 ? { id: candidate.id, gross } : null;
       }).filter((entry): entry is { id: string; gross: number } => entry !== null)
         .sort((left, right) => right.gross - left.gross);
