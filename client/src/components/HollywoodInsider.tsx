@@ -132,8 +132,14 @@ export function HollywoodInsider() {
           Math.floor(film.totalBoxOffice * 0.4); // Default 40% domestic
         const internationalGross = film.totalBoxOffice - domesticGross;
         
-        // Use totalBudget which includes all production costs + marketing budget from film
-        const investmentBudget = (film.totalBudget || 0) + (film.marketingBudget || 0);
+        // Match the financial-performance page: totalBudget is assembled
+        // differently by older saves, so calculate the actual cost components
+        // directly and add marketing once.
+        const productionInvestment = (film.productionBudget || 0) +
+          (film.setsBudget || 0) + (film.costumesBudget || 0) + (film.stuntsBudget || 0) +
+          (film.makeupBudget || 0) + (film.practicalEffectsBudget || 0) +
+          (film.soundCrewBudget || 0) + (film.talentBudget || 0);
+        const investmentBudget = productionInvestment + (film.marketingBudget || 0);
         
         // Studios get 70% of box office revenue
         const studioRevenue = film.totalBoxOffice * 0.7;

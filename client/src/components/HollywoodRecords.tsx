@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import {
   ArrowUpRight,
@@ -17,8 +17,16 @@ import {
   Star,
   Trophy,
   Users,
+  type LucideIcon,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { genreLabels } from '@/lib/gameState';
 import { getGenrePoster } from '@/lib/genrePosters';
 import type { Film } from '@shared/schema';
@@ -40,11 +48,30 @@ interface HollywoodRecordsProps {
   films: HollywoodRecordFilm[];
 }
 
+interface RecordEntry {
+  film: HollywoodRecordFilm;
+  value: number;
+  display: string;
+}
+
+interface RecordCategory {
+  key: string;
+  label: string;
+  description: string;
+  entries: RecordEntry[];
+  icon: LucideIcon;
+  color: string;
+}
+
 function compactMoney(amount: number): string {
   if (amount >= 1_000_000_000) return `$${(amount / 1_000_000_000).toFixed(2)}B`;
   if (amount >= 1_000_000) return `$${(amount / 1_000_000).toFixed(1)}M`;
   if (amount >= 1_000) return `$${Math.round(amount / 1_000)}K`;
   return `$${Math.round(amount).toLocaleString('en-US')}`;
+}
+
+function profitMoney(amount: number): string {
+  return `${amount >= 0 ? '+' : '-'}${compactMoney(Math.abs(amount))}`;
 }
 
 function audienceScore100(film: Film): number {
@@ -83,6 +110,7 @@ function FilmLink({ film, className = '' }: { film: HollywoodRecordFilm; classNa
 }
 
 export function HollywoodRecords({ films }: HollywoodRecordsProps) {
+  const [selectedRecordKey, setSelectedRecordKey] = useState<string | null>(null);
   const data = useMemo(() => {
     const byWorldwide = [...films].sort((a, b) => b.worldwideGross - a.worldwideGross);
     const byDomestic = [...films].sort((a, b) => b.domesticGross - a.domesticGross);
@@ -112,54 +140,82 @@ export function HollywoodRecords({ films }: HollywoodRecordsProps) {
     const genreChampions = Array.from(genreMap.entries())
       .sort(([, filmA], [, filmB]) => filmB.worldwideGross - filmA.worldwideGross);
 
+    const holders: RecordCategory[] = [
+      {
+        key: 'opening-weekend',
+        label: 'Opening Weekend',
+        description: 'The largest worldwide Friday-through-Sunday openings.',
+        entries: byOpening.map(({ film, value }) => ({ film, value, display: compactMoney(value) })),
+        icon: Rocket,
+        color: 'text-orange-400',
+      },
+      {
+        key: 'domestic-gross',
+        label: 'Domestic Gross',
+        description: 'The highest North American theatrical grosses.',
+        entries: byDomestic.map(film => ({
+          film,
+          value: film.domesticGross,
+          display: compactMoney(film.domesticGross),
+        })),
+        icon: Landmark,
+        color: 'text-blue-400',
+      },
+      {
+        key: 'international-gross',
+        label: 'International Gross',
+        description: 'The highest theatrical grosses outside North America.',
+        entries: byInternational.map(film => ({
+          film,
+          value: film.internationalGross,
+          display: compactMoney(film.internationalGross),
+        })),
+        icon: Globe2,
+        color: 'text-emerald-400',
+      },
+      {
+        key: 'audience-score',
+        label: 'Audience Favorite',
+        description: 'The highest audience scores, with worldwide gross breaking ties.',
+        entries: byAudience.map(film => ({
+          film,
+          value: audienceScore100(film),
+          display: `${Math.round(audienceScore100(film))}%`,
+        })),
+        icon: Users,
+        color: 'text-rose-400',
+      },
+      {
+        key: 'critic-score',
+        label: "Critics' Pick",
+        description: 'The highest critic scores, with worldwide gross breaking ties.',
+        entries: byCritics.map(film => ({
+          film,
+          value: film.criticScore,
+          display: `${film.criticScore}%`,
+        })),
+        icon: Star,
+        color: 'text-violet-400',
+      },
+      {
+        key: 'theatrical-profit',
+        label: 'Highest Theatrical Profit',
+        description: 'Studio theatrical revenue (70% of worldwide gross) minus production, departments, talent, and marketing.',
+        entries: byProfit.map(film => ({
+          film,
+          value: film.profit,
+          display: profitMoney(film.profit),
+        })),
+        icon: CircleDollarSign,
+        color: 'text-amber-400',
+      },
+    ];
+
     return {
       byWorldwide,
       yearlyChampions,
       genreChampions,
-      holders: [
-        {
-          label: 'Opening Weekend',
-          film: byOpening[0]?.film,
-          display: compactMoney(byOpening[0]?.value || 0),
-          icon: Rocket,
-          color: 'text-orange-400',
-        },
-        {
-          label: 'Domestic Gross',
-          film: byDomestic[0],
-          display: compactMoney(byDomestic[0]?.domesticGross || 0),
-          icon: Landmark,
-          color: 'text-blue-400',
-        },
-        {
-          label: 'International Gross',
-          film: byInternational[0],
-          display: compactMoney(byInternational[0]?.internationalGross || 0),
-          icon: Globe2,
-          color: 'text-emerald-400',
-        },
-        {
-          label: 'Audience Favorite',
-          film: byAudience[0],
-          display: byAudience[0] ? `${Math.round(audienceScore100(byAudience[0]))}%` : '—',
-          icon: Users,
-          color: 'text-rose-400',
-        },
-        {
-          label: "Critics' Pick",
-          film: byCritics[0],
-          display: byCritics[0] ? `${byCritics[0].criticScore}%` : '—',
-          icon: Star,
-          color: 'text-violet-400',
-        },
-        {
-          label: 'Biggest Profit',
-          film: byProfit[0],
-          display: compactMoney(byProfit[0]?.profit || 0),
-          icon: CircleDollarSign,
-          color: 'text-amber-400',
-        },
-      ],
+      holders,
     };
   }, [films]);
 
@@ -180,6 +236,8 @@ export function HollywoodRecords({ films }: HollywoodRecordsProps) {
     millions,
     count: films.filter(film => film.worldwideGross >= millions * 1_000_000).length,
   }));
+  const selectedRecord = data.holders.find(holder => holder.key === selectedRecordKey) || null;
+  const SelectedRecordIcon = selectedRecord?.icon;
 
   return (
     <div className="space-y-5">
@@ -221,12 +279,14 @@ export function HollywoodRecords({ films }: HollywoodRecordsProps) {
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {data.holders.map(holder => {
           const Icon = holder.icon;
-          if (!holder.film) return null;
+          const leader = holder.entries[0];
+          if (!leader) return null;
           return (
-            <Link
+            <button
+              type="button"
               key={holder.label}
-              href={`/film/${holder.film.id}`}
-              className="group rounded-xl border border-border/80 bg-card/65 p-4 transition-all hover:-translate-y-0.5 hover:border-amber-500/30 hover:bg-card hover:shadow-lg hover:shadow-black/10"
+              onClick={() => setSelectedRecordKey(holder.key)}
+              className="group rounded-xl border border-border/80 bg-card/65 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-amber-500/30 hover:bg-card hover:shadow-lg hover:shadow-black/10"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className={`rounded-lg bg-muted/70 p-2.5 ${holder.color}`}>
@@ -235,9 +295,9 @@ export function HollywoodRecords({ films }: HollywoodRecordsProps) {
                 <ChevronRight className="h-4 w-4 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5 group-hover:text-amber-400" />
               </div>
               <p className="mt-4 text-xs font-medium uppercase tracking-wider text-muted-foreground">{holder.label}</p>
-              <p className="mt-1 text-2xl font-bold tracking-tight">{holder.display}</p>
-              <p className="mt-1 truncate text-sm text-muted-foreground group-hover:text-foreground">{holder.film.title}</p>
-            </Link>
+              <p className="mt-1 text-2xl font-bold tracking-tight">{leader.display}</p>
+              <p className="mt-1 truncate text-sm text-muted-foreground group-hover:text-foreground">{leader.film.title}</p>
+            </button>
           );
         })}
       </section>
@@ -351,6 +411,65 @@ export function HollywoodRecords({ films }: HollywoodRecordsProps) {
           ))}
         </div>
       </section>
+
+      <Dialog
+        open={selectedRecord !== null}
+        onOpenChange={open => {
+          if (!open) setSelectedRecordKey(null);
+        }}
+      >
+        <DialogContent className="max-h-[88vh] max-w-3xl overflow-hidden border-border bg-background p-0">
+          {selectedRecord && (
+            <>
+              <DialogHeader className="border-b border-border bg-gradient-to-r from-amber-500/10 to-transparent px-6 py-5 pr-12">
+                <DialogTitle className="flex items-center gap-3 text-xl">
+                  {SelectedRecordIcon && (
+                    <span className={`rounded-lg bg-muted p-2 ${selectedRecord.color}`}>
+                      <SelectedRecordIcon className="h-5 w-5" />
+                    </span>
+                  )}
+                  Top 10: {selectedRecord.label}
+                </DialogTitle>
+                <DialogDescription>{selectedRecord.description}</DialogDescription>
+              </DialogHeader>
+              <div className="max-h-[68vh] divide-y divide-border/70 overflow-y-auto sleek-scrollbar">
+                {selectedRecord.entries.slice(0, 10).map((entry, index) => (
+                  <Link
+                    key={entry.film.id}
+                    href={`/film/${entry.film.id}`}
+                    onClick={() => setSelectedRecordKey(null)}
+                    className="group grid grid-cols-[2.25rem_2.5rem_1fr_auto] items-center gap-3 px-5 py-3 transition-colors hover:bg-muted/45"
+                  >
+                    <span className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
+                      index === 0 ? 'bg-amber-400 text-black' :
+                      index === 1 ? 'bg-slate-300 text-slate-900' :
+                      index === 2 ? 'bg-orange-700 text-orange-50' :
+                      'bg-muted text-muted-foreground'
+                    }`}>
+                      {index + 1}
+                    </span>
+                    <img
+                      src={entry.film.posterUrl || getGenrePoster(entry.film.genre)}
+                      alt=""
+                      className="h-10 w-7 rounded object-cover"
+                    />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold group-hover:text-amber-400">{entry.film.title}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {entry.film.studioName} · {entry.film.releaseYear}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold tabular-nums">{entry.display}</p>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">View film</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
