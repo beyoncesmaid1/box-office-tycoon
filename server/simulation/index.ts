@@ -14,6 +14,12 @@ export {
 export { simulateFilmQuality } from "./quality";
 export { simulateBoxOffice } from "./box-office";
 export {
+  allocateTerritoryAudienceMarket,
+  type TerritoryAudienceAllocation,
+  type TerritoryAudienceCandidate,
+  type TerritoryAudienceMarketResult,
+} from "./audience-market";
+export {
   calculateCompetitionPressure,
   type CompetitionRival,
   type CompetitionTarget,
@@ -34,6 +40,7 @@ export {
 export {
   allocatePremiumFormat,
   calculateTerritoryTheaterCount,
+  calculateTerritoryRegularCapacityAdmissions,
   calculatePremiumSuitability,
   estimatePremiumFormatDemand,
   simulateTerritoryWeek,

@@ -115,6 +115,8 @@ export interface CampaignBalanceConfig {
 export interface ExhibitionBalanceConfig {
   productionScaleHalfSaturation: number;
   openingAddressableAdmissionsDomestic: number;
+  /** Soft total weekly moviegoing audience in North America before event expansion. */
+  weeklyAudienceAdmissionsDomestic: number;
   productionDemandFloor: number;
   retentionBase: number;
   eventThreshold: number;
@@ -281,6 +283,7 @@ export const DEFAULT_SIMULATION_CONFIG: SimulationBalanceConfig = {
   exhibition: {
     productionScaleHalfSaturation: 0.75,
     openingAddressableAdmissionsDomestic: 72_900_000, // Provisional +35% working baseline.
+    weeklyAudienceAdmissionsDomestic: 18_500_000,
     productionDemandFloor: 0.62,
     retentionBase: 0.51,
     eventThreshold: 67,

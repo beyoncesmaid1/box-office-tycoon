@@ -72,7 +72,7 @@ export function calculateTerritoryTheaterCount(input: TheaterAllocationInput): n
     clamp(input.launchHook) * 0.1 +
     clamp(input.blockbusterDeployment ?? 0, 0, 1) * 100 * 0.08 +
     eventStrength * 0.05 +
-    (100 - clamp(input.competition)) * 0.02;
+    2;
   const openingProgress = smoothstep((openingStrength - 18) / 72);
   const strategicOpening = profile.minimum +
     (profile.maximum - profile.minimum) * openingProgress;
@@ -155,6 +155,19 @@ export function calculateTerritoryTheaterCount(input: TheaterAllocationInput): n
     Math.max(profile.minimum, maximumWeeklyContraction),
     Math.min(profile.maximum, maximumExpansion),
   ));
+}
+
+/** Converts a booked theater count into the existing regular-format physical
+ * admissions supply. Market allocation happens before this cap is applied. */
+export function calculateTerritoryRegularCapacityAdmissions(
+  territoryCode: string,
+  theaterCount: number,
+  fullMarketAdmissions: number,
+): number {
+  const profile = THEATER_MARKET_PROFILES[territoryCode] ??
+    THEATER_MARKET_PROFILES.OTHER;
+  const coverage = clamp(theaterCount / profile.maximum, 0, 1);
+  return Math.max(0, fullMarketAdmissions) * coverage;
 }
 
 const normalizedGenre = (genre: string): string =>
@@ -397,8 +410,6 @@ export function simulateTerritoryWeek(input: TerritoryWeekInput): TerritoryWeekR
   const interest = clamp(input.campaign.interest) / 100;
   const appeal = clamp(input.commercialAppeal) / 100;
   const timing = 0.82 + clamp(input.releaseTiming) / 100 * 0.36;
-  const competitionOpportunity = 1 -
-    clamp(input.competition) / 100 * 0.68;
   const productionScale = clamp(input.productionScale) / 100;
   const launchHook = clamp(input.launchHook) / 100;
   const marketScale = Math.max(0.005, input.territoryMarketShare / 0.35);
@@ -416,7 +427,7 @@ export function simulateTerritoryWeek(input: TerritoryWeekInput): TerritoryWeekR
     Math.max(0.18, productionScale),
     Math.max(0.18, launchHook),
     clamp(timing / 1.18, 0.2, 1),
-    clamp(competitionOpportunity, 0.2, 1),
+    1,
     premiumReadiness,
     globalAccessibility,
   ]) * 100);
@@ -483,7 +494,6 @@ export function simulateTerritoryWeek(input: TerritoryWeekInput): TerritoryWeekR
     (BALANCE.productionDemandFloor +
       productionScale * (1 - BALANCE.productionDemandFloor)) *
     timing *
-    competitionOpportunity *
     eventDemandMultiplier *
     variance;
 
@@ -506,13 +516,8 @@ export function simulateTerritoryWeek(input: TerritoryWeekInput): TerritoryWeekR
   );
   const previousAdmissions = Math.max(0, input.previousWeekGross ?? 0) /
     Math.max(1, input.baseTicketPrice * 1.08);
-  // Once a film is open, competition remains capable of moving the run in a
-  // meaningful way. The old blend limited even maximum pressure to roughly
-  // an 11% effect, which made tentpoles largely ignore one another.
-  const holdoverCompetitionMultiplier = 1 -
-    clamp(input.competition) / 100 * 0.52;
   const weeklyDemandMomentum = clamp(
-    variance * timing * holdoverCompetitionMultiplier,
+    variance * timing,
     0.6,
     1.45,
   );
@@ -522,11 +527,18 @@ export function simulateTerritoryWeek(input: TerritoryWeekInput): TerritoryWeekR
   const discoveryDecay = Math.exp(-Math.max(0, input.weekNumber - 1) / 8);
   const organicDiscoveryDemand = openingAddressableAdmissions *
     BALANCE.phenomenonDiscoveryShare * phenomenonIntensity * discoveryDecay *
-    (0.45 + awareness * 0.35 + interest * 0.2) *
-    holdoverCompetitionMultiplier;
-  const totalDemandAdmissions = input.weekNumber === 0
+    (0.45 + awareness * 0.35 + interest * 0.2);
+  const unconstrainedDemandAdmissions = input.weekNumber === 0
     ? openingDemand
     : holdoverDemand + organicDiscoveryDemand;
+  const requestedMarketAllocation = Number(input.marketAllocatedAdmissions);
+  const marketAllocatedAdmissions = Number.isFinite(requestedMarketAllocation)
+    ? Math.min(
+      unconstrainedDemandAdmissions,
+      Math.max(0, requestedMarketAllocation),
+    )
+    : unconstrainedDemandAdmissions;
+  const totalDemandAdmissions = marketAllocatedAdmissions;
 
   const formatDemand = estimatePremiumFormatDemand(
     totalDemandAdmissions,
@@ -565,6 +577,8 @@ export function simulateTerritoryWeek(input: TerritoryWeekInput): TerritoryWeekR
     regularGross: Math.round(regularGross),
     imaxGross: Math.round(imaxGross),
     dolbyGross: Math.round(dolbyGross),
+    unconstrainedDemandAdmissions,
+    marketAllocatedAdmissions,
     totalDemandAdmissions,
     regularDemandAdmissions: regularDemand,
     imaxDemandAdmissions: formatDemand.imax,

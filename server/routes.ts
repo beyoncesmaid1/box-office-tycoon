@@ -56,10 +56,12 @@ import {
   DEFAULT_SIMULATION_CONFIG,
   advanceCampaignWeek,
   allocatePremiumFormat,
+  allocateTerritoryAudienceMarket,
   applyCampaignAction,
   calculatePremiumSuitability,
   calculateCompetitionPressure,
   calculateTerritoryTheaterCount,
+  calculateTerritoryRegularCapacityAdmissions,
   chooseAIReleaseDate,
   createInitialCampaignState,
   createSeededRng,
@@ -3377,6 +3379,418 @@ async function calculateHistoricalTerritoryRun(
   };
 }
 
+type HistoricalMarketRun = Awaited<ReturnType<typeof calculateHistoricalTerritoryRun>>;
+
+/**
+ * Preload every released film on one calendar. This is deliberately a two-pass
+ * market: films first express natural demand, then share a finite territory
+ * audience and premium-format supply, and only then hit their booked capacity.
+ */
+async function calculateHistoricalMarketRuns(
+  films: Film[],
+  talentPool: Awaited<ReturnType<typeof storage.getAllTalent>>,
+): Promise<Map<string, HistoricalMarketRun>> {
+  type HistoricalState = {
+    film: Film;
+    releaseAbsolute: number;
+    genreBalance: ReturnType<typeof resolveGenre>;
+    productionScale: number;
+    blockbusterDeployment: number;
+    launchHook: number;
+    imaxSuitability: number;
+    dolbySuitability: number;
+    campaigns: Map<string, TerritoryCampaignState>;
+    openingExpectations: Map<string, number>;
+    previousGrosses: Map<string, number>;
+    previousTheaterCounts: Map<string, number>;
+    theaterHistories: Map<string, number[]>;
+    weeklyGrosses: number[];
+    peakEventPotential: number;
+    peakEventIntensity: number;
+    peakPhenomenonPotential: number;
+    peakPhenomenonIntensity: number;
+    openingCompetition: number;
+    openingReleaseTiming: number;
+  };
+
+  const schedule: Array<{ weeksFromRelease: number; action: CampaignActionKind; share: number }> = [
+    { weeksFromRelease: 14, action: "teaser", share: 0.12 },
+    { weeksFromRelease: 8, action: "broad-awareness", share: 0.28 },
+    { weeksFromRelease: 3, action: "publicity", share: 0.18 },
+    { weeksFromRelease: 1, action: "opening-blitz", share: 0.32 },
+  ];
+
+  const states: HistoricalState[] = await Promise.all(films.map(async film => {
+    const genreBalance = resolveGenre(film.genre);
+    const productionScale = Math.min(100,
+      100 * (1 - Math.exp(-(film.productionBudget || 0) /
+        Math.max(1, genreBalance.viableBudget *
+          DEFAULT_SIMULATION_CONFIG.exhibition.productionScaleHalfSaturation))));
+    const campaigns = new Map<string, TerritoryCampaignState>();
+    const openingExpectations = new Map<string, number>();
+    for (const territory of BOX_OFFICE_COUNTRIES) {
+      let campaign = createInitialCampaignState(
+        Math.max(6, genreBalance.baseCommercialAppeal * 0.2),
+        Math.max(8, genreBalance.baseCommercialAppeal * 0.17),
+        52,
+      );
+      const countryName = getCountryName(territory.code) || territory.code;
+      const territoryFit = GENRE_TERRITORY_FACTORS[film.genre.toLowerCase()]?.[countryName] ?? 1;
+      let previousWeeksFromRelease = 16;
+      for (const scheduled of schedule) {
+        for (let week = previousWeeksFromRelease; week > scheduled.weeksFromRelease; week -= 1) {
+          campaign = advanceCampaignWeek(campaign, { isReleased: false });
+        }
+        campaign = applyCampaignAction({
+          state: campaign,
+          action: scheduled.action,
+          spend: (film.marketingBudget || 0) * scheduled.share * territory.percentage,
+          territoryMarketShare: territory.percentage,
+          territoryFit,
+          targetingFit: 0.92,
+          weeksFromRelease: scheduled.weeksFromRelease,
+          creativeStrength: Math.max(20, Math.min(100,
+            ((film.scriptQuality || 50) + (film.cinematographyQuality || 50)) / 2)),
+        }, createSeededRng(
+          `historical-campaign:${film.id}:${territory.code}:${scheduled.action}`,
+        )).state;
+        previousWeeksFromRelease = scheduled.weeksFromRelease;
+      }
+      campaigns.set(territory.code, campaign);
+      openingExpectations.set(territory.code, campaign.expectation);
+    }
+    const premiumProfile = await calculateFilmPremiumProfile(film, talentPool);
+    return {
+      film,
+      releaseAbsolute: absoluteWeek(film.releaseWeek || 1, film.releaseYear || 2025),
+      genreBalance,
+      productionScale,
+      blockbusterDeployment: getBlockbusterScale(film.productionBudget || 0),
+      launchHook: talentLaunchHook(film, talentPool),
+      imaxSuitability: premiumProfile.imaxSuitability,
+      dolbySuitability: premiumProfile.dolbySuitability,
+      campaigns,
+      openingExpectations,
+      previousGrosses: new Map<string, number>(),
+      previousTheaterCounts: new Map<string, number>(),
+      theaterHistories: new Map<string, number[]>(
+        BOX_OFFICE_COUNTRIES.map(territory => [territory.code, []]),
+      ),
+      weeklyGrosses: [],
+      peakEventPotential: 0,
+      peakEventIntensity: 0,
+      peakPhenomenonPotential: 0,
+      peakPhenomenonIntensity: 0,
+      openingCompetition: 0,
+      openingReleaseTiming: 52,
+    } satisfies HistoricalState;
+  }));
+
+  if (states.length === 0) return new Map();
+  const firstCalendar = Math.min(...states.map(state => state.releaseAbsolute));
+  const lastCalendar = Math.max(...states.map(state => state.releaseAbsolute + 15));
+
+  type HistoricalContext = {
+    state: HistoricalState;
+    territoryCode: string;
+    weekNumber: number;
+    competition: number;
+    releaseTiming: number;
+    campaign: TerritoryCampaignState;
+    openingExpectation: number;
+    previousWeekGross: number;
+    demandVariance: number;
+    preliminaryDemand: number;
+    preliminaryImaxDemand: number;
+    preliminaryDolbyDemand: number;
+    preliminaryEventIntensity: number;
+    preliminaryPhenomenonIntensity: number;
+    marketAllocatedAdmissions: number;
+    regularCapacityAdmissions: number;
+  };
+
+  for (let calendar = firstCalendar; calendar <= lastCalendar; calendar += 1) {
+    const active = states.filter(state => {
+      const age = calendar - state.releaseAbsolute;
+      return age >= 0 && age < 16;
+    });
+    if (active.length === 0) continue;
+    const calendarWeek = ((calendar - 1) % 52) + 1;
+    const calendarYear = Math.floor((calendar - 1) / 52);
+    const weeklyTotals = new Map(active.map(state => [state.film.id, 0]));
+    const contexts: HistoricalContext[] = [];
+
+    for (const state of active) {
+      const weekNumber = calendar - state.releaseAbsolute;
+      const rivals = active
+        .filter(other => other.film.id !== state.film.id)
+        .map(other => ({
+          genre: other.film.genre,
+          isOpening: calendar === other.releaseAbsolute,
+          weeksInRelease: calendar - other.releaseAbsolute,
+          previousWeekGross: other.previousGrosses.get("NA") || 0,
+          territoryMarketShare: 0.35,
+          awareness: other.campaigns.get("NA")?.awareness || 58,
+          interest: other.campaigns.get("NA")?.interest || 62,
+          commercialAppeal: other.genreBalance.baseCommercialAppeal,
+          launchHook: other.launchHook,
+          blockbusterDeployment: other.blockbusterDeployment,
+          marketingBudget: other.film.marketingBudget || 0,
+          eventIntensity: other.peakEventIntensity,
+        }));
+      const competition = calculateCompetitionPressure(
+        { genre: state.film.genre },
+        rivals,
+      );
+      const holidayFit = getGenreHolidayModifier(calendarWeek, state.film.genre);
+      const releaseTiming = Math.max(0, Math.min(100,
+        52 + (holidayFit - 1) * 62));
+      if (weekNumber === 0) {
+        state.openingCompetition = competition;
+        state.openingReleaseTiming = releaseTiming;
+      }
+      const globalDemandVariance = Math.exp(
+        0.13 * normal(createSeededRng(
+          `historical-weekly-demand:${state.film.id}:${calendarYear}:${calendarWeek}`,
+        )) - (0.13 ** 2) / 2,
+      );
+
+      for (const territory of BOX_OFFICE_COUNTRIES) {
+        const exhibition = getTerritoryExhibitionProfile(territory.code);
+        const campaign = state.campaigns.get(territory.code)!;
+        const openingExpectation = state.openingExpectations.get(territory.code) ??
+          campaign.expectation;
+        const previousWeekGross = state.previousGrosses.get(territory.code) || 0;
+        const demandVariance = globalDemandVariance * Math.exp(
+          0.07 * normal(createSeededRng(
+            `historical-demand:${state.film.id}:${territory.code}:${calendarYear}:${calendarWeek}`,
+          )) - (0.07 ** 2) / 2,
+        );
+        const preliminary = simulateTerritoryWeek({
+          territoryCode: territory.code,
+          territoryMarketShare: territory.percentage,
+          genre: state.film.genre,
+          productionScale: state.productionScale,
+          blockbusterDeployment: state.blockbusterDeployment,
+          commercialAppeal: state.genreBalance.baseCommercialAppeal,
+          launchHook: state.launchHook,
+          releaseTiming,
+          competition,
+          audienceExperience: intrinsicAudienceExperience(state.film),
+          campaign,
+          openingExpectation,
+          weekNumber,
+          previousWeekGross,
+          baseTicketPrice: exhibition.baseTicketPrice,
+          imaxTicketPrice: exhibition.imaxTicketPrice,
+          dolbyTicketPrice: exhibition.dolbyTicketPrice,
+          regularCapacityAdmissions: Number.MAX_SAFE_INTEGER,
+          imaxAllocationAdmissions: Number.MAX_SAFE_INTEGER,
+          dolbyAllocationAdmissions: Number.MAX_SAFE_INTEGER,
+          imaxSuitability: state.imaxSuitability,
+          dolbySuitability: state.dolbySuitability,
+          demandVariance,
+        });
+        contexts.push({
+          state,
+          territoryCode: territory.code,
+          weekNumber,
+          competition,
+          releaseTiming,
+          campaign,
+          openingExpectation,
+          previousWeekGross,
+          demandVariance,
+          preliminaryDemand: preliminary.unconstrainedDemandAdmissions,
+          preliminaryImaxDemand: preliminary.imaxDemandAdmissions,
+          preliminaryDolbyDemand: preliminary.dolbyDemandAdmissions,
+          preliminaryEventIntensity: preliminary.eventIntensity,
+          preliminaryPhenomenonIntensity: preliminary.phenomenonIntensity,
+          marketAllocatedAdmissions: preliminary.unconstrainedDemandAdmissions,
+          regularCapacityAdmissions: exhibition.regularOpeningAdmissions,
+        });
+      }
+    }
+
+    for (const territory of BOX_OFFICE_COUNTRIES) {
+      const territoryContexts = contexts.filter(context =>
+        context.territoryCode === territory.code);
+      if (territoryContexts.length === 0) continue;
+      const exhibition = getTerritoryExhibitionProfile(territory.code);
+      const audienceMarket = allocateTerritoryAudienceMarket({
+        territoryCode: territory.code,
+        territoryMarketShare: territory.percentage,
+        candidates: territoryContexts.map(context => ({
+          filmId: context.state.film.id,
+          genre: context.state.film.genre,
+          unconstrainedDemandAdmissions: context.preliminaryDemand,
+          eventIntensity: context.preliminaryEventIntensity,
+          releaseTiming: context.releaseTiming,
+          isOpeningWeek: context.weekNumber === 0,
+        })),
+      });
+      for (const allocation of audienceMarket.allocations) {
+        const context = territoryContexts.find(candidate =>
+          candidate.state.film.id === allocation.filmId)!;
+        context.marketAllocatedAdmissions = allocation.allocatedAdmissions;
+        const estimatedGross = allocation.allocatedAdmissions *
+          (exhibition.baseTicketPrice * 0.78 +
+            exhibition.imaxTicketPrice * 0.12 +
+            exhibition.dolbyTicketPrice * 0.1);
+        const bookedTheaters = context.weekNumber === 0
+          ? calculateTerritoryTheaterCount({
+            territoryCode: territory.code,
+            weekNumber: context.weekNumber,
+            currentGross: estimatedGross,
+            previousGross: context.previousWeekGross,
+            previousTheaterCount: 0,
+            awareness: context.campaign.awareness,
+            interest: context.campaign.interest,
+            commercialAppeal: context.state.genreBalance.baseCommercialAppeal,
+            launchHook: context.state.launchHook,
+            competition: 0,
+            blockbusterDeployment: context.state.blockbusterDeployment,
+            eventIntensity: context.preliminaryEventIntensity,
+            phenomenonIntensity: context.preliminaryPhenomenonIntensity,
+          })
+          : context.state.previousTheaterCounts.get(territory.code) || 0;
+        context.regularCapacityAdmissions = calculateTerritoryRegularCapacityAdmissions(
+          territory.code,
+          bookedTheaters,
+          exhibition.regularOpeningAdmissions,
+        );
+      }
+
+      const premiumAllocations = new Map<string, { imax: number; dolby: number }>(
+        territoryContexts.map(context => [context.state.film.id, { imax: 0, dolby: 0 }]),
+      );
+      for (const format of ["imax", "dolby"] as const) {
+        const allocations = allocatePremiumFormat({
+          format,
+          territorySupply: format === "imax"
+            ? exhibition.imaxAdmissions
+            : exhibition.dolbyAdmissions,
+          candidates: territoryContexts.map(context => ({
+            filmId: context.state.film.id,
+            formatDemand: (format === "imax"
+              ? context.preliminaryImaxDemand
+              : context.preliminaryDolbyDemand) *
+              (context.preliminaryDemand > 0
+                ? context.marketAllocatedAdmissions / context.preliminaryDemand
+                : 0),
+            suitability: format === "imax"
+              ? context.state.imaxSuitability
+              : context.state.dolbySuitability,
+            accessLevel: "standard" as PremiumAccessLevel,
+            isOpeningWeek: context.weekNumber === 0,
+          })),
+        });
+        for (const allocation of allocations) {
+          premiumAllocations.get(allocation.filmId)![format] =
+            allocation.allocatedAdmissions;
+        }
+      }
+
+      for (const context of territoryContexts) {
+        const state = context.state;
+        const premium = premiumAllocations.get(state.film.id)!;
+        const result = simulateTerritoryWeek({
+          territoryCode: territory.code,
+          territoryMarketShare: territory.percentage,
+          genre: state.film.genre,
+          productionScale: state.productionScale,
+          blockbusterDeployment: state.blockbusterDeployment,
+          commercialAppeal: state.genreBalance.baseCommercialAppeal,
+          launchHook: state.launchHook,
+          releaseTiming: context.releaseTiming,
+          competition: context.competition,
+          audienceExperience: intrinsicAudienceExperience(state.film),
+          campaign: context.campaign,
+          openingExpectation: context.openingExpectation,
+          weekNumber: context.weekNumber,
+          previousWeekGross: context.previousWeekGross,
+          baseTicketPrice: exhibition.baseTicketPrice,
+          imaxTicketPrice: exhibition.imaxTicketPrice,
+          dolbyTicketPrice: exhibition.dolbyTicketPrice,
+          regularCapacityAdmissions: context.regularCapacityAdmissions,
+          imaxAllocationAdmissions: premium.imax,
+          dolbyAllocationAdmissions: premium.dolby,
+          imaxSuitability: state.imaxSuitability,
+          dolbySuitability: state.dolbySuitability,
+          demandVariance: context.demandVariance,
+          marketAllocatedAdmissions: context.marketAllocatedAdmissions,
+        });
+        weeklyTotals.set(state.film.id,
+          (weeklyTotals.get(state.film.id) || 0) + result.gross);
+        state.peakEventPotential = Math.max(state.peakEventPotential, result.eventPotential);
+        state.peakEventIntensity = Math.max(state.peakEventIntensity, result.eventIntensity);
+        state.peakPhenomenonPotential = Math.max(
+          state.peakPhenomenonPotential,
+          result.phenomenonPotential,
+        );
+        state.peakPhenomenonIntensity = Math.max(
+          state.peakPhenomenonIntensity,
+          result.phenomenonIntensity,
+        );
+        const theaterCount = calculateTerritoryTheaterCount({
+          territoryCode: territory.code,
+          weekNumber: context.weekNumber,
+          currentGross: result.gross,
+          previousGross: context.previousWeekGross,
+          previousTheaterCount: state.previousTheaterCounts.get(territory.code) || 0,
+          awareness: context.campaign.awareness,
+          interest: context.campaign.interest,
+          commercialAppeal: state.genreBalance.baseCommercialAppeal,
+          launchHook: state.launchHook,
+          competition: 0,
+          blockbusterDeployment: state.blockbusterDeployment,
+          eventIntensity: result.eventIntensity,
+          phenomenonIntensity: result.phenomenonIntensity,
+        });
+        state.theaterHistories.get(territory.code)!.push(theaterCount);
+        state.previousTheaterCounts.set(territory.code, theaterCount);
+        state.previousGrosses.set(territory.code, result.gross);
+        state.campaigns.set(territory.code, advanceCampaignWeek(context.campaign, {
+          isReleased: true,
+          audienceExperience: intrinsicAudienceExperience(state.film),
+          openingExpectation: context.openingExpectation,
+          criticScore: state.film.criticScore || 0,
+        }));
+      }
+    }
+
+    for (const state of active) {
+      state.weeklyGrosses.push(weeklyTotals.get(state.film.id) || 0);
+    }
+  }
+
+  return new Map(states.map(state => {
+    const totalGross = state.weeklyGrosses.reduce((sum, gross) => sum + gross, 0);
+    const openingWeekend = state.weeklyGrosses[0] || 0;
+    return [state.film.id, {
+      openingWeekend,
+      totalGross,
+      weeklyGrosses: state.weeklyGrosses,
+      theaterHistories: state.theaterHistories,
+      theaterCount: state.theaterHistories.get("NA")?.[0] || 0,
+      legsMultiplier: openingWeekend > 0 ? totalGross / openingWeekend : 0,
+      breakdown: {
+        modelVersion: 4,
+        commercialAppeal: state.genreBalance.baseCommercialAppeal,
+        productionScale: state.productionScale,
+        launchHook: state.launchHook,
+        releaseTiming: state.openingReleaseTiming,
+        competition: state.openingCompetition,
+        peakEventPotential: state.peakEventPotential,
+        peakEventIntensity: state.peakEventIntensity,
+        peakPhenomenonPotential: state.peakPhenomenonPotential,
+        peakPhenomenonIntensity: state.peakPhenomenonIntensity,
+        sharedAudienceMarket: true,
+      },
+    } as HistoricalMarketRun];
+  }));
+}
+
 // Genre-based review patterns from Rotten Tomatoes analysis
 const genreReviewPatterns: Record<string, { criticBase: number; audienceBase: number; criticVar: number; audienceVar: number }> = {
   drama: { criticBase: 75, audienceBase: 72, criticVar: 20, audienceVar: 15 },
@@ -3965,7 +4379,17 @@ export async function registerRoutes(
           criticScoreBreakdown: scores.criticBreakdown,
           audienceScoreBreakdown: scores.audienceBreakdown,
         });
-        const run = await calculateHistoricalTerritoryRun(film, createdFilms, talentPool);
+      });
+
+      const historicalRuns = await calculateHistoricalMarketRuns(
+        releasedPlans.map(plan => plan.film!),
+        talentPool,
+      );
+
+      await runBatched(releasedPlans, 8, async plan => {
+        const film = plan.film!;
+        const run = historicalRuns.get(film.id);
+        if (!run) throw new Error(`Historical market simulation lost ${film.title}`);
         const historyLength = Math.max(1, Math.min(
           run.weeklyGrosses.length,
           finalAbsolute - plan.releaseAbsolute + 1,
@@ -5572,6 +5996,13 @@ export async function registerRoutes(
         dolbySuitability: number;
         preliminaryImaxDemand: number;
         preliminaryDolbyDemand: number;
+        preliminaryDemand: number;
+        preliminaryEventIntensity: number;
+        preliminaryPhenomenonIntensity: number;
+        marketAllocatedAdmissions: number;
+        marketPoolAdmissions: number;
+        marketUtilization: number;
+        physicalRegularCapacityAdmissions: number;
       };
       const territoryContexts = new Map<string, TerritoryWeekContext>();
       const allPremiumBookings = initialPremiumBookings;
@@ -5741,6 +6172,13 @@ export async function registerRoutes(
             dolbySuitability: premiumProfile.dolbySuitability,
             preliminaryImaxDemand: preliminary.imaxDemandAdmissions,
             preliminaryDolbyDemand: preliminary.dolbyDemandAdmissions,
+            preliminaryDemand: preliminary.unconstrainedDemandAdmissions,
+            preliminaryEventIntensity: preliminary.eventIntensity,
+            preliminaryPhenomenonIntensity: preliminary.phenomenonIntensity,
+            marketAllocatedAdmissions: preliminary.unconstrainedDemandAdmissions,
+            marketPoolAdmissions: 0,
+            marketUtilization: 0,
+            physicalRegularCapacityAdmissions: exhibition.regularOpeningAdmissions,
           });
         }
       }
@@ -5752,6 +6190,53 @@ export async function registerRoutes(
           .filter(context => context.release.territoryCode === territory.code);
         if (territoryEntries.length === 0) continue;
         const exhibition = getTerritoryExhibitionProfile(territory.code);
+        const audienceMarket = allocateTerritoryAudienceMarket({
+          territoryCode: territory.code,
+          territoryMarketShare: getTerritoryBasePercentage(territory.code),
+          candidates: territoryEntries.map(context => ({
+            filmId: context.film.id,
+            genre: context.film.genre,
+            unconstrainedDemandAdmissions: context.preliminaryDemand,
+            eventIntensity: context.preliminaryEventIntensity,
+            releaseTiming: context.releaseTiming,
+            isOpeningWeek: context.weekNumber === 0,
+          })),
+        });
+        for (const allocation of audienceMarket.allocations) {
+          const context = territoryEntries.find(entry =>
+            entry.film.id === allocation.filmId);
+          if (!context) continue;
+          context.marketAllocatedAdmissions = allocation.allocatedAdmissions;
+          context.marketPoolAdmissions = audienceMarket.expandedPoolAdmissions;
+          context.marketUtilization = audienceMarket.utilization;
+          const estimatedGross = allocation.allocatedAdmissions *
+            (exhibition.baseTicketPrice * 0.78 +
+              exhibition.imaxTicketPrice * 0.12 +
+              exhibition.dolbyTicketPrice * 0.1);
+          const bookedTheaters = context.weekNumber === 0 || context.release.theaterCount <= 0
+            ? calculateTerritoryTheaterCount({
+              territoryCode: territory.code,
+              weekNumber: context.weekNumber,
+              currentGross: estimatedGross,
+              previousGross: context.previousWeekGross,
+              previousTheaterCount: context.release.theaterCount,
+              awareness: context.campaign.awareness,
+              interest: context.campaign.interest,
+              commercialAppeal: context.commercialAppeal,
+              launchHook: context.launchHook,
+              competition: 0,
+              blockbusterDeployment: context.blockbusterDeployment,
+              eventIntensity: context.preliminaryEventIntensity,
+              phenomenonIntensity: context.preliminaryPhenomenonIntensity,
+            })
+            : context.release.theaterCount;
+          context.physicalRegularCapacityAdmissions =
+            calculateTerritoryRegularCapacityAdmissions(
+              territory.code,
+              bookedTheaters,
+              exhibition.regularOpeningAdmissions,
+            );
+        }
         for (const format of ["imax", "dolby"] as const) {
           const allocation = allocatePremiumFormat({
             format,
@@ -5765,9 +6250,12 @@ export async function registerRoutes(
                 candidate.format === format);
               return {
                 filmId: context.film.id,
-                formatDemand: format === "imax"
+                formatDemand: (format === "imax"
                   ? context.preliminaryImaxDemand
-                  : context.preliminaryDolbyDemand,
+                  : context.preliminaryDolbyDemand) *
+                  (context.preliminaryDemand > 0
+                    ? context.marketAllocatedAdmissions / context.preliminaryDemand
+                    : 0),
                 suitability: format === "imax"
                   ? context.imaxSuitability
                   : context.dolbySuitability,
@@ -5972,12 +6460,13 @@ export async function registerRoutes(
               baseTicketPrice: exhibition.baseTicketPrice,
               imaxTicketPrice: exhibition.imaxTicketPrice,
               dolbyTicketPrice: exhibition.dolbyTicketPrice,
-              regularCapacityAdmissions: exhibition.regularOpeningAdmissions,
+              regularCapacityAdmissions: context.physicalRegularCapacityAdmissions,
               imaxAllocationAdmissions: imaxAllocationByRelease.get(release.id) || 0,
               dolbyAllocationAdmissions: dolbyAllocationByRelease.get(release.id) || 0,
               imaxSuitability: context.imaxSuitability,
               dolbySuitability: context.dolbySuitability,
               demandVariance: context.demandVariance,
+              marketAllocatedAdmissions: context.marketAllocatedAdmissions,
             });
             const countryName = getCountryName(release.territoryCode) || release.territoryCode;
             weeklyByCountry[countryName] = territoryResult.gross;
@@ -6034,6 +6523,13 @@ export async function registerRoutes(
               phenomenonPotential: Math.round(territoryResult.phenomenonPotential * 10) / 10,
               phenomenonIntensity: Math.round(territoryResult.phenomenonIntensity * 1000) / 1000,
               competitionPressure: Math.round(context.competition * 10) / 10,
+              unconstrainedDemandAdmissions: Math.round(context.preliminaryDemand),
+              marketAllocatedAdmissions: Math.round(context.marketAllocatedAdmissions),
+              marketPoolAdmissions: Math.round(context.marketPoolAdmissions),
+              marketUtilization: Math.round(context.marketUtilization * 1000) / 1000,
+              physicalRegularCapacityAdmissions: Math.round(
+                context.physicalRegularCapacityAdmissions,
+              ),
               regularAdmissions: Math.round(territoryResult.regularAdmissions),
               imaxAdmissions: Math.round(territoryResult.imaxAdmissions),
               dolbyAdmissions: Math.round(territoryResult.dolbyAdmissions),

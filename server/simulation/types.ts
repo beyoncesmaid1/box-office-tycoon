@@ -299,6 +299,8 @@ export interface TerritoryWeekInput {
   imaxSuitability: number;
   dolbySuitability: number;
   demandVariance?: number;
+  /** Audience admissions awarded by the shared territory market, before screens. */
+  marketAllocatedAdmissions?: number;
 }
 
 export interface TerritoryWeekResult {
@@ -307,6 +309,8 @@ export interface TerritoryWeekResult {
   imaxGross: number;
   dolbyGross: number;
   totalDemandAdmissions: number;
+  unconstrainedDemandAdmissions: number;
+  marketAllocatedAdmissions: number;
   regularDemandAdmissions: number;
   imaxDemandAdmissions: number;
   dolbyDemandAdmissions: number;

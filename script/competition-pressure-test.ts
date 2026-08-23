@@ -142,23 +142,14 @@ const results = {
   twoTentpoles,
   strongHoldover,
   crowdedMinorSlate,
-  openingLossVsSmallRelease: 1 - openingGross(smallRelease) / baselineOpening,
-  openingLossVsNormalWide: 1 - openingGross(normalWide) / baselineOpening,
-  openingLossVsOverlappingWide: 1 - openingGross(overlappingWide) / baselineOpening,
-  openingLossVsTentpole: 1 - openingGross(overlappingTentpole) / baselineOpening,
-  openingLossVsTwoTentpoles: 1 - openingGross(twoTentpoles) / baselineOpening,
-  holdoverLossVsTentpole: 1 - holdoverGross(overlappingTentpole) / baselineHoldover,
-  holdoverLossVsTwoTentpoles: 1 - holdoverGross(twoTentpoles) / baselineHoldover,
+  openingCompetitionDoubleCount: 1 - openingGross(twoTentpoles) / baselineOpening,
+  holdoverCompetitionDoubleCount: 1 - holdoverGross(twoTentpoles) / baselineHoldover,
 };
 
-assert.ok(results.holdoverLossVsTentpole >= 0.18,
-  `Tentpole should materially affect a holdover`);
-assert.ok(results.holdoverLossVsTwoTentpoles >= 0.28,
-  `Two tentpoles should strongly affect a holdover`);
-assert.ok(results.openingLossVsSmallRelease <= 0.05,
-  `A tiny unrelated release should not move a major opening materially`);
-assert.ok(results.openingLossVsNormalWide >= 0.05 && results.openingLossVsNormalWide <= 0.15,
-  `A normal unrelated wide release should have a modest effect`);
+assert.equal(openingGross(twoTentpoles), baselineOpening,
+  `Competition must not be subtracted again inside opening demand`);
+assert.equal(holdoverGross(twoTentpoles), baselineHoldover,
+  `Competition must not be subtracted again inside holdover demand`);
 
 console.log(Object.fromEntries(Object.entries(results).map(([key, value]) => [
   key,
