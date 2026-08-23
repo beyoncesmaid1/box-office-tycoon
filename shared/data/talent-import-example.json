@@ -1,0 +1,13 @@
+{
+  "people": [
+    {
+      "name": "Example Actor",
+      "type": "actor",
+      "gender": "female"
+    },
+    {
+      "name": "Example Director",
+      "type": "director"
+    }
+  ]
+}

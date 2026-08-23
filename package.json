@@ -16,6 +16,9 @@
     "test:deletion": "tsx script/save-deletion-test.ts",
     "test:preload-handoff": "tsx script/preload-handoff-test.ts",
     "test:five-year-market": "npm run build && tsx script/five-year-market-simulation.ts",
+    "talent:preview": "tsx --env-file=.env script/import-talent.ts preview",
+    "talent:apply": "tsx --env-file=.env script/import-talent.ts apply",
+    "test:talent-import": "tsx script/import-talent.ts self-test",
     "balance": "tsx script/balance-simulation.ts",
     "db:push": "drizzle-kit push"
   },
