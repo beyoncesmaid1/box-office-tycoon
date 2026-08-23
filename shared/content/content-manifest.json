@@ -1,7 +1,7 @@
 {
-  "contentVersion": 6,
+  "contentVersion": 7,
   "schemaVersion": 1,
   "contentFile": "base-content.json",
-  "sha256": "395dbb18e0545829fa059eb1a6351952d71a8927b11ad05b4c3ebd899ff59b13",
-  "talentCount": 861
+  "sha256": "1a667f794774eeb194cb02156bf89f69b40d33bf3a4a1ace012b87cee8de3bf7",
+  "talentCount": 1000
 }
