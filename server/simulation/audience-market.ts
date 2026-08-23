@@ -84,15 +84,18 @@ export function allocateTerritoryAudienceMarket(input: {
     : 52;
   const seasonalExpansion = 0.9 + clamp01(demandWeightedTiming / 100) * 0.2;
   const eventStrengths = candidates
-    .map(candidate => clamp01(
-      candidate.eventIntensity /
-        DEFAULT_SIMULATION_CONFIG.exhibition.eventMaximumIntensity,
-    ))
+    .map(candidate => {
+      const strength = clamp01(
+        candidate.eventIntensity /
+          DEFAULT_SIMULATION_CONFIG.exhibition.eventMaximumIntensity,
+      );
+      return strength * strength * (3 - 2 * strength);
+    })
     .sort((left, right) => right - left);
   const eventExpansion = 1 +
-    (eventStrengths[0] || 0) * 0.22 +
-    (eventStrengths[1] || 0) * 0.08 +
-    (eventStrengths[2] || 0) * 0.03;
+    (eventStrengths[0] || 0) * 0.16 +
+    (eventStrengths[1] || 0) * 0.05 +
+    (eventStrengths[2] || 0) * 0.02;
   // Multiple genuine events can bring infrequent customers into the market,
   // but high film demand cannot expand the territory without limit.
   const demandExpansion = 1 + Math.min(
@@ -174,4 +177,3 @@ export function allocateTerritoryAudienceMarket(input: {
     }),
   };
 }
-

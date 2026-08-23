@@ -1259,7 +1259,8 @@ function reportEventScenarios(seed: string): void {
   }
   if (phenomenon.phenomenonIntensity < 0.1 ||
       phenomenon.openingWeekend >= 100_000_000 ||
-      phenomenon.totalGross < phenomenon.openingWeekend * 8) {
+      phenomenon.totalGross < phenomenon.openingWeekend * 8 ||
+      phenomenon.totalGross > phenomenon.openingWeekend * 15) {
     throw new Error("Sleeper success failed to emerge through organic expansion");
   }
   console.log("\nEVENT SCENARIOS");

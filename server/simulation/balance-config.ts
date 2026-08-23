@@ -123,10 +123,11 @@ export interface ExhibitionBalanceConfig {
   eventRange: number;
   eventCurveExponent: number;
   eventMaximumIntensity: number;
-  eventDemandBoost: number;
-  eventCapacityBoost: number;
-  eventPremiumTurnoverBoost: number;
-  eventInternationalReachBoost: number;
+  eventResponseExponent: number;
+  eventDemandMaximumLift: number;
+  eventCapacityMaximumLift: number;
+  eventPremiumTurnoverMaximumLift: number;
+  eventInternationalReachMaximumLift: number;
   phenomenonThreshold: number;
   phenomenonRange: number;
   phenomenonCurveExponent: number;
@@ -290,16 +291,20 @@ export const DEFAULT_SIMULATION_CONFIG: SimulationBalanceConfig = {
     eventRange: 18,
     eventCurveExponent: 1.7,
     eventMaximumIntensity: 0.3,
-    eventDemandBoost: 3.4,
-    eventCapacityBoost: 6,
-    eventPremiumTurnoverBoost: 0.65,
-    eventInternationalReachBoost: 0.28,
+    eventResponseExponent: 1.35,
+    // Event strength is normalized through a smooth response curve before
+    // these maximum lifts are applied. The systems no longer multiply the raw
+    // intensity independently and create an abrupt second box-office class.
+    eventDemandMaximumLift: 0.58,
+    eventCapacityMaximumLift: 0.95,
+    eventPremiumTurnoverMaximumLift: 0.24,
+    eventInternationalReachMaximumLift: 0.14,
     phenomenonThreshold: 76,
     phenomenonRange: 18,
     phenomenonCurveExponent: 2.1,
-    phenomenonDiscoveryShare: 0.018,
-    phenomenonCapacityBoost: 2,
-    phenomenonPremiumTurnoverBoost: 0.4,
+    phenomenonDiscoveryShare: 0.01,
+    phenomenonCapacityBoost: 0.85,
+    phenomenonPremiumTurnoverBoost: 0.18,
     phenomenonRetentionBoost: 0.08,
     maximumPremiumDemandShare: 0.46,
   },

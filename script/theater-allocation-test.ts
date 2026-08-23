@@ -30,6 +30,29 @@ const modestOpening = calculateTerritoryTheaterCount({
 assert.ok(modestOpening >= 40 && modestOpening < 2_000,
   `A modest film should not receive blockbuster saturation; got ${modestOpening}`);
 
+const eventTransitionBase = {
+  territoryCode: "NA",
+  weekNumber: 0,
+  currentGross: 42_000_000,
+  awareness: 68,
+  interest: 66,
+  commercialAppeal: 70,
+  launchHook: 65,
+  competition: 25,
+  blockbusterDeployment: 0.55,
+} as const;
+const justBelowEvent = calculateTerritoryTheaterCount({
+  ...eventTransitionBase,
+  eventIntensity: 0.099,
+});
+const justAboveEvent = calculateTerritoryTheaterCount({
+  ...eventTransitionBase,
+  eventIntensity: 0.101,
+});
+assert.ok(Math.abs(justAboveEvent - justBelowEvent) <= 100,
+  `Crossing event status must not cause a theater cliff; got ` +
+    `${justBelowEvent} -> ${justAboveEvent}`);
+
 const strongHold = calculateTerritoryTheaterCount({
   territoryCode: "NA",
   weekNumber: 1,
@@ -127,6 +150,7 @@ assert.ok(lateRun < 600 && lateRun >= 40,
 console.log({
   wideOpening,
   modestOpening,
+  eventTransition: [justBelowEvent, justAboveEvent],
   strongHold,
   secondFrame,
   thirdFrame,

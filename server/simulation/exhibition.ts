@@ -86,12 +86,16 @@ export function calculateTerritoryTheaterCount(input: TheaterAllocationInput): n
   // should have booked a film. This floor prevents a huge opening from starting
   // artificially narrow and then adding hundreds of theaters for several weeks.
   openingTheaters = Math.max(openingTheaters, grossSupportedOpening * 0.9);
-  if ((input.eventIntensity ?? 0) >= 0.1) {
-    openingTheaters = Math.max(
-      openingTheaters,
-      profile.maximum * (0.72 + 0.2 * clamp(eventStrength / 100, 0, 1)),
-    );
-  }
+  // Event infrastructure ramps continuously. The former >= .10 gate jumped a
+  // newly qualified event straight to at least 72% of every territory's
+  // theaters, which separated events from the middle market overnight.
+  const eventInfrastructure = Math.pow(
+    smoothstep(eventStrength / 100),
+    BALANCE.eventResponseExponent,
+  );
+  const eventTheaterFloor = profile.minimum +
+    (profile.maximum - profile.minimum) * 0.82 * eventInfrastructure;
+  openingTheaters = Math.max(openingTheaters, eventTheaterFloor);
   openingTheaters = clamp(openingTheaters, profile.minimum, profile.maximum);
 
   if (input.weekNumber <= 0) return Math.round(openingTheaters);
@@ -442,7 +446,17 @@ export function simulateTerritoryWeek(input: TerritoryWeekInput): TerritoryWeekR
   const smoothEventProgress = eventProgress * eventProgress * (3 - 2 * eventProgress);
   const eventIntensity = BALANCE.eventMaximumIntensity *
     Math.pow(smoothEventProgress, BALANCE.eventCurveExponent);
-  const eventDemandMultiplier = 1 + BALANCE.eventDemandBoost * eventIntensity;
+  const normalizedEventStrength = clamp(
+    eventIntensity / BALANCE.eventMaximumIntensity,
+    0,
+    1,
+  );
+  const eventResponse = Math.pow(
+    smoothstep(normalizedEventStrength),
+    BALANCE.eventResponseExponent,
+  );
+  const eventDemandMultiplier = 1 +
+    BALANCE.eventDemandMaximumLift * eventResponse;
 
   const womDelta = audienceExperience - clamp(input.openingExpectation);
   const deliveryStrength = clamp((womDelta - 8) / 24, 0, 1);
@@ -473,8 +487,14 @@ export function simulateTerritoryWeek(input: TerritoryWeekInput): TerritoryWeekR
   // event intensity; this extends the run without stacking both paths fully.
   const eventPhenomenonCoexistence = 1 -
     0.65 * clamp(eventIntensity / BALANCE.eventMaximumIntensity, 0, 1);
+  // A sleeper breakout is a lifecycle, not a permanent status. It can build
+  // through frames two to four, peaks once, and then loses strength even when
+  // the film remains exceptionally well-liked.
+  const phenomenonLifecycle = input.weekNumber <= 3
+    ? smoothstep(input.weekNumber / 3)
+    : Math.exp(-(input.weekNumber - 3) / 4.5);
   const phenomenonIntensity = rawPhenomenonIntensity *
-    eventPhenomenonCoexistence;
+    eventPhenomenonCoexistence * phenomenonLifecycle;
 
   // Broad international infrastructure grows gradually. This is deliberately
   // outside eventPotential: budget/strategy can widen a release, but cannot
@@ -483,7 +503,7 @@ export function simulateTerritoryWeek(input: TerritoryWeekInput): TerritoryWeekR
   const infrastructureReach = 0.12 * Math.pow(blockbusterDeployment, 0.85) *
     globalAccessibility * (input.territoryCode === "NA" ? 0.15 : 1);
   const internationalReach = 1 + infrastructureReach +
-    BALANCE.eventInternationalReachBoost * eventIntensity * globalAccessibility *
+    BALANCE.eventInternationalReachMaximumLift * eventResponse * globalAccessibility *
     (input.territoryCode === "NA" ? 0.15 : 1);
   const openingAddressableAdmissions =
     BALANCE.openingAddressableAdmissionsDomestic * marketScale * internationalReach;
@@ -546,7 +566,7 @@ export function simulateTerritoryWeek(input: TerritoryWeekInput): TerritoryWeekR
     input.dolbySuitability,
   );
   const premiumTurnover = 1 +
-    BALANCE.eventPremiumTurnoverBoost * eventIntensity +
+    BALANCE.eventPremiumTurnoverMaximumLift * eventResponse +
     BALANCE.phenomenonPremiumTurnoverBoost * phenomenonIntensity;
   const imaxAdmissions = Math.min(
     formatDemand.imax,
@@ -562,7 +582,7 @@ export function simulateTerritoryWeek(input: TerritoryWeekInput): TerritoryWeekR
     Math.max(0, formatDemand.imax - imaxAdmissions) * 0.82 +
     Math.max(0, formatDemand.dolby - dolbyAdmissions) * 0.86;
   const eventDensity = 1 +
-    BALANCE.eventCapacityBoost * eventIntensity +
+    BALANCE.eventCapacityMaximumLift * eventResponse +
     BALANCE.phenomenonCapacityBoost * phenomenonIntensity;
   const regularCapacity = Math.max(0, input.regularCapacityAdmissions) * eventDensity;
   const regularDemand = formatDemand.regular + premiumSpillover;
