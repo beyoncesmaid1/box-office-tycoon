@@ -34,6 +34,7 @@ import {
 import { useGame, formatMoney, genreLabels } from '@/lib/gameState';
 import { getGenrePoster } from '@/lib/genrePosters';
 import type { Film, Studio, Talent, AwardNomination } from '@shared/schema';
+import { HollywoodRecords } from './HollywoodRecords';
 
 type SortField = 'worldwide' | 'domestic' | 'international';
 type TimeFilter = 'all-time' | 'yearly';
@@ -316,66 +317,68 @@ export function HollywoodInsider() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <FilmIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+      {activeTab !== 'records' && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                  <FilmIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    {timeFilter === 'yearly' ? `${selectedYear} Films` : 'All-Time Films'}
+                  </p>
+                  <p className="text-2xl font-bold">{summaryStats.totalFilms}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">
-                  {timeFilter === 'yearly' ? `${selectedYear} Films` : 'All-Time Films'}
-                </p>
-                <p className="text-2xl font-bold">{summaryStats.totalFilms}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                  <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Box Office</p>
+                  <p className="text-2xl font-bold">{formatCompactMoney(summaryStats.totalBoxOffice)}</p>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                  <Star className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Avg. Box Office</p>
+                  <p className="text-2xl font-bold">{formatCompactMoney(summaryStats.avgBoxOffice)}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total Box Office</p>
-                <p className="text-2xl font-bold">{formatCompactMoney(summaryStats.totalBoxOffice)}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+                  <Trophy className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Top Film</p>
+                  <p className="text-lg font-bold truncate">{summaryStats.topGrossing}</p>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                <Star className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Avg. Box Office</p>
-                <p className="text-2xl font-bold">{formatCompactMoney(summaryStats.avgBoxOffice)}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
-                <Trophy className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Top Film</p>
-                <p className="text-lg font-bold truncate">{summaryStats.topGrossing}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 sm:grid-cols-3 lg:w-auto lg:grid-cols-5">
           <TabsTrigger value="box-office" className="gap-2">
             <TrendingUp className="w-4 h-4" />
             Box Office Charts
@@ -392,7 +395,15 @@ export function HollywoodInsider() {
             <Star className="w-4 h-4" />
             Inside Scoop
           </TabsTrigger>
+          <TabsTrigger value="records" className="gap-2">
+            <Trophy className="w-4 h-4" />
+            Records
+          </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="records" className="space-y-4">
+          <HollywoodRecords films={filmsWithStats} />
+        </TabsContent>
 
         {/* Box Office Charts Tab */}
         <TabsContent value="box-office" className="space-y-4">

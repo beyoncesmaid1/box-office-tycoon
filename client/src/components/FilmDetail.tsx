@@ -144,9 +144,9 @@ function territoryGross(
 
 const BOX_OFFICE_DAYS = ['Fri', 'Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu'] as const;
 
-type DailyPerformanceProfile = 'family' | 'fan' | 'adult' | 'general';
+export type DailyPerformanceProfile = 'family' | 'fan' | 'adult' | 'general';
 
-function dailyPerformanceProfile(
+export function dailyPerformanceProfile(
   genre: string,
   isSequel: boolean,
 ): DailyPerformanceProfile {
