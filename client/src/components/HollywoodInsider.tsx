@@ -408,7 +408,11 @@ export function HollywoodInsider() {
         </TabsList>
 
         <TabsContent value="records" className="space-y-4">
-          <HollywoodRecords films={filmsWithStats} />
+          <HollywoodRecords
+            films={filmsWithStats}
+            currentYear={state.currentYear}
+            currentWeek={state.currentWeek}
+          />
         </TabsContent>
 
         {/* Box Office Charts Tab */}

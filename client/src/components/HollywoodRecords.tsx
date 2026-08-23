@@ -41,6 +41,7 @@ import {
   dailyPerformanceProfile,
   distributeWeeklyGrossAcrossDays,
 } from './FilmDetail';
+import { YearlyBoxOfficeTracker } from './YearlyBoxOfficeTracker';
 
 export interface HollywoodRecordFilm extends Film {
   studioName: string;
@@ -53,6 +54,8 @@ export interface HollywoodRecordFilm extends Film {
 
 interface HollywoodRecordsProps {
   films: HollywoodRecordFilm[];
+  currentYear: number;
+  currentWeek: number;
 }
 
 interface RecordEntry {
@@ -193,7 +196,7 @@ function FilmLink({ film, className = '' }: { film: HollywoodRecordFilm; classNa
   );
 }
 
-export function HollywoodRecords({ films }: HollywoodRecordsProps) {
+export function HollywoodRecords({ films, currentYear, currentWeek }: HollywoodRecordsProps) {
   const [selectedRecordKey, setSelectedRecordKey] = useState<string | null>(null);
   const [selectedTerritory, setSelectedTerritory] = useState(WORLDWIDE_TERRITORY);
   const availableTerritories = useMemo(() => {
@@ -535,6 +538,12 @@ export function HollywoodRecords({ films }: HollywoodRecordsProps) {
           ))}
         </div>
       </section>
+
+      <YearlyBoxOfficeTracker
+        films={films}
+        currentYear={currentYear}
+        currentWeek={currentWeek}
+      />
 
       <Dialog
         open={selectedRecord !== null}
