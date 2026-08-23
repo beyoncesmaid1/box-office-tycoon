@@ -15,6 +15,7 @@ import {
   Rocket,
   Sparkles,
   Star,
+  Ticket,
   Trophy,
   Users,
   type LucideIcon,
@@ -36,7 +37,7 @@ import {
 } from '@/components/ui/select';
 import { genreLabels } from '@/lib/gameState';
 import { getGenrePoster } from '@/lib/genrePosters';
-import type { Film } from '@shared/schema';
+import type { Film, FilmRelease } from '@shared/schema';
 import {
   dailyPerformanceProfile,
   distributeWeeklyGrossAcrossDays,
@@ -54,6 +55,7 @@ export interface HollywoodRecordFilm extends Film {
 
 interface HollywoodRecordsProps {
   films: HollywoodRecordFilm[];
+  releases: FilmRelease[];
   currentYear: number;
   currentWeek: number;
 }
@@ -87,6 +89,10 @@ function compactMoney(amount: number): string {
 
 function profitMoney(amount: number): string {
   return `${amount >= 0 ? '+' : '-'}${compactMoney(Math.abs(amount))}`;
+}
+
+function wholeMoney(amount: number): string {
+  return `$${Math.round(amount).toLocaleString('en-US')}`;
 }
 
 function audienceScore100(film: Film): number {
@@ -170,12 +176,64 @@ function openingGrossForTerritory(film: Film, territory: string): number {
   const openingWeekByTerritory = Array.isArray(weeklyTerritories)
     ? countryGrosses(weeklyTerritories[0])
     : {};
-  const territoryWeek = grossForTerritory(
+  let territoryWeek = grossForTerritory(
     openingWeekByTerritory,
     territory,
     openingWeeklyGross,
   );
+  if (territoryWeek <= 0 && territory === 'North America') {
+    territoryWeek = openingWeeklyGross * 0.4;
+  } else if (territoryWeek <= 0 && territory === INTERNATIONAL_TERRITORY) {
+    territoryWeek = openingWeeklyGross * 0.6;
+  }
   return territoryWeek * (openingWeekend / openingWeeklyGross);
+}
+
+function openingTheaterCount(film: Film, releases: FilmRelease[]): number {
+  const domesticRelease = releases.find(release =>
+    release.filmId === film.id && ['NA', 'North America', 'Domestic'].includes(release.territoryCode));
+  let capacityHistory: unknown = domesticRelease?.weeklyCapacityBreakdown;
+  if (typeof capacityHistory === 'string') {
+    try {
+      capacityHistory = JSON.parse(capacityHistory);
+    } catch {
+      capacityHistory = [];
+    }
+  }
+  if (Array.isArray(capacityHistory)) {
+    const recorded = Number(
+      (capacityHistory[0] as Record<string, unknown> | undefined)?.theaterCount || 0,
+    );
+    if (recorded > 0) return Math.min(4_600, recorded);
+  }
+
+  // Older saves did not retain opening theater history. Reconstruct the same
+  // opening estimate used by Film Detail rather than using the film's current
+  // (often heavily contracted) theater count.
+  let weeklyTerritories: unknown = film.weeklyBoxOfficeByCountry;
+  if (typeof weeklyTerritories === 'string') {
+    try {
+      weeklyTerritories = JSON.parse(weeklyTerritories);
+    } catch {
+      weeklyTerritories = [];
+    }
+  }
+  const openingWorldwideWeek = Number(film.weeklyBoxOffice?.[0] || 0);
+  const openingTerritories = Array.isArray(weeklyTerritories)
+    ? countryGrosses(weeklyTerritories[0])
+    : {};
+  const recordedDomesticWeek = grossForTerritory(
+    openingTerritories,
+    'North America',
+    openingWorldwideWeek,
+  );
+  const domesticWeek = recordedDomesticWeek > 0
+    ? recordedDomesticWeek
+    : openingWorldwideWeek * 0.4;
+  return Math.round(Math.max(40, Math.min(
+    4_600,
+    500 + 4_000 * Math.sqrt(Math.max(0, domesticWeek) / 100_000_000),
+  )));
 }
 
 function territoryLabel(territory: string): string {
@@ -196,7 +254,7 @@ function FilmLink({ film, className = '' }: { film: HollywoodRecordFilm; classNa
   );
 }
 
-export function HollywoodRecords({ films, currentYear, currentWeek }: HollywoodRecordsProps) {
+export function HollywoodRecords({ films, releases, currentYear, currentWeek }: HollywoodRecordsProps) {
   const [selectedRecordKey, setSelectedRecordKey] = useState<string | null>(null);
   const [selectedTerritory, setSelectedTerritory] = useState(WORLDWIDE_TERRITORY);
   const availableTerritories = useMemo(() => {
@@ -222,6 +280,18 @@ export function HollywoodRecords({ films, currentYear, currentWeek }: HollywoodR
     const byInternational = [...films].sort((a, b) => b.internationalGross - a.internationalGross);
     const byOpening = films
       .map(film => ({ film, value: openingWeekendGross(film) }))
+      .sort((a, b) => b.value - a.value);
+    const byPerTheaterAverage = films
+      .map(film => {
+        const theaters = openingTheaterCount(film, releases);
+        const domesticOpeningWeekend = openingGrossForTerritory(film, 'North America');
+        return {
+          film,
+          theaters,
+          value: theaters > 0 ? domesticOpeningWeekend / theaters : 0,
+        };
+      })
+      .filter(entry => entry.value > 0)
       .sort((a, b) => b.value - a.value);
     const byAudience = [...films].sort((a, b) =>
       audienceScore100(b) - audienceScore100(a) || b.worldwideGross - a.worldwideGross,
@@ -269,6 +339,18 @@ export function HollywoodRecords({ films, currentYear, currentWeek }: HollywoodR
         color: 'text-blue-400',
         territoryMetric: 'total',
         defaultTerritory: 'North America',
+      },
+      {
+        key: 'per-theater-average',
+        label: 'Per-Theater Average',
+        description: 'North American opening-weekend gross divided by the film’s opening theater count.',
+        entries: byPerTheaterAverage.map(({ film, value }) => ({
+          film,
+          value,
+          display: wholeMoney(value),
+        })),
+        icon: Ticket,
+        color: 'text-cyan-400',
       },
       {
         key: 'international-gross',
@@ -328,7 +410,7 @@ export function HollywoodRecords({ films, currentYear, currentWeek }: HollywoodR
       genreChampions,
       holders,
     };
-  }, [films]);
+  }, [films, releases]);
 
   if (films.length === 0) {
     return (
@@ -400,7 +482,7 @@ export function HollywoodRecords({ films, currentYear, currentWeek }: HollywoodR
         </div>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {data.holders.map(holder => {
           const Icon = holder.icon;
           const leader = holder.entries[0];

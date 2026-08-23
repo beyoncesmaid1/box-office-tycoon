@@ -33,7 +33,7 @@ import {
 } from '@/components/ui/select';
 import { useGame, formatMoney, genreLabels } from '@/lib/gameState';
 import { getGenrePoster } from '@/lib/genrePosters';
-import type { Film, Studio, Talent, AwardNomination } from '@shared/schema';
+import type { Film, Studio, Talent, AwardNomination, FilmRelease } from '@shared/schema';
 import { HollywoodRecords } from './HollywoodRecords';
 
 type SortField = 'worldwide' | 'domestic' | 'international';
@@ -104,6 +104,16 @@ export function HollywoodInsider() {
   const { data: nominations = [] } = useQuery<AwardNomination[]>({
     queryKey: ['/api/nominations', state.studioId],
     enabled: !!state.studioId,
+  });
+
+  const { data: allReleases = [] } = useQuery<FilmRelease[]>({
+    queryKey: ['/api/all-releases', state.studioId],
+    queryFn: async () => {
+      const response = await fetch(`/api/all-releases?playerGameId=${encodeURIComponent(state.studioId)}`);
+      if (!response.ok) throw new Error('Failed to load film release records');
+      return response.json();
+    },
+    enabled: !!state.studioId && activeTab === 'records',
   });
 
   const studioMap = useMemo(() => new Map(allStudios.map(s => [s.id, s])), [allStudios]);
@@ -410,6 +420,7 @@ export function HollywoodInsider() {
         <TabsContent value="records" className="space-y-4">
           <HollywoodRecords
             films={filmsWithStats}
+            releases={allReleases}
             currentYear={state.currentYear}
             currentWeek={state.currentWeek}
           />
