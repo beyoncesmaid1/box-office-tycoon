@@ -20,6 +20,7 @@
     "talent:merge": "tsx --env-file=.env script/import-talent.ts merge",
     "talent:apply": "tsx --env-file=.env script/import-talent.ts apply",
     "test:talent-import": "tsx script/import-talent.ts self-test",
+    "talent:repair-images": "tsx --env-file=.env script/repair-talent-images.ts",
     "balance": "tsx script/balance-simulation.ts",
     "db:push": "drizzle-kit push"
   },

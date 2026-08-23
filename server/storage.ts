@@ -976,11 +976,12 @@ export class DatabaseStorage implements IStorage {
           // Get existing talent to preserve custom imageUrl if set
           const existing = await this.getTalentByName(t.name);
           
-          // Update existing entry to sync all fields including new skills
-          // Only update imageUrl if the existing one is empty/null (preserve custom edits)
+          // Source-backed TMDB portraits replace stale, broken, or non-TMDB seed URLs.
+          // Custom images remain untouched when TMDB has no portrait for that person.
+          const sourceHasTmdbImage = t.imageUrl?.startsWith('https://image.tmdb.org/t/p/');
           await db.update(talent)
             .set({
-              imageUrl: existing?.imageUrl ? existing.imageUrl : t.imageUrl,
+              imageUrl: sourceHasTmdbImage ? t.imageUrl : (existing?.imageUrl || t.imageUrl),
               starRating: t.starRating,
               askingPrice: t.askingPrice,
               boxOfficeAvg: t.boxOfficeAvg,

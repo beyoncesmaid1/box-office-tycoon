@@ -1,5 +1,5 @@
 {
-  "contentVersion": 7,
+  "contentVersion": 8,
   "actors": [
     {
       "name": "Iain Armitage",
@@ -126,7 +126,8 @@
       },
       "importWarnings": [
         "Awards could not be confirmed; review the generated value."
-      ]
+      ],
+      "imageTmdbId": 1684536
     },
     {
       "name": "Aml Ameen",
@@ -269,7 +270,8 @@
       },
       "importWarnings": [
         "Awards could not be confirmed; review the generated value."
-      ]
+      ],
+      "imageTmdbId": 78062
     },
     {
       "name": "Jimmy Akingbola",
@@ -368,7 +370,8 @@
       "importWarnings": [
         "Awards could not be confirmed; review the generated value.",
         "Only 0 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 175690
     },
     {
       "name": "David Ajala",
@@ -500,7 +503,8 @@
       },
       "importWarnings": [
         "Awards could not be confirmed; review the generated value."
-      ]
+      ],
+      "imageTmdbId": 971049
     },
     {
       "name": "Adeel Akhtar",
@@ -628,7 +632,8 @@
       },
       "importWarnings": [
         "Awards could not be confirmed; review the generated value."
-      ]
+      ],
+      "imageTmdbId": 81840
     },
     {
       "name": "Abraham Attah",
@@ -714,7 +719,8 @@
       "importWarnings": [
         "Awards could not be confirmed; review the generated value.",
         "Only 2 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 1421427
     },
     {
       "name": "Asa Butterfield",
@@ -879,7 +885,8 @@
       },
       "importWarnings": [
         "Awards could not be confirmed; review the generated value."
-      ]
+      ],
+      "imageTmdbId": 77996
     },
     {
       "name": "Jordan Bolger",
@@ -1007,7 +1014,8 @@
       },
       "importWarnings": [
         "Awards could not be confirmed; review the generated value."
-      ]
+      ],
+      "imageTmdbId": 1674734
     },
     {
       "name": "Adam Bakri",
@@ -1097,7 +1105,8 @@
       "importWarnings": [
         "Awards could not be confirmed; review the generated value.",
         "Only 2 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 1187037
     },
     {
       "name": "Saleh Bakri",
@@ -1209,7 +1218,8 @@
       "importWarnings": [
         "Awards could not be confirmed; review the generated value.",
         "Only 2 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 42442
     },
     {
       "name": "Tawfeek Barhom",
@@ -1335,7 +1345,8 @@
       },
       "importWarnings": [
         "Awards could not be confirmed; review the generated value."
-      ]
+      ],
+      "imageTmdbId": 1260004
     },
     {
       "name": "Diego Boneta",
@@ -1488,7 +1499,8 @@
       },
       "importWarnings": [
         "Awards could not be confirmed; review the generated value."
-      ]
+      ],
+      "imageTmdbId": 935201
     },
     {
       "name": "Raúl Castillo",
@@ -1627,7 +1639,8 @@
       },
       "importWarnings": [
         "Awards could not be confirmed; review the generated value."
-      ]
+      ],
+      "imageTmdbId": 557579
     },
     {
       "name": "Diego Calva",
@@ -1747,7 +1760,8 @@
       },
       "importWarnings": [
         "Awards could not be confirmed; review the generated value."
-      ]
+      ],
+      "imageTmdbId": 1413390
     },
     {
       "name": "Sebastian Croft",
@@ -1877,7 +1891,8 @@
       },
       "importWarnings": [
         "Awards could not be confirmed; review the generated value."
-      ]
+      ],
+      "imageTmdbId": 1614317
     },
     {
       "name": "Théo Christine",
@@ -1998,7 +2013,8 @@
       "importWarnings": [
         "Awards could not be confirmed; review the generated value.",
         "Only 2 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 2004136
     },
     {
       "name": "Cody Fern",
@@ -2082,7 +2098,8 @@
       "importWarnings": [
         "Awards could not be confirmed; review the generated value.",
         "Only 1 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 1197895
     },
     {
       "name": "O-T Fagbenle",
@@ -2209,7 +2226,8 @@
       },
       "importWarnings": [
         "Awards could not be confirmed; review the generated value."
-      ]
+      ],
+      "imageTmdbId": 113970
     },
     {
       "name": "Philip Froissant",
@@ -2283,7 +2301,8 @@
       "importWarnings": [
         "Awards could not be confirmed; review the generated value.",
         "Only 1 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 3147083
     },
     {
       "name": "Ishaan Khatter",
@@ -2408,7 +2427,8 @@
       },
       "importWarnings": [
         "Awards could not be confirmed; review the generated value."
-      ]
+      ],
+      "imageTmdbId": 930298
     },
     {
       "name": "Malachi Kirby",
@@ -2522,7 +2542,8 @@
       "importWarnings": [
         "Awards could not be confirmed; review the generated value.",
         "Only 2 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 1145665
     },
     {
       "name": "Lucien Laviscount",
@@ -2646,7 +2667,8 @@
       "importWarnings": [
         "Awards could not be confirmed; review the generated value.",
         "Only 1 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 233096
     },
     {
       "name": "Gabriel Leone",
@@ -2749,7 +2771,8 @@
       "importWarnings": [
         "Awards could not be confirmed; review the generated value.",
         "Only 2 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 1475555
     },
     {
       "name": "Peter Lanzani",
@@ -2868,7 +2891,8 @@
       },
       "importWarnings": [
         "Awards could not be confirmed; review the generated value."
-      ]
+      ],
+      "imageTmdbId": 1246181
     },
     {
       "name": "Lamorne Morris",
@@ -3010,7 +3034,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 1181327
     },
     {
       "name": "Ramy Youssef",
@@ -3132,7 +3157,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 1382987
     },
     {
       "name": "Nathan Stewart-Jarrett",
@@ -3261,7 +3287,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 221980
     },
     {
       "name": "Benjamin Voisin",
@@ -3374,7 +3401,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 1871464
     },
     {
       "name": "Vijay Varma",
@@ -3497,7 +3525,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 1551045
     },
     {
       "name": "Vikrant Massey",
@@ -3624,7 +3653,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 1208682
     },
     {
       "name": "Yim Si-wan",
@@ -3711,7 +3741,8 @@
       },
       "importWarnings": [
         "Only 1 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 1296713
     },
     {
       "name": "Teo Yoo",
@@ -3834,7 +3865,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 1387126
     },
     {
       "name": "Koji Yakusho",
@@ -4001,7 +4033,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 18056
     },
     {
       "name": "Dacre Montgomery",
@@ -4138,7 +4171,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 1525047
     }
   ],
   "actresses": [
@@ -4269,7 +4303,8 @@
       },
       "importWarnings": [
         "Awards could not be confirmed; review the generated value."
-      ]
+      ],
+      "imageTmdbId": 1972166
     },
     {
       "name": "Oulaya Amamra",
@@ -4386,7 +4421,8 @@
       "importWarnings": [
         "Awards could not be confirmed; review the generated value.",
         "Only 0 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 1578123
     },
     {
       "name": "Asta Kamma August",
@@ -4469,7 +4505,8 @@
       "importWarnings": [
         "Awards could not be confirmed; review the generated value.",
         "Only 1 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 1994008
     },
     {
       "name": "Masali Baduza",
@@ -4562,7 +4599,8 @@
       "importWarnings": [
         "Awards could not be confirmed; review the generated value.",
         "Only 2 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 2538481
     },
     {
       "name": "Malia Baker",
@@ -4656,7 +4694,8 @@
       "importWarnings": [
         "Awards could not be confirmed; review the generated value.",
         "Only 0 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 2630461
     },
     {
       "name": "Anna Ben",
@@ -4776,7 +4815,8 @@
       "importWarnings": [
         "Awards could not be confirmed; review the generated value.",
         "Only 2 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 2236873
     },
     {
       "name": "Mamitha Baiju",
@@ -4882,7 +4922,8 @@
       "importWarnings": [
         "Awards could not be confirmed; review the generated value.",
         "Only 1 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 2191938
     },
     {
       "name": "Leonie Benesch",
@@ -4979,7 +5020,8 @@
       },
       "importWarnings": [
         "Awards could not be confirmed; review the generated value."
-      ]
+      ],
+      "imageTmdbId": 119065
     },
     {
       "name": "Mabel Cadena",
@@ -5070,7 +5112,8 @@
       "importWarnings": [
         "Awards could not be confirmed; review the generated value.",
         "Only 1 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 2213811
     },
     {
       "name": "Miyako",
@@ -5186,7 +5229,8 @@
       "importWarnings": [
         "Awards could not be confirmed; review the generated value.",
         "Only 1 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 1771746
     },
     {
       "name": "Emily Carey",
@@ -5302,7 +5346,8 @@
       },
       "importWarnings": [
         "Awards could not be confirmed; review the generated value."
-      ]
+      ],
+      "imageTmdbId": 1590758
     },
     {
       "name": "Cho Yi-hyun",
@@ -5419,7 +5464,8 @@
       "importWarnings": [
         "Awards could not be confirmed; review the generated value.",
         "Only 2 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 2185341
     },
     {
       "name": "Meg Donnelly",
@@ -5544,7 +5590,8 @@
       "importWarnings": [
         "Awards could not be confirmed; review the generated value.",
         "Only 0 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 1692795
     },
     {
       "name": "Salma Abu Deif",
@@ -5618,7 +5665,8 @@
       "importWarnings": [
         "Awards could not be confirmed; review the generated value.",
         "Only 1 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 1963368
     },
     {
       "name": "Ryan Destiny",
@@ -5693,7 +5741,8 @@
       "importWarnings": [
         "Awards could not be confirmed; review the generated value.",
         "Only 1 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 1711828
     },
     {
       "name": "Ester Expósito",
@@ -5802,7 +5851,8 @@
       "importWarnings": [
         "Awards could not be confirmed; review the generated value.",
         "Only 1 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 2025252
     },
     {
       "name": "Midori Francis",
@@ -5917,7 +5967,8 @@
       },
       "importWarnings": [
         "Awards could not be confirmed; review the generated value."
-      ]
+      ],
+      "imageTmdbId": 1984116
     },
     {
       "name": "Elva Guerra",
@@ -5968,7 +6019,8 @@
       "importWarnings": [
         "Awards could not be confirmed; review the generated value.",
         "Only 0 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 3229530
     },
     {
       "name": "Isis Hainsworth",
@@ -6065,7 +6117,8 @@
       "importWarnings": [
         "Awards could not be confirmed; review the generated value.",
         "Only 2 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 2284412
     },
     {
       "name": "Leah Harvey",
@@ -6169,7 +6222,8 @@
       },
       "importWarnings": [
         "Awards could not be confirmed; review the generated value."
-      ]
+      ],
+      "imageTmdbId": 1765346
     },
     {
       "name": "Devery Jacobs",
@@ -6270,7 +6324,8 @@
       "importWarnings": [
         "Awards could not be confirmed; review the generated value.",
         "Only 1 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 1197101
     },
     {
       "name": "Kim Da-mi",
@@ -6378,7 +6433,8 @@
       },
       "importWarnings": [
         "Awards could not be confirmed; review the generated value."
-      ]
+      ],
+      "imageTmdbId": 2053219
     },
     {
       "name": "Tamara Lawrance",
@@ -6494,7 +6550,8 @@
       },
       "importWarnings": [
         "Awards could not be confirmed; review the generated value."
-      ]
+      ],
+      "imageTmdbId": 1595457
     },
     {
       "name": "DeWanda Wise",
@@ -6613,7 +6670,8 @@
       },
       "importWarnings": [
         "Only 2 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 206425
     },
     {
       "name": "Nafessa Williams",
@@ -6717,7 +6775,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 1532331
     },
     {
       "name": "Maitreyi Ramakrishnan",
@@ -6823,7 +6882,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 2602879
     },
     {
       "name": "Geraldine Viswanathan",
@@ -6962,7 +7022,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 1803287
     },
     {
       "name": "Vivian Oparah",
@@ -7050,7 +7111,8 @@
       },
       "importWarnings": [
         "Only 1 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 1675593
     },
     {
       "name": "Sophie Okonedo",
@@ -7211,7 +7273,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 2598
     },
     {
       "name": "Anamaria Vartolomei",
@@ -7325,7 +7388,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 1021689
     },
     {
       "name": "Milena Smit",
@@ -7429,7 +7493,8 @@
       },
       "importWarnings": [
         "Only 2 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 2560224
     },
     {
       "name": "Sanya Malhotra",
@@ -7544,7 +7609,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 1756851
     },
     {
       "name": "Ji-young Yoo",
@@ -7679,7 +7745,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 2983147
     },
     {
       "name": "Eliza Scanlen",
@@ -7792,7 +7859,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 1669125
     },
     {
       "name": "Iman Vellani",
@@ -7892,7 +7960,8 @@
       },
       "importWarnings": [
         "Only 2 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 2798462
     },
     {
       "name": "Juno Temple",
@@ -8048,7 +8117,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 36594
     }
   ],
   "directors": [
@@ -8130,7 +8200,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 118772
     },
     {
       "name": "Nabil Ayouch",
@@ -8205,7 +8276,8 @@
       },
       "importWarnings": [
         "Only 1 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 285104
     },
     {
       "name": "Amjad Al-Rasheed",
@@ -8323,7 +8395,8 @@
       },
       "importWarnings": [
         "Only 0 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 1689281
     },
     {
       "name": "Ramata-Toulaye Sy",
@@ -8387,7 +8460,8 @@
       },
       "importWarnings": [
         "Only 1 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 3211417
     },
     {
       "name": "Tarik Saleh",
@@ -8495,7 +8569,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 119293
     },
     {
       "name": "Kristoffer Borgli",
@@ -8597,7 +8672,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 1280021
     },
     {
       "name": "Halfdan Ullmann Tøndel",
@@ -8656,7 +8732,8 @@
       },
       "importWarnings": [
         "Only 0 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 1502652
     },
     {
       "name": "Thea Hvistendahl",
@@ -8736,7 +8813,8 @@
       },
       "importWarnings": [
         "Only 1 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 1712237
     },
     {
       "name": "Magnus von Horn",
@@ -8815,7 +8893,8 @@
       },
       "importWarnings": [
         "Only 2 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 130690
     },
     {
       "name": "Gustav Möller",
@@ -8889,7 +8968,8 @@
       },
       "importWarnings": [
         "Only 1 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 1923202
     },
     {
       "name": "Ali Abbasi",
@@ -8993,7 +9073,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 1574550
     },
     {
       "name": "Milad Alami",
@@ -9060,7 +9141,8 @@
       },
       "importWarnings": [
         "Only 0 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 1406120
     },
     {
       "name": "Levan Akin",
@@ -9160,7 +9242,8 @@
       },
       "importWarnings": [
         "Only 2 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 931406
     },
     {
       "name": "Kiyoshi Kurosawa",
@@ -9296,7 +9379,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 26882
     },
     {
       "name": "Naoko Yamada",
@@ -9412,7 +9496,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 1072778
     },
     {
       "name": "Mamoru Hosoda",
@@ -9548,7 +9633,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 81718
     },
     {
       "name": "Davy Chou",
@@ -9613,7 +9699,8 @@
       },
       "importWarnings": [
         "Only 1 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 1124422
     },
     {
       "name": "Anthony Chen",
@@ -9692,7 +9779,8 @@
       },
       "importWarnings": [
         "Only 2 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 1170106
     },
     {
       "name": "P. S. Vinothraj",
@@ -9741,7 +9829,8 @@
       },
       "importWarnings": [
         "Only 0 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 2904919
     },
     {
       "name": "Alessandra Lacorazza",
@@ -9863,7 +9952,8 @@
       },
       "importWarnings": [
         "Only 0 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 1850272
     },
     {
       "name": "Alonso Ruizpalacios",
@@ -9942,7 +10032,8 @@
       },
       "importWarnings": [
         "Only 0 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 1305360
     }
   ],
   "writers": [
@@ -10018,7 +10109,8 @@
       },
       "importWarnings": [
         "Only 1 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 1590194
     },
     {
       "name": "Bill Dubuque",
@@ -10103,7 +10195,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 1281388
     },
     {
       "name": "Jonathan Tropper",
@@ -10204,7 +10297,8 @@
       },
       "importWarnings": [
         "Only 2 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 1274663
     },
     {
       "name": "Zach Dean",
@@ -10314,7 +10408,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 1014026
     },
     {
       "name": "T.S. Nowlin",
@@ -10435,7 +10530,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 1257144
     },
     {
       "name": "Michael Gilio",
@@ -10523,7 +10619,8 @@
       },
       "importWarnings": [
         "Only 1 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 186654
     },
     {
       "name": "Mattson Tomlin",
@@ -10620,7 +10717,8 @@
       },
       "importWarnings": [
         "Only 1 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 1823051
     },
     {
       "name": "Akela Cooper",
@@ -10726,7 +10824,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 1327476
     },
     {
       "name": "Bryce McGuire",
@@ -10804,7 +10903,8 @@
       },
       "importWarnings": [
         "Only 2 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 1389077
     },
     {
       "name": "Scott Beck",
@@ -10917,7 +11017,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 1317685
     },
     {
       "name": "Bryan Woods",
@@ -11030,7 +11131,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 1317686
     },
     {
       "name": "Jimmy Warden",
@@ -11114,7 +11216,8 @@
       },
       "importWarnings": [
         "Only 1 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 1906002
     },
     {
       "name": "Seth W. Owen",
@@ -11433,7 +11536,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 83858
     },
     {
       "name": "Brian Duffield",
@@ -11559,7 +11663,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 1295292
     },
     {
       "name": "Zach Cregger",
@@ -11654,7 +11759,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 84833
     },
     {
       "name": "Lori Evans Taylor",
@@ -11729,7 +11835,8 @@
       },
       "importWarnings": [
         "Only 1 movies had reported revenue; box-office average has low confidence."
-      ]
+      ],
+      "imageTmdbId": 2198345
     },
     {
       "name": "Guy Busick",
@@ -11833,7 +11940,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 1661850
     },
     {
       "name": "Michael Kennedy",
@@ -11937,7 +12045,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 2855709
     },
     {
       "name": "Christopher Landon",
@@ -12074,7 +12183,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 54248
     },
     {
       "name": "Jonathan Glazer",
@@ -12177,7 +12287,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 66728
     },
     {
       "name": "Enda Walsh",
@@ -12294,7 +12405,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 150607
     }
   ],
   "composers": [
@@ -12447,7 +12559,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 8377
     },
     {
       "name": "Craig Armstrong",
@@ -12586,7 +12699,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 7045
     },
     {
       "name": "Dominic Lewis",
@@ -12733,7 +12847,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 1404094
     },
     {
       "name": "Jeff Russo",
@@ -12850,7 +12965,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 1219207
     },
     {
       "name": "John Paesano",
@@ -13004,7 +13120,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 77949
     },
     {
       "name": "Marcelo Zarvos",
@@ -13163,7 +13280,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 55177
     },
     {
       "name": "Martin Phipps",
@@ -13284,7 +13402,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 139904
     },
     {
       "name": "Mateo Messina",
@@ -13415,7 +13534,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 52454
     },
     {
       "name": "Rael Jones",
@@ -13757,7 +13877,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 2593
     },
     {
       "name": "Simon Franglen",
@@ -13891,7 +14012,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 1654408
     },
     {
       "name": "Tom Howe",
@@ -14048,7 +14170,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 1785135
     },
     {
       "name": "Stephen McKeon",
@@ -14196,7 +14319,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 63357
     },
     {
       "name": "Jeff Danna",
@@ -14360,7 +14484,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 8320
     },
     {
       "name": "Mychael Danna",
@@ -14509,7 +14634,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 5359
     },
     {
       "name": "Alberto Iglesias",
@@ -14644,7 +14770,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 405
     },
     {
       "name": "Bryce Dessner",
@@ -14776,7 +14903,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 931140
     },
     {
       "name": "Fernando Velázquez",
@@ -14939,7 +15067,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 51897
     },
     {
       "name": "James Righton",
@@ -15128,7 +15257,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 2127965
     },
     {
       "name": "Naoki Sato",
@@ -15282,7 +15412,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 1537405
     },
     {
       "name": "Alex Heffes",
@@ -15420,7 +15551,8 @@
         "wikidata": null,
         "method": "Automated draft; weighted ratings are shrunk toward 60 when vote counts are small."
       },
-      "importWarnings": []
+      "importWarnings": [],
+      "imageTmdbId": 22047
     }
   ]
 }
