@@ -104,14 +104,17 @@ export function calculateCompetitionPressure(
   target: CompetitionTarget,
   rivals: CompetitionRival[],
 ): number {
+  const contributions = rivals.map(rival => Math.min(
+    0.55,
+    rivalContribution(rival) * audienceOverlap(target.genre, rival.genre) / 100,
+  )).sort((left, right) => right - left);
   let remainingOpportunity = 1;
-  for (const rival of rivals) {
-    const contribution = Math.min(
-      0.55,
-      rivalContribution(rival) * audienceOverlap(target.genre, rival.genre) / 100,
-    );
-    remainingOpportunity *= 1 - contribution;
+  for (let index = 0; index < contributions.length; index += 1) {
+    // The three strongest alternatives define the real weekly choice. The
+    // long tail still matters, but cannot make a crowded ordinary slate behave
+    // like seven equally powerful tentpoles.
+    const tailWeight = index < 3 ? 1 : 0.22 * Math.pow(0.8, index - 3);
+    remainingOpportunity *= 1 - contributions[index] * tailWeight;
   }
   return Math.round(Math.min(85, (1 - remainingOpportunity) * 100) * 10) / 10;
 }
-

@@ -19,6 +19,12 @@ export {
   type CompetitionTarget,
 } from "./competition";
 export {
+  chooseAIReleaseDate,
+  type AIReleaseDateInput,
+  type ScheduledFilmLike,
+  type ScheduledPremiumBookingLike,
+} from "./release-calendar";
+export {
   CAMPAIGN_ACTIONS,
   advanceCampaignWeek,
   applyCampaignAction,

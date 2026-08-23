@@ -60,6 +60,7 @@ import {
   calculatePremiumSuitability,
   calculateCompetitionPressure,
   calculateTerritoryTheaterCount,
+  chooseAIReleaseDate,
   createInitialCampaignState,
   createSeededRng,
   estimatePremiumFormatDemand,
@@ -2476,57 +2477,6 @@ async function getGameScopeForStudio(studioId: string): Promise<{
   };
 }
 
-function chooseAIReleaseDate(
-  earliestWeek: number,
-  earliestYear: number,
-  genre: string,
-  calendarFilms: Film[],
-  profile: ReturnType<typeof createStudioDecisionProfile>,
-  premiumCalendar: readonly PremiumBooking[] = [],
-): { releaseWeek: number; releaseYear: number } {
-  let best = { releaseWeek: earliestWeek, releaseYear: earliestYear, utility: -Infinity };
-  for (let offset = 0; offset <= 8; offset++) {
-    let releaseWeek = earliestWeek + offset;
-    let releaseYear = earliestYear;
-    while (releaseWeek > 52) {
-      releaseWeek -= 52;
-      releaseYear += 1;
-    }
-    const sameWeek = calendarFilms.filter(film =>
-      film.releaseWeek === releaseWeek && film.releaseYear === releaseYear
-    );
-    const directCompetition = sameWeek.filter(film => film.genre === genre).length;
-    const candidateAbsoluteWeek = absoluteWeek(releaseWeek, releaseYear);
-    const activeExclusiveFormats = premiumCalendar.filter(booking => {
-      if (booking.status !== "secured" || booking.accessLevel !== "exclusive") return false;
-      const start = absoluteWeek(booking.startWeek, booking.startYear);
-      return candidateAbsoluteWeek >= start &&
-        candidateAbsoluteWeek < start + booking.durationWeeks;
-    });
-    const normalized = genre.toLowerCase().replace(/[\s-]/g, "");
-    const valuesImax = ["action", "scifi", "fantasy", "animation"].includes(normalized);
-    const valuesDolby = ["horror", "action", "scifi", "thriller", "musicals"].includes(normalized);
-    const imaxLockPenalty = valuesImax
-      ? activeExclusiveFormats.filter(booking => booking.format === "imax").length * 0.055
-      : 0;
-    const dolbyLockPenalty = valuesDolby
-      ? activeExclusiveFormats.filter(booking => booking.format === "dolby").length * 0.04
-      : 0;
-    const holidayFit = getGenreHolidayModifier(releaseWeek, genre);
-    const observationNoise = (Math.random() - 0.5) * (0.7 - profile.decisionQuality * 0.45);
-    const utility =
-      (holidayFit - 1) * 0.9 -
-      sameWeek.length * 0.07 -
-      directCompetition * 0.13 -
-      imaxLockPenalty -
-      dolbyLockPenalty -
-      offset * 0.012 +
-      observationNoise;
-    if (utility > best.utility) best = { releaseWeek, releaseYear, utility };
-  }
-  return { releaseWeek: best.releaseWeek, releaseYear: best.releaseYear };
-}
-
 // VFX Studios with quality ratings and costs
 const vfxStudios = [
   { id: 'weta', name: 'Weta Digital', cost: 120000000, quality: 100, specialization: ['action', 'scifi'] },
@@ -3848,14 +3798,15 @@ export async function registerRoutes(
             releaseWeek: initialReleaseDate.week,
             releaseYear: initialReleaseDate.year,
           };
-          releaseDate = chooseAIReleaseDate(
-            releaseDate.releaseWeek,
-            releaseDate.releaseYear,
+          releaseDate = chooseAIReleaseDate({
+            earliestWeek: releaseDate.releaseWeek,
+            earliestYear: releaseDate.releaseYear,
             genre,
-            plans.map(plan => plan.filmData as Film),
-            projectProfile,
-            premiumBookings,
-          );
+            productionBudget: prodBudget,
+            calendarFilms: plans.map(plan => plan.filmData as Film),
+            profile: projectProfile,
+            premiumCalendar: premiumBookings,
+          });
           const releaseAbsolute = absoluteWeek(releaseDate.releaseWeek, releaseDate.releaseYear);
           // Talent work ends when principal production ends; post-production and
           // release-calendar delays should not keep the entire cast unavailable.
@@ -4573,14 +4524,15 @@ export async function registerRoutes(
                 releaseYear += Math.floor(releaseWeek / 52);
                 releaseWeek = ((releaseWeek - 1) % 52) + 1;
               }
-              ({ releaseWeek, releaseYear } = chooseAIReleaseDate(
-                releaseWeek,
-                releaseYear,
+              ({ releaseWeek, releaseYear } = chooseAIReleaseDate({
+                earliestWeek: releaseWeek,
+                earliestYear: releaseYear,
                 genre,
-                saveFilms,
-                decisionProfile,
-                await storage.getAllPremiumBookings(),
-              ));
+                productionBudget: prodBudget,
+                calendarFilms: saveFilms,
+                profile: decisionProfile,
+                premiumCalendar: await storage.getAllPremiumBookings(),
+              }));
 
               const newFilm = await storage.createFilm({
                 studioId: aiStudio.id,
@@ -6499,6 +6451,12 @@ export async function registerRoutes(
       await Promise.all(studioUpdatePromises);
       // Each AI studio owns a separate budget and film slate, so their weekly
       // planning can run concurrently without changing decisions within a studio.
+      const pendingAIReleasePlans: Array<{
+        genre: string;
+        productionBudget: number;
+        releaseWeek: number;
+        releaseYear: number;
+      }> = [];
       await Promise.all(aiStudiosWithWeeks.map(async (
         { id: aiStudioId, oldStudio: aiStudio, aiNewWeek, aiNewYear, updatedBudget },
         studioIndex,
@@ -6647,14 +6605,21 @@ export async function registerRoutes(
               releaseYear += Math.floor(releaseWeek / 52);
               releaseWeek = ((releaseWeek - 1) % 52) + 1;
             }
-            ({ releaseWeek, releaseYear } = chooseAIReleaseDate(
+            ({ releaseWeek, releaseYear } = chooseAIReleaseDate({
+              earliestWeek: releaseWeek,
+              earliestYear: releaseYear,
+              genre,
+              productionBudget: prodBudget,
+              calendarFilms: [...allFilms, ...pendingAIReleasePlans],
+              profile: projectProfile,
+              premiumCalendar: initialPremiumBookings,
+            }));
+            pendingAIReleasePlans.push({
+              genre,
+              productionBudget: prodBudget,
               releaseWeek,
               releaseYear,
-              genre,
-              allFilms,
-              projectProfile,
-              initialPremiumBookings,
-            ));
+            });
 
             try {
               const newFilm = await storage.createFilm({

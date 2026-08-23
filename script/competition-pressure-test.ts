@@ -69,6 +69,18 @@ const strongHoldover = calculateCompetitionPressure(target, [rival({
   interest: 88,
   eventIntensity: 0.2,
 })]);
+const crowdedMinorSlate = calculateCompetitionPressure(target, Array.from(
+  { length: 10 },
+  () => rival({
+    genre: "romance",
+    awareness: 24,
+    interest: 28,
+    commercialAppeal: 50,
+    launchHook: 35,
+    blockbusterDeployment: 0,
+    marketingBudget: 3_000_000,
+  }),
+));
 
 assert.ok(smallRelease <= 5, `Small unrelated release pressure was ${smallRelease}`);
 assert.ok(normalWide >= 6 && normalWide <= 15,
@@ -81,6 +93,8 @@ assert.ok(twoTentpoles > overlappingTentpole + 15,
   `A second tentpole must materially add pressure`);
 assert.ok(strongHoldover >= 25,
   `A strong holdover must remain a meaningful competitor; pressure was ${strongHoldover}`);
+assert.ok(crowdedMinorSlate <= 8,
+  `Minor releases should not stack into tentpole pressure; got ${crowdedMinorSlate}`);
 
 const commonInput = {
   territoryCode: "NA",
@@ -127,6 +141,7 @@ const results = {
   overlappingTentpole,
   twoTentpoles,
   strongHoldover,
+  crowdedMinorSlate,
   openingLossVsSmallRelease: 1 - openingGross(smallRelease) / baselineOpening,
   openingLossVsNormalWide: 1 - openingGross(normalWide) / baselineOpening,
   openingLossVsOverlappingWide: 1 - openingGross(overlappingWide) / baselineOpening,

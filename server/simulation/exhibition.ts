@@ -456,10 +456,14 @@ export function simulateTerritoryWeek(input: TerritoryWeekInput): TerritoryWeekR
     ),
     BALANCE.phenomenonCurveExponent,
   );
-  // Anticipated events and sleeper phenomena are separate paths. A film that
-  // already opened as a major event cannot stack the full sleeper expansion.
+  // Anticipated events and sleeper phenomena remain distinct, but an event is
+  // no longer disqualified from extraordinary post-opening momentum. Elite
+  // delivery can preserve up to 35% of the sleeper-style boost at maximum
+  // event intensity; this extends the run without stacking both paths fully.
+  const eventPhenomenonCoexistence = 1 -
+    0.65 * clamp(eventIntensity / BALANCE.eventMaximumIntensity, 0, 1);
   const phenomenonIntensity = rawPhenomenonIntensity *
-    (1 - clamp(eventIntensity / 0.1, 0, 1));
+    eventPhenomenonCoexistence;
 
   // Broad international infrastructure grows gradually. This is deliberately
   // outside eventPotential: budget/strategy can widen a release, but cannot
