@@ -4,6 +4,7 @@ import path from "node:path";
 
 const root = process.cwd();
 const legacyPath = path.join(root, "shared", "data", "talent.json");
+const dataDirectory = path.join(root, "shared", "data");
 const outputDirectory = path.join(root, "shared", "content");
 const contentPath = path.join(outputDirectory, "base-content.json");
 const manifestPath = path.join(outputDirectory, "content-manifest.json");
@@ -35,7 +36,15 @@ function defaultAskingPrice(type: string, fame: number, id: string): number {
   return Math.round(price);
 }
 
-const source = JSON.parse(fs.readFileSync(legacyPath, "utf8"));
+const sourcePaths = [
+  legacyPath,
+  ...fs.readdirSync(dataDirectory)
+    .filter(file => /^talent-current-batch-\d+\.json$/i.test(file))
+    .sort()
+    .map(file => path.join(dataDirectory, file)),
+];
+const sources = sourcePaths.map(sourcePath => JSON.parse(fs.readFileSync(sourcePath, "utf8")));
+const contentVersion = Math.max(1, ...sources.map(source => Number(source.contentVersion) || 1));
 const groups = [
   ["directors", "director", "unknown"],
   ["actors", "actor", "male"],
@@ -44,10 +53,22 @@ const groups = [
   ["composers", "composer", "unknown"],
 ] as const;
 const usedIds = new Set<string>();
+const usedPeople = new Set<string>();
 const talent: Record<string, unknown>[] = [];
 
 for (const [group, type, defaultGender] of groups) {
-  for (const item of source[group] || []) {
+  for (const source of sources) for (const rawItem of source[group] || []) {
+    const defaults = source.defaults?.[group] || {};
+    const item = {
+      ...defaults,
+      ...rawItem,
+      skills: { ...(defaults.skills || {}), ...(rawItem.skills || {}) },
+    };
+    const personKey = `${type}:${String(item.name).trim().toLowerCase()}`;
+    if (usedPeople.has(personKey)) {
+      throw new Error(`Duplicate talent entry: ${item.name} (${type})`);
+    }
+    usedPeople.add(personKey);
     const baseId = `talent-${type}-${slug(item.name)}`;
     let id = baseId;
     if (usedIds.has(id)) {
@@ -57,7 +78,15 @@ for (const [group, type, defaultGender] of groups) {
     while (usedIds.has(id)) id = `${baseId}-${suffix++}`;
     usedIds.add(id);
 
-    const skill = (field: string) => item[field] ?? deterministicNumber(`${id}:${field}`, 20, 100);
+    const genreBySkill: Record<string, string> = {
+      skillAction: "action", skillDrama: "drama", skillComedy: "comedy",
+      skillThriller: "thriller", skillHorror: "horror", skillScifi: "scifi",
+      skillAnimation: "animation", skillRomance: "romance", skillFantasy: "fantasy",
+      skillMusicals: "musicals", skillCinematography: "cinematography",
+      skillEditing: "editing", skillOrchestral: "orchestral", skillElectronic: "electronic",
+    };
+    const skill = (field: string) => item[field] ?? item.skills?.[genreBySkill[field]]
+      ?? item.genreBaseline ?? deterministicNumber(`${id}:${field}`, 20, 100);
     const fame = item.fame ?? deterministicNumber(`${id}:fame`, 20, 100);
     const skills = {
       skillAction: skill("skillAction"),
@@ -111,11 +140,11 @@ for (const [group, type, defaultGender] of groups) {
 }
 
 fs.mkdirSync(outputDirectory, { recursive: true });
-const content = `${JSON.stringify({ schemaVersion: 1, contentVersion: 1, talent }, null, 2)}\n`;
+const content = `${JSON.stringify({ schemaVersion: 1, contentVersion, talent }, null, 2)}\n`;
 fs.writeFileSync(contentPath, content);
 const sha256 = crypto.createHash("sha256").update(content).digest("hex");
 const manifest = {
-  contentVersion: 1,
+  contentVersion,
   schemaVersion: 1,
   contentFile: "base-content.json",
   sha256,

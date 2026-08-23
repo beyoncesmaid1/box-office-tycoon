@@ -22,6 +22,9 @@ async function main() {
     await fs.readFile(path.join(process.cwd(), "shared", "content", "base-content.json"), "utf8"),
   ));
   const storage = new DatabaseStorage();
+  const bundledVersion = bundled.contentVersion;
+  const updateVersion = bundledVersion + 1;
+  const rollbackVersion = updateVersion + 1;
   let responseManifest = "";
   let responseContent = "";
   const server = http.createServer((request, response) => {
@@ -32,8 +35,8 @@ async function main() {
   try {
     await runMigrations();
     await ensureBundledContent();
-    assert.equal((await getContentStatus()).localContentVersion, 1);
-    assert.equal((await storage.getAllTalent()).length, 361);
+    assert.equal((await getContentStatus()).localContentVersion, bundledVersion);
+    assert.equal((await storage.getAllTalent()).length, bundled.talent.length);
     assert.ok((await storage.getAllTalent()).every(person => person.id.startsWith("talent-")));
 
     const save = await storage.createStudio({ deviceId: "content-test", name: "Content Test Save" });
@@ -52,7 +55,7 @@ async function main() {
     };
     const versionTwo = {
       ...bundled,
-      contentVersion: 2,
+      contentVersion: updateVersion,
       talent: [
         { ...bundled.talent[0], name: `${bundled.talent[0].name} Corrected` },
         ...bundled.talent.slice(1),
@@ -62,7 +65,7 @@ async function main() {
     responseContent = `${JSON.stringify(versionTwo, null, 2)}\n`;
     const hash = crypto.createHash("sha256").update(responseContent).digest("hex");
     responseManifest = JSON.stringify({
-      contentVersion: 2,
+      contentVersion: updateVersion,
       schemaVersion: 1,
       contentFile: "content.json",
       sha256: hash,
@@ -75,7 +78,7 @@ async function main() {
 
     const updateResult = await checkForRemoteContentUpdates();
     assert.equal(updateResult.applied, true);
-    assert.equal(updateResult.version, 2);
+    assert.equal(updateResult.version, updateVersion);
     assert.equal((await storage.getTalent(original.id))?.name, versionTwo.talent[0].name);
     assert.equal((await storage.getTalentForSave(original.id, save.id))?.fame, 7);
     assert.ok(await storage.getTalent(addedTalent.id));
@@ -85,22 +88,22 @@ async function main() {
     assert.equal((await checkForRemoteContentUpdates()).applied, false);
 
     const rollbackContent = structuredClone(versionTwo);
-    rollbackContent.contentVersion = 3;
+    rollbackContent.contentVersion = rollbackVersion;
     rollbackContent.talent[0].name = "This Must Roll Back";
     rollbackContent.talent[1].askingPrice = 5_000_000_000;
     await assert.rejects(() => applyContentBundle(rollbackContent, {
-      contentVersion: 3,
+      contentVersion: rollbackVersion,
       schemaVersion: 1,
       contentFile: "content.json",
       sha256: "a".repeat(64),
       talentCount: rollbackContent.talent.length,
     }, "rollback-test"));
-    assert.equal((await getContentStatus()).localContentVersion, 2);
+    assert.equal((await getContentStatus()).localContentVersion, updateVersion);
     assert.equal((await storage.getTalent(original.id))?.name, versionTwo.talent[0].name);
 
     responseContent = JSON.stringify({ corrupted: true });
     responseManifest = JSON.stringify({
-      contentVersion: 3,
+      contentVersion: rollbackVersion,
       schemaVersion: 1,
       contentFile: "content.json",
       sha256: crypto.createHash("sha256").update(responseContent).digest("hex"),
@@ -108,12 +111,12 @@ async function main() {
     });
     const corruptResult = await checkForRemoteContentUpdates();
     assert.ok(corruptResult.error);
-    assert.equal((await getContentStatus()).localContentVersion, 2);
+    assert.equal((await getContentStatus()).localContentVersion, updateVersion);
 
     await new Promise<void>(resolve => server.close(() => resolve()));
     const offlineResult = await checkForRemoteContentUpdates();
     assert.ok(offlineResult.error);
-    assert.equal((await getContentStatus()).localContentVersion, 2);
+    assert.equal((await getContentStatus()).localContentVersion, updateVersion);
     console.log("Content update and offline rollback tests passed");
   } finally {
     if (server.listening) await new Promise<void>(resolve => server.close(() => resolve()));
