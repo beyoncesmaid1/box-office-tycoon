@@ -132,9 +132,35 @@ export async function applyContentBundle(
 
   try {
     await db.transaction(async transaction => {
+      const existingTalent = await transaction.select().from(talent);
+      const existingTalentById = new Map(existingTalent.map(person => [person.id, person]));
       for (let index = 0; index < content.talent.length; index += 75) {
         const rows = content.talent.slice(index, index + 75).map(asTalentRow);
         for (const row of rows) {
+          const previous = existingTalentById.get(row.id);
+          if (previous) {
+            // Content corrections should reach existing saves, but only replace a
+            // skill when the save still carries the prior bundled default.
+            await transaction.execute(sql`
+              UPDATE save_talent_state
+              SET skill_action = CASE WHEN skill_action = ${previous.skillAction} THEN ${row.skillAction} ELSE skill_action END,
+                  skill_drama = CASE WHEN skill_drama = ${previous.skillDrama} THEN ${row.skillDrama} ELSE skill_drama END,
+                  skill_comedy = CASE WHEN skill_comedy = ${previous.skillComedy} THEN ${row.skillComedy} ELSE skill_comedy END,
+                  skill_thriller = CASE WHEN skill_thriller = ${previous.skillThriller} THEN ${row.skillThriller} ELSE skill_thriller END,
+                  skill_horror = CASE WHEN skill_horror = ${previous.skillHorror} THEN ${row.skillHorror} ELSE skill_horror END,
+                  skill_scifi = CASE WHEN skill_scifi = ${previous.skillScifi} THEN ${row.skillScifi} ELSE skill_scifi END,
+                  skill_animation = CASE WHEN skill_animation = ${previous.skillAnimation} THEN ${row.skillAnimation} ELSE skill_animation END,
+                  skill_romance = CASE WHEN skill_romance = ${previous.skillRomance} THEN ${row.skillRomance} ELSE skill_romance END,
+                  skill_fantasy = CASE WHEN skill_fantasy = ${previous.skillFantasy} THEN ${row.skillFantasy} ELSE skill_fantasy END,
+                  skill_musicals = CASE WHEN skill_musicals = ${previous.skillMusicals} THEN ${row.skillMusicals} ELSE skill_musicals END,
+                  skill_cinematography = CASE WHEN skill_cinematography = ${previous.skillCinematography} THEN ${row.skillCinematography} ELSE skill_cinematography END,
+                  skill_editing = CASE WHEN skill_editing = ${previous.skillEditing} THEN ${row.skillEditing} ELSE skill_editing END,
+                  skill_orchestral = CASE WHEN skill_orchestral = ${previous.skillOrchestral} THEN ${row.skillOrchestral} ELSE skill_orchestral END,
+                  skill_electronic = CASE WHEN skill_electronic = ${previous.skillElectronic} THEN ${row.skillElectronic} ELSE skill_electronic END,
+                  initialized_content_version = ${manifest.contentVersion}
+              WHERE talent_id = ${row.id}
+            `);
+          }
           await transaction.insert(talent).values(row).onConflictDoUpdate({
             target: talent.id,
             set: talentUpdateFields(row),

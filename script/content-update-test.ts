@@ -44,7 +44,14 @@ async function main() {
     const original = (await storage.getAllTalentForSave(save.id))[0];
     const originalState = (await storage.getTalentStateForSave(save.id))
       .find(state => state.talentId === original.id)!;
-    await storage.upsertTalentStateForSave({ ...originalState, fame: 7 });
+    await storage.upsertTalentStateForSave({ ...originalState, fame: 7, skillDrama: 7 });
+
+    const correctedActionSkill = bundled.talent[0].skillAction === 100
+      ? 99
+      : bundled.talent[0].skillAction + 1;
+    const correctedDramaSkill = bundled.talent[0].skillDrama === 100
+      ? 99
+      : bundled.talent[0].skillDrama + 1;
 
     const addedTalent = {
       ...bundled.talent[0],
@@ -57,7 +64,12 @@ async function main() {
       ...bundled,
       contentVersion: updateVersion,
       talent: [
-        { ...bundled.talent[0], name: `${bundled.talent[0].name} Corrected` },
+        {
+          ...bundled.talent[0],
+          name: `${bundled.talent[0].name} Corrected`,
+          skillAction: correctedActionSkill,
+          skillDrama: correctedDramaSkill,
+        },
         ...bundled.talent.slice(1),
         addedTalent,
       ],
@@ -81,6 +93,8 @@ async function main() {
     assert.equal(updateResult.version, updateVersion);
     assert.equal((await storage.getTalent(original.id))?.name, versionTwo.talent[0].name);
     assert.equal((await storage.getTalentForSave(original.id, save.id))?.fame, 7);
+    assert.equal((await storage.getTalentForSave(original.id, save.id))?.skillAction, correctedActionSkill);
+    assert.equal((await storage.getTalentForSave(original.id, save.id))?.skillDrama, 7);
     assert.ok(await storage.getTalent(addedTalent.id));
     const addedState = (await storage.getTalentStateForSave(save.id))
       .find(state => state.talentId === addedTalent.id);
