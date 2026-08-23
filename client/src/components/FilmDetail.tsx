@@ -896,15 +896,40 @@ export function FilmDetail({ filmId }: FilmDetailProps) {
     const profit = film.totalBoxOffice - investmentBudget;
     const roi = investmentBudget > 0 ? (profit / investmentBudget * 100) : 0;
 
-    const openingWeekend = film.weeklyBoxOffice?.[0] || 0;
     const weeklyData = film.weeklyBoxOffice || [];
+    const openingWeeklyGross = Number(weeklyData[0] || 0);
+    const normalizedAudienceScore = (film.audienceScore || 0) <= 10
+      ? (film.audienceScore || 0) * 10
+      : film.audienceScore || 0;
+    const peakEventIntensity = Number(
+      (film.boxOfficeBreakdown as Record<string, unknown> | null)?.peakEventIntensity || 0,
+    );
+    const openingDailyGrosses = openingWeeklyGross > 0
+      ? distributeWeeklyGrossAcrossDays({
+        filmId: film.id,
+        weeklyGross: openingWeeklyGross,
+        weekIndex: 0,
+        previousWeeklyGross: 0,
+        openingWeeklyGross,
+        profile: dailyPerformanceProfile(film.genre, film.isSequel),
+        audienceScore: normalizedAudienceScore,
+        eventIntensity: peakEventIntensity,
+        calendarWeek: film.releaseWeek || undefined,
+      })
+      : [];
+    const openingWeekend = openingDailyGrosses
+      .slice(0, 3)
+      .reduce((sum, gross) => sum + gross, 0);
+    const openingWeekendShare = openingWeeklyGross > 0
+      ? openingWeekend / openingWeeklyGross
+      : 0;
     
     // Get opening weekend per country (first week's data)
     const openingByCountry: Record<string, number> = {};
     if (weeklyByCountry && weeklyByCountry.length > 0) {
       const firstWeek = weeklyByCountry[0];
       Object.entries(firstWeek).forEach(([country, gross]) => {
-        openingByCountry[country] = gross;
+        openingByCountry[country] = Math.round(gross * openingWeekendShare);
       });
     }
     
