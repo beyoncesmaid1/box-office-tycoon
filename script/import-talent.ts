@@ -70,7 +70,8 @@ type DraftFile = {
 const root = process.cwd();
 const dataDirectory = path.join(root, "shared", "data");
 const draftDirectory = path.join(dataDirectory, "talent-import-drafts");
-const cachePath = path.join(root, ".local-data", "talent-import-cache.json");
+const shardName = (process.env.TALENT_IMPORT_SHARD || "main").replace(/[^a-z0-9_-]/gi, "-");
+const cachePath = path.join(root, ".local-data", `talent-import-cache-${shardName}.json`);
 const manifestPath = path.join(root, "shared", "content", "content-manifest.json");
 const tmdbBase = "https://api.themoviedb.org/3";
 const wikidataBase = "https://www.wikidata.org/w/api.php";
@@ -118,6 +119,7 @@ const sleep = (milliseconds: number) => new Promise(resolve => setTimeout(resolv
 class JsonCache {
   private values: Record<string, { storedAt: number; value: unknown }> = {};
   private dirty = false;
+  private writesSinceSave = 0;
 
   constructor() {
     if (fs.existsSync(cachePath)) {
@@ -134,12 +136,16 @@ class JsonCache {
   set(key: string, value: unknown): void {
     this.values[key] = { storedAt: Date.now(), value };
     this.dirty = true;
+    this.writesSinceSave++;
+    if (this.writesSinceSave >= 25) this.save();
   }
 
   save(): void {
     if (!this.dirty) return;
     fs.mkdirSync(path.dirname(cachePath), { recursive: true });
     fs.writeFileSync(cachePath, `${JSON.stringify(this.values)}\n`);
+    this.dirty = false;
+    this.writesSinceSave = 0;
   }
 }
 
@@ -148,8 +154,20 @@ const cache = new JsonCache();
 async function cachedFetch(key: string, url: string, headers: Record<string, string> = {}): Promise<any> {
   const cached = cache.get(key);
   if (cached !== undefined) return cached;
-  for (let attempt = 0; attempt < 4; attempt++) {
-    const response = await fetch(url, { headers: { Accept: "application/json", ...headers } });
+  const maxAttempts = url.startsWith(wikidataBase) ? 1 : 3;
+  const timeoutMilliseconds = url.startsWith(wikidataBase) ? 5_000 : 12_000;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        headers: { Accept: "application/json", "User-Agent": "BoxOfficeTycoonTalentImporter/1.0", ...headers },
+        signal: AbortSignal.timeout(timeoutMilliseconds),
+      });
+    } catch (error) {
+      if (attempt === maxAttempts - 1) throw error;
+      await sleep(500 * (attempt + 1));
+      continue;
+    }
     if (response.ok) {
       const value = await response.json();
       cache.set(key, value);
@@ -342,8 +360,28 @@ async function wikidataEnrichment(name: string, birthYear: number | null): Promi
   }
 }
 
+function nationalityFromPlace(placeOfBirth: string | null | undefined): string | null {
+  if (!placeOfBirth) return null;
+  const place = placeOfBirth.toLowerCase();
+  const countries: Array<[string[], string]> = [
+    [["usa", "united states"], "American"],
+    [["england", "scotland", "wales", "northern ireland", "united kingdom"], "British"],
+    [["south korea", "republic of korea"], "South Korean"],
+    [["canada"], "Canadian"], [["australia"], "Australian"], [["new zealand"], "New Zealander"],
+    [["mexico"], "Mexican"], [["france"], "French"], [["germany"], "German"], [["ireland"], "Irish"],
+    [["japan"], "Japanese"], [["china"], "Chinese"], [["brazil"], "Brazilian"], [["india"], "Indian"],
+    [["italy"], "Italian"], [["spain"], "Spanish"], [["sweden"], "Swedish"], [["norway"], "Norwegian"],
+    [["denmark"], "Danish"], [["iceland"], "Icelandic"], [["belgium"], "Belgian"], [["netherlands"], "Dutch"],
+    [["austria"], "Austrian"], [["switzerland"], "Swiss"], [["poland"], "Polish"], [["romania"], "Romanian"],
+    [["egypt"], "Egyptian"], [["lebanon"], "Lebanese"], [["iran"], "Iranian"], [["pakistan"], "Pakistani"],
+    [["philippines"], "Filipino"], [["indonesia"], "Indonesian"], [["nigeria"], "Nigerian"], [["ghana"], "Ghanaian"],
+    [["uganda"], "Ugandan"], [["rwanda"], "Rwandan"], [["south africa"], "South African"],
+  ];
+  return countries.find(([needles]) => needles.some(needle => needle === "usa" ? /\busa\b/.test(place) : place.includes(needle)))?.[1] || null;
+}
+
 async function revenueAverage(credits: TmdbCredit[]): Promise<{ value: number; sample: Array<{ title: string; revenue: number }> }> {
-  const candidates = [...credits].sort((a, b) => ((b.vote_count || 0) + (b.popularity || 0) * 50) - ((a.vote_count || 0) + (a.popularity || 0) * 50)).slice(0, 10);
+  const candidates = [...credits].sort((a, b) => ((b.vote_count || 0) + (b.popularity || 0) * 50) - ((a.vote_count || 0) + (a.popularity || 0) * 50)).slice(0, 6);
   const movies = await mapConcurrent(candidates, 5, credit => tmdb(`/movie/${credit.id}?language=en-US`));
   const sample = movies.filter(movie => Number(movie.revenue) > 0).map(movie => ({ title: movie.title, revenue: Number(movie.revenue) }));
   if (!sample.length) return { value: 0, sample: [] };
@@ -359,14 +397,20 @@ function genderFromTmdb(value: number): Gender {
 async function buildDraftPerson(input: InputPerson): Promise<{ talent: DraftPerson; warnings: Warning[] }> {
   const { details, credits, warnings } = await resolveTmdbPerson(input);
   const birthYear = input.birthYear || (details.birthday ? Number(String(details.birthday).slice(0, 4)) : null);
-  const [wiki, revenue] = await Promise.all([wikidataEnrichment(details.name, birthYear), revenueAverage(credits)]);
+  const [wiki, revenue] = await Promise.all([
+    process.env.TALENT_SKIP_WIKIDATA === "1"
+      ? Promise.resolve({ nationality: null, awards: null, evidence: null })
+      : wikidataEnrichment(details.name, birthYear),
+    revenueAverage(credits),
+  ]);
   const metrics = careerMetrics(details, credits);
   const skillResult = calculateSkills(credits);
   const skills = { ...skillResult.skills, ...(input.skills || {}) };
   const gender = input.gender || genderFromTmdb(details.gender);
-  const nationality = input.nationality || wiki.nationality || "Unknown";
+  const inferredNationality = nationalityFromPlace(details.place_of_birth);
+  const nationality = input.nationality || wiki.nationality || inferredNationality || "Unknown";
   const awards = input.awards ?? wiki.awards ?? 0;
-  if (!input.nationality && !wiki.nationality) warnings.push({ level: "warning", message: "Nationality could not be confirmed; review the generated value." });
+  if (!input.nationality && !wiki.nationality && !inferredNationality) warnings.push({ level: "warning", message: "Nationality could not be confirmed; review the generated value." });
   if (input.awards === undefined && wiki.awards === null) warnings.push({ level: "warning", message: "Awards could not be confirmed; review the generated value." });
   if (metrics.latestYear !== null && metrics.latestYear < currentYear - 6) warnings.push({ level: "warning", message: `No matching released movie credit since ${metrics.latestYear}; confirm this person is still current.` });
   if (revenue.sample.length < 3) warnings.push({ level: "warning", message: `Only ${revenue.sample.length} movies had reported revenue; box-office average has low confidence.` });
@@ -392,6 +436,8 @@ async function buildDraftPerson(input: InputPerson): Promise<{ talent: DraftPers
       sources: ["TMDB person details", "TMDB combined credits", "TMDB movie details", ...(wiki.evidence ? ["Wikidata"] : [])],
       tmdbId: details.id,
       tmdbPopularity: details.popularity,
+      placeOfBirth: details.place_of_birth,
+      nationalitySource: input.nationality ? "input override" : wiki.nationality ? "Wikidata citizenship" : inferredNationality ? "TMDB birthplace country" : "unresolved",
       relevantMovieCredits: metrics.creditCount,
       careerSpanYears: metrics.span,
       latestCreditYear: metrics.latestYear,
@@ -458,7 +504,11 @@ function reportMarkdown(draft: DraftFile): string {
 
 async function preview(inputArgument: string): Promise<string> {
   const inputPath = path.resolve(root, inputArgument);
-  const people = readInput(inputPath);
+  const allPeople = readInput(inputPath);
+  const start = Math.max(0, Number(process.env.TALENT_SHARD_START) || 0);
+  const end = Math.min(allPeople.length, Number(process.env.TALENT_SHARD_END) || allPeople.length);
+  const people = allPeople.slice(start, end);
+  if (!people.length) throw new Error(`Shard ${start}:${end} contains no people.`);
   const known = existingPeople();
   const seen = new Set<string>();
   console.log(`Researching ${people.length} people (up to 8 at once; repeat runs use the local cache)...`);
@@ -476,7 +526,7 @@ async function preview(inputArgument: string): Promise<string> {
   cache.save();
   const draft: DraftFile = { generatedAt: new Date().toISOString(), sourceInput: path.relative(root, inputPath), people: generated };
   fs.mkdirSync(draftDirectory, { recursive: true });
-  const stem = `${path.basename(inputPath, path.extname(inputPath))}-${new Date().toISOString().replace(/[:.]/g, "-")}`;
+  const stem = `${path.basename(inputPath, path.extname(inputPath))}-${shardName}-${new Date().toISOString().replace(/[:.]/g, "-")}`;
   const draftPath = path.join(draftDirectory, `${stem}.json`);
   const reportPath = path.join(draftDirectory, `${stem}.md`);
   fs.writeFileSync(draftPath, `${JSON.stringify(draft, null, 2)}\n`);
@@ -499,15 +549,50 @@ function applyDraft(draftArgument: string): void {
   const outputPath = path.join(dataDirectory, `talent-current-batch-${String(nextBatch).padStart(2, "0")}.json`);
   if (fs.existsSync(outputPath)) throw new Error(`Refusing to overwrite existing batch: ${outputPath}`);
   fs.writeFileSync(outputPath, `${JSON.stringify(output, null, 2)}\n`);
+  const runNpm = (script: string) => {
+    const npmCli = process.env.npm_execpath;
+    if (npmCli && fs.existsSync(npmCli)) {
+      execFileSync(process.execPath, [npmCli, "run", script], { cwd: root, stdio: "inherit" });
+      return;
+    }
+    execFileSync(process.platform === "win32" ? "npm.cmd" : "npm", ["run", script], { cwd: root, stdio: "inherit", shell: process.platform === "win32" });
+  };
   try {
-    execFileSync(process.platform === "win32" ? "npm.cmd" : "npm", ["run", "content:build"], { cwd: root, stdio: "inherit" });
-    execFileSync(process.platform === "win32" ? "npm.cmd" : "npm", ["run", "test:content"], { cwd: root, stdio: "inherit" });
+    runNpm("content:build");
+    runNpm("test:content");
   } catch (error) {
     fs.unlinkSync(outputPath);
-    execFileSync(process.platform === "win32" ? "npm.cmd" : "npm", ["run", "content:build"], { cwd: root, stdio: "inherit" });
+    runNpm("content:build");
     throw error;
   }
   console.log(`Applied ${draft.people.length} people to ${outputPath}. Review it before committing.`);
+}
+
+function mergeDrafts(draftArguments: string[]): string {
+  if (draftArguments.length < 2) throw new Error("Merge needs at least two preview JSON files.");
+  const drafts = draftArguments.map(argument => JSON.parse(fs.readFileSync(path.resolve(root, argument), "utf8")) as DraftFile);
+  const people = drafts.flatMap(draft => draft.people);
+  const seen = new Set<string>();
+  for (const person of people) {
+    const key = `${person.input.type}:${normalizeName(person.talent.name)}`;
+    if (seen.has(key)) throw new Error(`Duplicate person while merging: ${person.talent.name}`);
+    seen.add(key);
+  }
+  const merged: DraftFile = {
+    generatedAt: new Date().toISOString(),
+    sourceInput: [...new Set(drafts.map(draft => draft.sourceInput))].join(", "),
+    people,
+  };
+  fs.mkdirSync(draftDirectory, { recursive: true });
+  const stem = `talent-import-merged-${new Date().toISOString().replace(/[:.]/g, "-")}`;
+  const jsonPath = path.join(draftDirectory, `${stem}.json`);
+  const markdownPath = path.join(draftDirectory, `${stem}.md`);
+  fs.writeFileSync(jsonPath, `${JSON.stringify(merged, null, 2)}\n`);
+  fs.writeFileSync(markdownPath, `${reportMarkdown(merged)}\n`);
+  console.log(`Merged ${people.length} people.`);
+  console.log(`Preview JSON: ${jsonPath}`);
+  console.log(`Review report: ${markdownPath}`);
+  return jsonPath;
 }
 
 function selfTest(): void {
@@ -529,13 +614,15 @@ function selfTest(): void {
 function usage(): never {
   console.log("Usage:");
   console.log("  npm run talent:preview -- shared/data/my-talent-list.json");
+  console.log("  npm run talent:merge -- preview-a.json preview-b.json preview-c.json");
   console.log("  npm run talent:apply -- shared/data/talent-import-drafts/<preview>.json");
   console.log("  npm run test:talent-import");
   process.exit(1);
 }
 
 async function main() {
-  const [command, argument] = process.argv.slice(2);
+  const [command, ...arguments_] = process.argv.slice(2);
+  const argument = arguments_[0];
   if (command === "self-test") return selfTest();
   if (command === "preview") {
     if (!argument) usage();
@@ -547,6 +634,10 @@ async function main() {
     applyDraft(argument);
     return;
   }
+  if (command === "merge") {
+    mergeDrafts(arguments_);
+    return;
+  }
   usage();
 }
 
@@ -555,3 +646,10 @@ main().catch(error => {
   console.error(`Talent import failed: ${error instanceof Error ? error.message : String(error)}`);
   process.exitCode = 1;
 });
+
+for (const signal of ["SIGINT", "SIGTERM"] as const) {
+  process.once(signal, () => {
+    cache.save();
+    process.exit(130);
+  });
+}
