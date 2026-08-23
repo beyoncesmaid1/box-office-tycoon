@@ -27,6 +27,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { genreLabels } from '@/lib/gameState';
 import { getGenrePoster } from '@/lib/genrePosters';
 import type { Film } from '@shared/schema';
@@ -61,7 +68,12 @@ interface RecordCategory {
   entries: RecordEntry[];
   icon: LucideIcon;
   color: string;
+  territoryMetric?: 'opening' | 'total';
+  defaultTerritory?: string;
 }
+
+const WORLDWIDE_TERRITORY = '__worldwide__';
+const INTERNATIONAL_TERRITORY = '__international__';
 
 function compactMoney(amount: number): string {
   if (amount >= 1_000_000_000) return `$${(amount / 1_000_000_000).toFixed(2)}B`;
@@ -97,6 +109,78 @@ function openingWeekendGross(film: Film): number {
   }).slice(0, 3).reduce((sum, gross) => sum + gross, 0);
 }
 
+function normalizeTerritoryName(name: string): string {
+  return ['NA', 'Domestic'].includes(name) ? 'North America' : name;
+}
+
+function countryGrosses(value: unknown): Record<string, number> {
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === 'object' ? parsed as Record<string, number> : {};
+    } catch {
+      return {};
+    }
+  }
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, number>
+    : {};
+}
+
+function grossForTerritory(
+  grosses: Record<string, number>,
+  territory: string,
+  worldwideGross: number,
+): number {
+  if (territory === WORLDWIDE_TERRITORY) return worldwideGross;
+  const northAmerica = Number(
+    grosses['North America'] ?? grosses.NA ?? grosses.Domestic ?? 0,
+  );
+  if (territory === INTERNATIONAL_TERRITORY) {
+    return Math.max(0, worldwideGross - northAmerica);
+  }
+  if (territory === 'North America') return northAmerica;
+  return Number(grosses[territory] || 0);
+}
+
+function totalGrossForTerritory(film: Film, territory: string): number {
+  return grossForTerritory(
+    countryGrosses(film.totalBoxOfficeByCountry),
+    territory,
+    Number(film.totalBoxOffice || 0),
+  );
+}
+
+function openingGrossForTerritory(film: Film, territory: string): number {
+  const openingWeeklyGross = Number(film.weeklyBoxOffice?.[0] || 0);
+  const openingWeekend = openingWeekendGross(film);
+  if (territory === WORLDWIDE_TERRITORY || openingWeeklyGross <= 0) return openingWeekend;
+
+  let weeklyTerritories: unknown = film.weeklyBoxOfficeByCountry;
+  if (typeof weeklyTerritories === 'string') {
+    try {
+      weeklyTerritories = JSON.parse(weeklyTerritories);
+    } catch {
+      weeklyTerritories = [];
+    }
+  }
+  const openingWeekByTerritory = Array.isArray(weeklyTerritories)
+    ? countryGrosses(weeklyTerritories[0])
+    : {};
+  const territoryWeek = grossForTerritory(
+    openingWeekByTerritory,
+    territory,
+    openingWeeklyGross,
+  );
+  return territoryWeek * (openingWeekend / openingWeeklyGross);
+}
+
+function territoryLabel(territory: string): string {
+  if (territory === WORLDWIDE_TERRITORY) return 'Worldwide';
+  if (territory === INTERNATIONAL_TERRITORY) return 'International';
+  return territory;
+}
+
 function FilmLink({ film, className = '' }: { film: HollywoodRecordFilm; className?: string }) {
   return (
     <Link
@@ -111,6 +195,24 @@ function FilmLink({ film, className = '' }: { film: HollywoodRecordFilm; classNa
 
 export function HollywoodRecords({ films }: HollywoodRecordsProps) {
   const [selectedRecordKey, setSelectedRecordKey] = useState<string | null>(null);
+  const [selectedTerritory, setSelectedTerritory] = useState(WORLDWIDE_TERRITORY);
+  const availableTerritories = useMemo(() => {
+    const totals = new Map<string, number>();
+    for (const film of films) {
+      const countryData = countryGrosses(film.totalBoxOfficeByCountry);
+      for (const [rawTerritory, gross] of Object.entries(countryData)) {
+        const territory = normalizeTerritoryName(rawTerritory);
+        if (territory === 'Worldwide' || territory === 'International') continue;
+        totals.set(territory, (totals.get(territory) || 0) + Number(gross || 0));
+      }
+    }
+    if (!totals.has('North America')) totals.set('North America', 0);
+    return Array.from(totals.keys()).sort((a, b) => {
+      if (a === 'North America') return -1;
+      if (b === 'North America') return 1;
+      return (totals.get(b) || 0) - (totals.get(a) || 0);
+    });
+  }, [films]);
   const data = useMemo(() => {
     const byWorldwide = [...films].sort((a, b) => b.worldwideGross - a.worldwideGross);
     const byDomestic = [...films].sort((a, b) => b.domesticGross - a.domesticGross);
@@ -144,15 +246,17 @@ export function HollywoodRecords({ films }: HollywoodRecordsProps) {
       {
         key: 'opening-weekend',
         label: 'Opening Weekend',
-        description: 'The largest worldwide Friday-through-Sunday openings.',
+        description: 'The largest Friday-through-Sunday theatrical openings.',
         entries: byOpening.map(({ film, value }) => ({ film, value, display: compactMoney(value) })),
         icon: Rocket,
         color: 'text-orange-400',
+        territoryMetric: 'opening',
+        defaultTerritory: WORLDWIDE_TERRITORY,
       },
       {
         key: 'domestic-gross',
         label: 'Domestic Gross',
-        description: 'The highest North American theatrical grosses.',
+        description: 'The highest lifetime theatrical grosses in the selected market.',
         entries: byDomestic.map(film => ({
           film,
           value: film.domesticGross,
@@ -160,11 +264,13 @@ export function HollywoodRecords({ films }: HollywoodRecordsProps) {
         })),
         icon: Landmark,
         color: 'text-blue-400',
+        territoryMetric: 'total',
+        defaultTerritory: 'North America',
       },
       {
         key: 'international-gross',
         label: 'International Gross',
-        description: 'The highest theatrical grosses outside North America.',
+        description: 'The highest lifetime theatrical grosses in the selected market.',
         entries: byInternational.map(film => ({
           film,
           value: film.internationalGross,
@@ -172,6 +278,8 @@ export function HollywoodRecords({ films }: HollywoodRecordsProps) {
         })),
         icon: Globe2,
         color: 'text-emerald-400',
+        territoryMetric: 'total',
+        defaultTerritory: INTERNATIONAL_TERRITORY,
       },
       {
         key: 'audience-score',
@@ -238,6 +346,19 @@ export function HollywoodRecords({ films }: HollywoodRecordsProps) {
   }));
   const selectedRecord = data.holders.find(holder => holder.key === selectedRecordKey) || null;
   const SelectedRecordIcon = selectedRecord?.icon;
+  const selectedRecordEntries = selectedRecord?.territoryMetric
+    ? films
+      .map(film => {
+        const value = selectedRecord.territoryMetric === 'opening'
+          ? openingGrossForTerritory(film, selectedTerritory)
+          : totalGrossForTerritory(film, selectedTerritory);
+        return { film, value, display: compactMoney(value) };
+      })
+      .sort((a, b) => b.value - a.value)
+    : selectedRecord?.entries || [];
+  const selectedRecordTitle = selectedRecord?.territoryMetric
+    ? `Top 10: ${territoryLabel(selectedTerritory)} ${selectedRecord.territoryMetric === 'opening' ? 'Opening Weekend' : 'Gross'}`
+    : `Top 10: ${selectedRecord?.label || ''}`;
 
   return (
     <div className="space-y-5">
@@ -285,7 +406,10 @@ export function HollywoodRecords({ films }: HollywoodRecordsProps) {
             <button
               type="button"
               key={holder.label}
-              onClick={() => setSelectedRecordKey(holder.key)}
+              onClick={() => {
+                setSelectedRecordKey(holder.key);
+                setSelectedTerritory(holder.defaultTerritory || WORLDWIDE_TERRITORY);
+              }}
               className="group rounded-xl border border-border/80 bg-card/65 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-amber-500/30 hover:bg-card hover:shadow-lg hover:shadow-black/10"
             >
               <div className="flex items-start justify-between gap-4">
@@ -422,18 +546,37 @@ export function HollywoodRecords({ films }: HollywoodRecordsProps) {
           {selectedRecord && (
             <>
               <DialogHeader className="border-b border-border bg-gradient-to-r from-amber-500/10 to-transparent px-6 py-5 pr-12">
-                <DialogTitle className="flex items-center gap-3 text-xl">
-                  {SelectedRecordIcon && (
-                    <span className={`rounded-lg bg-muted p-2 ${selectedRecord.color}`}>
-                      <SelectedRecordIcon className="h-5 w-5" />
-                    </span>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <DialogTitle className="flex items-center gap-3 text-xl">
+                      {SelectedRecordIcon && (
+                        <span className={`rounded-lg bg-muted p-2 ${selectedRecord.color}`}>
+                          <SelectedRecordIcon className="h-5 w-5" />
+                        </span>
+                      )}
+                      <span className="truncate">{selectedRecordTitle}</span>
+                    </DialogTitle>
+                    <DialogDescription className="mt-1.5">{selectedRecord.description}</DialogDescription>
+                  </div>
+                  {selectedRecord.territoryMetric && (
+                    <Select value={selectedTerritory} onValueChange={setSelectedTerritory}>
+                      <SelectTrigger className="h-9 w-full shrink-0 bg-background/70 sm:w-[180px]">
+                        <Globe2 className="mr-2 h-4 w-4 text-muted-foreground" />
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={WORLDWIDE_TERRITORY}>Worldwide</SelectItem>
+                        <SelectItem value={INTERNATIONAL_TERRITORY}>International</SelectItem>
+                        {availableTerritories.map(territory => (
+                          <SelectItem key={territory} value={territory}>{territory}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   )}
-                  Top 10: {selectedRecord.label}
-                </DialogTitle>
-                <DialogDescription>{selectedRecord.description}</DialogDescription>
+                </div>
               </DialogHeader>
               <div className="max-h-[68vh] divide-y divide-border/70 overflow-y-auto sleek-scrollbar">
-                {selectedRecord.entries.slice(0, 10).map((entry, index) => (
+                {selectedRecordEntries.slice(0, 10).map((entry, index) => (
                   <Link
                     key={entry.film.id}
                     href={`/film/${entry.film.id}`}
