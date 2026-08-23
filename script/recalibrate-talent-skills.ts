@@ -121,13 +121,13 @@ function parseGenres(html: string): string[] {
 function gameGenres(genres: string[]): Set<string> {
   const joined = genres.join(" ").toLowerCase();
   const result = new Set<string>();
-  if (/action|adventure/.test(joined)) result.add("action");
+  if (/action/.test(joined)) result.add("action");
   if (/drama|biography|history|war|western/.test(joined)) result.add("drama");
   if (/comedy/.test(joined)) result.add("comedy");
   if (/mystery|thriller|crime/.test(joined)) result.add("thriller");
   if (/horror/.test(joined)) result.add("horror");
   if (/sci-fi|science fiction/.test(joined)) result.add("scifi");
-  if (/animation|kids|family/.test(joined)) result.add("animation");
+  if (/animation/.test(joined)) result.add("animation");
   if (/romance/.test(joined)) result.add("romance");
   if (/fantasy/.test(joined)) result.add("fantasy");
   if (/musical|music/.test(joined)) result.add("musicals");

@@ -1,5 +1,5 @@
 {
-  "contentVersion": 3,
+  "contentVersion": 4,
   "defaults": {
     "actors": {
       "starRating": 3,
@@ -252,7 +252,7 @@
         "Comedy"
       ],
       "skills": {
-        "action": 64,
+        "action": 70,
         "drama": 73,
         "comedy": 66,
         "thriller": 92,
@@ -270,12 +270,12 @@
         "sampledCredits": 18,
         "genres": {
           "action": {
-            "score": 64,
-            "credits": 4,
+            "score": 70,
+            "credits": 3,
             "examples": [
-              "Animal Farm (30)",
               "No Sudden Move (92)",
-              "Scott Pilgrim vs. the World (83)"
+              "Scott Pilgrim vs. the World (83)",
+              "Nowhere to Run (35)"
             ]
           },
           "drama": {
@@ -345,7 +345,7 @@
         "Comedy"
       ],
       "skills": {
-        "action": 80,
+        "action": 76,
         "drama": 87,
         "comedy": 79,
         "thriller": 82,
@@ -363,8 +363,8 @@
         "sampledCredits": 18,
         "genres": {
           "action": {
-            "score": 80,
-            "credits": 4,
+            "score": 76,
+            "credits": 3,
             "examples": [
               "Civil War (81)",
               "Jungle Cruise (62)",
@@ -526,7 +526,7 @@
         "Fantasy"
       ],
       "skills": {
-        "action": 60,
+        "action": 62,
         "drama": 78,
         "comedy": 73,
         "thriller": 80,
@@ -544,12 +544,12 @@
         "sampledCredits": 18,
         "genres": {
           "action": {
-            "score": 60,
-            "credits": 7,
+            "score": 62,
+            "credits": 6,
             "examples": [
               "Superman (83)",
-              "The Garfield Movie (36)",
-              "Renfield (58)"
+              "Renfield (58)",
+              "Those Who Wish Me Dead (63)"
             ]
           },
           "drama": {
@@ -631,7 +631,7 @@
         "Thriller"
       ],
       "skills": {
-        "action": 74,
+        "action": 47,
         "drama": 85,
         "comedy": 79,
         "thriller": 64,
@@ -649,12 +649,11 @@
         "sampledCredits": 18,
         "genres": {
           "action": {
-            "score": 74,
-            "credits": 4,
+            "score": 47,
+            "credits": 2,
             "examples": [
               "Back in Action (31)",
-              "Catherine Called Birdy (89)",
-              "Swallows and Amazons (94)"
+              "Spectre (63)"
             ]
           },
           "drama": {
@@ -759,7 +758,7 @@
         "genres": {
           "action": {
             "score": 75,
-            "credits": 7,
+            "credits": 6,
             "examples": [
               "Transformers One (89)",
               "Godzilla x Kong: The New Empire (54)",
@@ -1071,7 +1070,7 @@
         "Animation"
       ],
       "skills": {
-        "action": 64,
+        "action": 52,
         "drama": 71,
         "comedy": 80,
         "thriller": 69,
@@ -1089,12 +1088,12 @@
         "sampledCredits": 16,
         "genres": {
           "action": {
-            "score": 64,
-            "credits": 7,
+            "score": 52,
+            "credits": 5,
             "examples": [
               "Atlas (17)",
               "The Rhythm Section (28)",
-              "Frozen II (77)"
+              "The Predator (34)"
             ]
           },
           "drama": {
@@ -1182,7 +1181,7 @@
         "Thriller"
       ],
       "skills": {
-        "action": 63,
+        "action": 56,
         "drama": 76,
         "comedy": 76,
         "thriller": 66,
@@ -1200,12 +1199,12 @@
         "sampledCredits": 18,
         "genres": {
           "action": {
-            "score": 63,
-            "credits": 7,
+            "score": 56,
+            "credits": 4,
             "examples": [
-              "Minions & Monsters (89)",
-              "Now You See Me: Now You Don't (61)",
-              "Sasquatch Sunset (71)"
+              "Sasquatch Sunset (71)",
+              "Zombieland: Double Tap (68)",
+              "Batman v Superman: Dawn of Justice (28)"
             ]
           },
           "drama": {
@@ -1290,7 +1289,7 @@
         "Thriller"
       ],
       "skills": {
-        "action": 78,
+        "action": 74,
         "drama": 80,
         "comedy": 72,
         "thriller": 81,
@@ -1308,12 +1307,12 @@
         "sampledCredits": 18,
         "genres": {
           "action": {
-            "score": 78,
-            "credits": 6,
+            "score": 74,
+            "credits": 3,
             "examples": [
-              "Spaceman (50)",
               "The Batman (85)",
-              "Okja (87)"
+              "Looper (93)",
+              "Cowboys & Aliens (44)"
             ]
           },
           "drama": {
@@ -1484,7 +1483,7 @@
         "Thriller"
       ],
       "skills": {
-        "action": 71,
+        "action": 67,
         "drama": 76,
         "comedy": 84,
         "thriller": 76,
@@ -1502,12 +1501,12 @@
         "sampledCredits": 18,
         "genres": {
           "action": {
-            "score": 71,
-            "credits": 4,
+            "score": 67,
+            "credits": 3,
             "examples": [
               "The Northman (90)",
               "Godzilla vs. Kong (75)",
-              "Hold the Dark (69)"
+              "The Legend of Tarzan (36)"
             ]
           },
           "drama": {
@@ -1596,7 +1595,7 @@
         "Thriller"
       ],
       "skills": {
-        "action": 84,
+        "action": 85,
         "drama": 78,
         "comedy": 62,
         "thriller": 58,
@@ -1614,8 +1613,8 @@
         "sampledCredits": 14,
         "genres": {
           "action": {
-            "score": 84,
-            "credits": 5,
+            "score": 85,
+            "credits": 4,
             "examples": [
               "DC League of Super-Pets (72)",
               "Trollhunters: Rise of the Titans (88)",
@@ -1717,7 +1716,7 @@
         "Comedy"
       ],
       "skills": {
-        "action": 76,
+        "action": 66,
         "drama": 74,
         "comedy": 94,
         "thriller": 49,
@@ -1735,12 +1734,11 @@
         "sampledCredits": 13,
         "genres": {
           "action": {
-            "score": 76,
-            "credits": 3,
+            "score": 66,
+            "credits": 2,
             "examples": [
               "The Mother (42)",
-              "Werewolf by Night (90)",
-              "Coco (97)"
+              "Werewolf by Night (90)"
             ]
           },
           "drama": {
@@ -1824,13 +1822,13 @@
         "Action"
       ],
       "skills": {
-        "action": 79,
+        "action": 73,
         "drama": 75,
         "comedy": 56,
         "thriller": 73,
         "horror": 25,
         "scifi": 64,
-        "animation": 70,
+        "animation": 95,
         "romance": 25,
         "fantasy": 25,
         "musicals": 40
@@ -1842,12 +1840,12 @@
         "sampledCredits": 13,
         "genres": {
           "action": {
-            "score": 79,
-            "credits": 6,
+            "score": 73,
+            "credits": 4,
             "examples": [
               "Civil War (81)",
-              "Puss in Boots: The Last Wish (95)",
-              "The Gray Man (45)"
+              "The Gray Man (45)",
+              "Elysium (64)"
             ]
           },
           "drama": {
@@ -1892,11 +1890,10 @@
             ]
           },
           "animation": {
-            "score": 70,
-            "credits": 2,
+            "score": 95,
+            "credits": 1,
             "examples": [
-              "Puss in Boots: The Last Wish (95)",
-              "The Gray Man (45)"
+              "Puss in Boots: The Last Wish (95)"
             ]
           },
           "romance": {
@@ -2018,7 +2015,7 @@
         "Thriller"
       ],
       "skills": {
-        "action": 50,
+        "action": 48,
         "drama": 82,
         "comedy": 80,
         "thriller": 54,
@@ -2036,12 +2033,12 @@
         "sampledCredits": 16,
         "genres": {
           "action": {
-            "score": 50,
-            "credits": 4,
+            "score": 48,
+            "credits": 3,
             "examples": [
               "The Iron Claw (89)",
               "The King's Man (41)",
-              "Maleficent: Mistress of Evil (40)"
+              "The Darkest Minds (15)"
             ]
           },
           "drama": {
@@ -2361,7 +2358,7 @@
         "Romance"
       ],
       "skills": {
-        "action": 65,
+        "action": 74,
         "drama": 81,
         "comedy": 72,
         "thriller": 46,
@@ -2379,10 +2376,9 @@
         "sampledCredits": 18,
         "genres": {
           "action": {
-            "score": 65,
-            "credits": 2,
+            "score": 74,
+            "credits": 1,
             "examples": [
-              "Mufasa: The Lion King (56)",
               "Assassination Nation (74)"
             ]
           },
@@ -2615,7 +2611,7 @@
         "Fantasy"
       ],
       "skills": {
-        "action": 33,
+        "action": 27,
         "drama": 64,
         "comedy": 66,
         "thriller": 69,
@@ -2633,10 +2629,9 @@
         "sampledCredits": 17,
         "genres": {
           "action": {
-            "score": 33,
-            "credits": 3,
+            "score": 27,
+            "credits": 2,
             "examples": [
-              "Fantastic Beasts: The Secrets of Dumbledore (46)",
               "Fantastic Beasts: The Crimes of Grindelwald (36)",
               "Assassin's Creed (18)"
             ]
@@ -2723,7 +2718,7 @@
         "Comedy"
       ],
       "skills": {
-        "action": 68,
+        "action": 94,
         "drama": 88,
         "comedy": 77,
         "thriller": 77,
@@ -2741,11 +2736,10 @@
         "sampledCredits": 9,
         "genres": {
           "action": {
-            "score": 68,
-            "credits": 2,
+            "score": 94,
+            "credits": 1,
             "examples": [
-              "The Odyssey (94)",
-              "The Super Mario Galaxy Movie (42)"
+              "The Odyssey (94)"
             ]
           },
           "drama": {
@@ -2815,7 +2809,7 @@
         "Thriller"
       ],
       "skills": {
-        "action": 82,
+        "action": 85,
         "drama": 70,
         "comedy": 62,
         "thriller": 49,
@@ -2833,12 +2827,11 @@
         "sampledCredits": 18,
         "genres": {
           "action": {
-            "score": 82,
-            "credits": 4,
+            "score": 85,
+            "credits": 2,
             "examples": [
-              "Wish Dragon (71)",
-              "Over the Moon (81)",
-              "Star Trek Beyond (86)"
+              "Star Trek Beyond (86)",
+              "Star Trek Into Darkness (84)"
             ]
           },
           "drama": {
@@ -3038,7 +3031,7 @@
         "Comedy"
       ],
       "skills": {
-        "action": 58,
+        "action": 53,
         "drama": 60,
         "comedy": 62,
         "thriller": 63,
@@ -3056,12 +3049,11 @@
         "sampledCredits": 18,
         "genres": {
           "action": {
-            "score": 58,
-            "credits": 4,
+            "score": 53,
+            "credits": 2,
             "examples": [
-              "I Love Boosters (92)",
               "The Unbearable Weight of Massive Talent (87)",
-              "Very Good Girls (20)"
+              "Bunraku (18)"
             ]
           },
           "drama": {
@@ -3147,13 +3139,13 @@
         "Fantasy"
       ],
       "skills": {
-        "action": 72,
+        "action": 40,
         "drama": 76,
         "comedy": 65,
         "thriller": 40,
         "horror": 40,
         "scifi": 40,
-        "animation": 72,
+        "animation": 64,
         "romance": 40,
         "fantasy": 72,
         "musicals": 77
@@ -3164,15 +3156,6 @@
         "asOf": "2026-08-23",
         "sampledCredits": 7,
         "genres": {
-          "action": {
-            "score": 72,
-            "credits": 3,
-            "examples": [
-              "Wicked: For Good (65)",
-              "Wicked (88)",
-              "Underdogs (64)"
-            ]
-          },
           "drama": {
             "score": 76,
             "credits": 1,
@@ -3190,11 +3173,9 @@
             ]
           },
           "animation": {
-            "score": 72,
-            "credits": 3,
+            "score": 64,
+            "credits": 1,
             "examples": [
-              "Wicked: For Good (65)",
-              "Wicked (88)",
               "Underdogs (64)"
             ]
           },
@@ -3318,7 +3299,7 @@
         "Thriller"
       ],
       "skills": {
-        "action": 69,
+        "action": 56,
         "drama": 75,
         "comedy": 58,
         "thriller": 42,
@@ -3336,12 +3317,12 @@
         "sampledCredits": 18,
         "genres": {
           "action": {
-            "score": 69,
-            "credits": 8,
+            "score": 56,
+            "credits": 5,
             "examples": [
               "Dead Shot (70)",
-              "Firedrake the Silver Dragon (80)",
-              "The Aeronauts (71)"
+              "Collide (23)",
+              "Rogue One: A Star Wars Story (84)"
             ]
           },
           "drama": {
@@ -3423,13 +3404,13 @@
         "Musicals"
       ],
       "skills": {
-        "action": 46,
+        "action": 40,
         "drama": 87,
         "comedy": 71,
         "thriller": 83,
         "horror": 77,
         "scifi": 65,
-        "animation": 46,
+        "animation": 62,
         "romance": 80,
         "fantasy": 49,
         "musicals": 78
@@ -3440,15 +3421,6 @@
         "asOf": "2026-08-23",
         "sampledCredits": 17,
         "genres": {
-          "action": {
-            "score": 46,
-            "credits": 3,
-            "examples": [
-              "Scrooge: A Christmas Carol (40)",
-              "Dolittle (15)",
-              "The Boy With the Cuckoo-Clock Heart (83)"
-            ]
-          },
           "drama": {
             "score": 87,
             "credits": 13,
@@ -3494,11 +3466,10 @@
             ]
           },
           "animation": {
-            "score": 46,
-            "credits": 3,
+            "score": 62,
+            "credits": 2,
             "examples": [
               "Scrooge: A Christmas Carol (40)",
-              "Dolittle (15)",
               "The Boy With the Cuckoo-Clock Heart (83)"
             ]
           },
@@ -3821,7 +3792,7 @@
         "thriller": 75,
         "horror": 88,
         "scifi": 47,
-        "animation": 95,
+        "animation": 40,
         "romance": 67,
         "fantasy": 47,
         "musicals": 40
@@ -3881,13 +3852,6 @@
               "Downsizing (47)"
             ]
           },
-          "animation": {
-            "score": 95,
-            "credits": 1,
-            "examples": [
-              "The Sheep Detectives (95)"
-            ]
-          },
           "romance": {
             "score": 67,
             "credits": 2,
@@ -3923,7 +3887,7 @@
         "Animation"
       ],
       "skills": {
-        "action": 75,
+        "action": 66,
         "drama": 83,
         "comedy": 80,
         "thriller": 60,
@@ -3941,12 +3905,12 @@
         "sampledCredits": 15,
         "genres": {
           "action": {
-            "score": 75,
-            "credits": 4,
+            "score": 66,
+            "credits": 3,
             "examples": [
-              "Toy Story 5 (93)",
               "TRON: Ares (52)",
-              "The Tiger's Apprentice (50)"
+              "The Tiger's Apprentice (50)",
+              "Spider-Man: Across the Spider-Verse (95)"
             ]
           },
           "drama": {
@@ -4033,7 +3997,7 @@
         "Thriller"
       ],
       "skills": {
-        "action": 56,
+        "action": 25,
         "drama": 90,
         "comedy": 95,
         "thriller": 93,
@@ -4051,11 +4015,10 @@
         "sampledCredits": 14,
         "genres": {
           "action": {
-            "score": 56,
-            "credits": 2,
+            "score": 25,
+            "credits": 1,
             "examples": [
-              "The Last Manhunt (20)",
-              "Walking Out (92)"
+              "The Last Manhunt (20)"
             ]
           },
           "drama": {
@@ -4117,13 +4080,13 @@
         "Comedy"
       ],
       "skills": {
-        "action": 60,
+        "action": 46,
         "drama": 86,
         "comedy": 63,
         "thriller": 40,
         "horror": 40,
         "scifi": 40,
-        "animation": 60,
+        "animation": 66,
         "romance": 40,
         "fantasy": 47,
         "musicals": 81
@@ -4135,10 +4098,9 @@
         "sampledCredits": 11,
         "genres": {
           "action": {
-            "score": 60,
-            "credits": 3,
+            "score": 46,
+            "credits": 2,
             "examples": [
-              "The Bad Guys 2 (88)",
               "A Minecraft Movie (47)",
               "The Angry Birds Movie (44)"
             ]
@@ -4162,11 +4124,10 @@
             ]
           },
           "animation": {
-            "score": 60,
-            "credits": 3,
+            "score": 66,
+            "credits": 2,
             "examples": [
               "The Bad Guys 2 (88)",
-              "A Minecraft Movie (47)",
               "The Angry Birds Movie (44)"
             ]
           },
@@ -4204,7 +4165,7 @@
         "Musicals"
       ],
       "skills": {
-        "action": 59,
+        "action": 41,
         "drama": 77,
         "comedy": 76,
         "thriller": 61,
@@ -4222,12 +4183,12 @@
         "sampledCredits": 14,
         "genres": {
           "action": {
-            "score": 59,
-            "credits": 4,
+            "score": 41,
+            "credits": 3,
             "examples": [
               "Bride Hard (14)",
               "Shadow Force (30)",
-              "Puss in Boots: The Last Wish (95)"
+              "The Lost City (78)"
             ]
           },
           "drama": {
@@ -4307,7 +4268,7 @@
         "Animation"
       ],
       "skills": {
-        "action": 93,
+        "action": 89,
         "drama": 74,
         "comedy": 78,
         "thriller": 61,
@@ -4325,12 +4286,11 @@
         "sampledCredits": 17,
         "genres": {
           "action": {
-            "score": 93,
-            "credits": 5,
+            "score": 89,
+            "credits": 2,
             "examples": [
-              "Arco (93)",
-              "How to Train Your Dragon: The Hidden World (90)",
-              "How to Train Your Dragon 2 (92)"
+              "How to Train Your Dragon 2 (92)",
+              "End of Watch (85)"
             ]
           },
           "drama": {
@@ -4413,13 +4373,13 @@
         "Action"
       ],
       "skills": {
-        "action": 51,
+        "action": 57,
         "drama": 39,
         "comedy": 47,
         "thriller": 40,
         "horror": 43,
         "scifi": 54,
-        "animation": 44,
+        "animation": 48,
         "romance": 91,
         "fantasy": 45,
         "musicals": 91
@@ -4431,12 +4391,11 @@
         "sampledCredits": 6,
         "genres": {
           "action": {
-            "score": 51,
-            "credits": 4,
+            "score": 57,
+            "credits": 2,
             "examples": [
-              "Disney's Snow White (39)",
-              "Spellbound (48)",
-              "The Hunger Games: The Ballad of Songbirds & Snakes (64)"
+              "The Hunger Games: The Ballad of Songbirds & Snakes (64)",
+              "Shazam! Fury of the Gods (49)"
             ]
           },
           "drama": {
@@ -4471,10 +4430,9 @@
             ]
           },
           "animation": {
-            "score": 44,
-            "credits": 2,
+            "score": 48,
+            "credits": 1,
             "examples": [
-              "Disney's Snow White (39)",
               "Spellbound (48)"
             ]
           },
@@ -4521,13 +4479,13 @@
         "Action"
       ],
       "skills": {
-        "action": 53,
+        "action": 52,
         "drama": 49,
         "comedy": 55,
         "thriller": 86,
         "horror": 86,
         "scifi": 51,
-        "animation": 70,
+        "animation": 40,
         "romance": 57,
         "fantasy": 54,
         "musicals": 70
@@ -4539,11 +4497,10 @@
         "sampledCredits": 6,
         "genres": {
           "action": {
-            "score": 53,
-            "credits": 3,
+            "score": 52,
+            "credits": 2,
             "examples": [
               "Charlie's Angels (52)",
-              "Aladdin (57)",
               "Saban's Power Rangers (51)"
             ]
           },
@@ -4581,14 +4538,6 @@
             "credits": 1,
             "examples": [
               "Saban's Power Rangers (51)"
-            ]
-          },
-          "animation": {
-            "score": 70,
-            "credits": 2,
-            "examples": [
-              "Aladdin (57)",
-              "Lemonade Mouth (83)"
             ]
           },
           "romance": {
@@ -4634,7 +4583,7 @@
         "Drama"
       ],
       "skills": {
-        "action": 89,
+        "action": 40,
         "drama": 42,
         "comedy": 93,
         "thriller": 80,
@@ -4651,13 +4600,6 @@
         "asOf": "2026-08-23",
         "sampledCredits": 7,
         "genres": {
-          "action": {
-            "score": 89,
-            "credits": 1,
-            "examples": [
-              "Prospect (89)"
-            ]
-          },
           "drama": {
             "score": 42,
             "credits": 2,
@@ -4936,7 +4878,7 @@
         "Comedy"
       ],
       "skills": {
-        "action": 72,
+        "action": 69,
         "drama": 73,
         "comedy": 71,
         "thriller": 76,
@@ -4954,12 +4896,12 @@
         "sampledCredits": 18,
         "genres": {
           "action": {
-            "score": 72,
-            "credits": 12,
+            "score": 69,
+            "credits": 10,
             "examples": [
-              "I Love Boosters (92)",
               "In the Grey (52)",
-              "Mike & Nick & Nick & Alice (75)"
+              "Mike & Nick & Nick & Alice (75)",
+              "Fountain of Youth (35)"
             ]
           },
           "drama": {
@@ -5288,7 +5230,7 @@
         "Animation"
       ],
       "skills": {
-        "action": 93,
+        "action": 40,
         "drama": 78,
         "comedy": 83,
         "thriller": 38,
@@ -5305,14 +5247,6 @@
         "asOf": "2026-08-23",
         "sampledCredits": 11,
         "genres": {
-          "action": {
-            "score": 93,
-            "credits": 2,
-            "examples": [
-              "Inside Out 2 (91)",
-              "Teenage Mutant Ninja Turtles: Mutant Mayhem (95)"
-            ]
-          },
           "drama": {
             "score": 78,
             "credits": 8,
@@ -5475,13 +5409,13 @@
         "Musicals"
       ],
       "skills": {
-        "action": 81,
+        "action": 85,
         "drama": 87,
         "comedy": 76,
         "thriller": 83,
         "horror": 40,
         "scifi": 69,
-        "animation": 93,
+        "animation": 40,
         "romance": 40,
         "fantasy": 86,
         "musicals": 68
@@ -5493,12 +5427,12 @@
         "sampledCredits": 8,
         "genres": {
           "action": {
-            "score": 81,
-            "credits": 4,
+            "score": 85,
+            "credits": 3,
             "examples": [
               "The Woman King (94)",
               "No Time to Die (83)",
-              "Max Cloud (59)"
+              "Captain Marvel (79)"
             ]
           },
           "drama": {
@@ -5531,13 +5465,6 @@
             "examples": [
               "Max Cloud (59)",
               "Captain Marvel (79)"
-            ]
-          },
-          "animation": {
-            "score": 93,
-            "credits": 1,
-            "examples": [
-              "Roald Dahl's Matilda the Musical (93)"
             ]
           },
           "fantasy": {
@@ -5576,7 +5503,7 @@
         "Thriller"
       ],
       "skills": {
-        "action": 63,
+        "action": 48,
         "drama": 71,
         "comedy": 82,
         "thriller": 65,
@@ -5594,12 +5521,12 @@
         "sampledCredits": 13,
         "genres": {
           "action": {
-            "score": 63,
-            "credits": 4,
+            "score": 48,
+            "credits": 3,
             "examples": [
-              "I Love Boosters (92)",
               "Shelter (64)",
-              "The Corrupted (30)"
+              "The Corrupted (30)",
+              "Star Wars: The Rise of Skywalker (51)"
             ]
           },
           "drama": {
@@ -5685,7 +5612,7 @@
         "Musicals"
       ],
       "skills": {
-        "action": 65,
+        "action": 61,
         "drama": 73,
         "comedy": 78,
         "thriller": 52,
@@ -5703,12 +5630,12 @@
         "sampledCredits": 15,
         "genres": {
           "action": {
-            "score": 65,
-            "credits": 6,
+            "score": 61,
+            "credits": 4,
             "examples": [
-              "I Love Boosters (92)",
               "Good Fortune (79)",
-              "The Pickup (24)"
+              "The Pickup (24)",
+              "Lightyear (74)"
             ]
           },
           "drama": {
@@ -5805,7 +5732,7 @@
         "Musicals"
       ],
       "skills": {
-        "action": 87,
+        "action": 76,
         "drama": 87,
         "comedy": 88,
         "thriller": 40,
@@ -5823,12 +5750,12 @@
         "sampledCredits": 8,
         "genres": {
           "action": {
-            "score": 87,
-            "credits": 5,
+            "score": 76,
+            "credits": 3,
             "examples": [
-              "The Wild Robot (97)",
               "The Fall Guy (81)",
-              "The Monkey King (56)"
+              "The Monkey King (56)",
+              "Shang-Chi and the Legend of the Ten Rings (92)"
             ]
           },
           "drama": {
@@ -5908,13 +5835,13 @@
         "Romance"
       ],
       "skills": {
-        "action": 86,
+        "action": 95,
         "drama": 77,
         "comedy": 84,
         "thriller": 80,
         "horror": 40,
         "scifi": 90,
-        "animation": 86,
+        "animation": 83,
         "romance": 71,
         "fantasy": 87,
         "musicals": 61
@@ -5926,12 +5853,10 @@
         "sampledCredits": 18,
         "genres": {
           "action": {
-            "score": 86,
-            "credits": 5,
+            "score": 95,
+            "credits": 1,
             "examples": [
-              "Paddington in Peru (93)",
-              "Puss in Boots: The Last Wish (95)",
-              "Scrooge: A Christmas Carol (40)"
+              "The Mitchells vs. the Machines (97)"
             ]
           },
           "drama": {
@@ -5968,12 +5893,12 @@
             ]
           },
           "animation": {
-            "score": 86,
-            "credits": 6,
+            "score": 83,
+            "credits": 4,
             "examples": [
-              "Paddington in Peru (93)",
-              "Wonka (82)",
-              "Puss in Boots: The Last Wish (95)"
+              "Puss in Boots: The Last Wish (95)",
+              "Scrooge: A Christmas Carol (40)",
+              "Ron's Gone Wrong (82)"
             ]
           },
           "romance": {
@@ -6023,13 +5948,13 @@
         "Action"
       ],
       "skills": {
-        "action": 57,
+        "action": 29,
         "drama": 34,
         "comedy": 62,
         "thriller": 33,
         "horror": 40,
         "scifi": 40,
-        "animation": 77,
+        "animation": 40,
         "romance": 56,
         "fantasy": 77,
         "musicals": 71,
@@ -6043,12 +5968,10 @@
         "sampledCredits": 12,
         "genres": {
           "action": {
-            "score": 57,
-            "credits": 4,
+            "score": 29,
+            "credits": 1,
             "examples": [
-              "Wicked: For Good (65)",
-              "Wicked (88)",
-              "Now You See Me 2 (33)"
+              "G.I. Joe: Retaliation (29)"
             ]
           },
           "drama": {
@@ -6073,14 +5996,6 @@
             "credits": 1,
             "examples": [
               "Now You See Me 2 (33)"
-            ]
-          },
-          "animation": {
-            "score": 77,
-            "credits": 2,
-            "examples": [
-              "Wicked: For Good (65)",
-              "Wicked (88)"
             ]
           },
           "romance": {
@@ -6889,7 +6804,7 @@
         "Fantasy"
       ],
       "skills": {
-        "action": 83,
+        "action": 40,
         "drama": 40,
         "comedy": 83,
         "thriller": 40,
@@ -6908,14 +6823,6 @@
         "asOf": "2026-08-23",
         "sampledCredits": 2,
         "genres": {
-          "action": {
-            "score": 83,
-            "credits": 2,
-            "examples": [
-              "Everything Everywhere All at Once (93)",
-              "Swiss Army Man (73)"
-            ]
-          },
           "comedy": {
             "score": 83,
             "credits": 2,
@@ -6960,7 +6867,7 @@
         "Fantasy"
       ],
       "skills": {
-        "action": 83,
+        "action": 40,
         "drama": 75,
         "comedy": 80,
         "thriller": 40,
@@ -6979,14 +6886,6 @@
         "asOf": "2026-08-23",
         "sampledCredits": 3,
         "genres": {
-          "action": {
-            "score": 83,
-            "credits": 2,
-            "examples": [
-              "Everything Everywhere All at Once (93)",
-              "Swiss Army Man (73)"
-            ]
-          },
           "drama": {
             "score": 75,
             "credits": 1,
@@ -7087,7 +6986,7 @@
         "Comedy"
       ],
       "skills": {
-        "action": 95,
+        "action": 40,
         "drama": 92,
         "comedy": 94,
         "thriller": 40,
@@ -7104,13 +7003,6 @@
         "asOf": "2026-08-23",
         "sampledCredits": 3,
         "genres": {
-          "action": {
-            "score": 95,
-            "credits": 1,
-            "examples": [
-              "Coyote vs. Acme (96)"
-            ]
-          },
           "drama": {
             "score": 92,
             "credits": 2,
@@ -7721,7 +7613,7 @@
         "Action"
       ],
       "skills": {
-        "action": 71,
+        "action": 72,
         "drama": 65,
         "comedy": 62,
         "thriller": 73,
@@ -7739,12 +7631,12 @@
         "sampledCredits": 8,
         "genres": {
           "action": {
-            "score": 71,
-            "credits": 5,
+            "score": 72,
+            "credits": 4,
             "examples": [
               "Jungle Cruise (62)",
-              "The Call of the Wild (62)",
-              "Blade Runner 2049 (88)"
+              "Blade Runner 2049 (88)",
+              "Logan (93)"
             ]
           },
           "drama": {
@@ -8017,7 +7909,7 @@
         "Sci-Fi"
       ],
       "skills": {
-        "action": 91,
+        "action": 90,
         "drama": 84,
         "comedy": 85,
         "thriller": 89,
@@ -8037,12 +7929,12 @@
         "sampledCredits": 18,
         "genres": {
           "action": {
-            "score": 91,
-            "credits": 7,
+            "score": 90,
+            "credits": 5,
             "examples": [
-              "Project Hail Mary (95)",
-              "The Bad Guys 2 (88)",
-              "Spider-Man: Across the Spider-Verse (95)"
+              "Spider-Man: Across the Spider-Verse (95)",
+              "Enola Holmes 2 (93)",
+              "The Bad Guys (87)"
             ]
           },
           "drama": {
@@ -8124,13 +8016,13 @@
         "Animation"
       ],
       "skills": {
-        "action": 61,
+        "action": 40,
         "drama": 79,
         "comedy": 53,
         "thriller": 40,
         "horror": 62,
         "scifi": 40,
-        "animation": 61,
+        "animation": 95,
         "romance": 40,
         "fantasy": 32,
         "musicals": 68,
@@ -8143,14 +8035,6 @@
         "asOf": "2026-08-23",
         "sampledCredits": 18,
         "genres": {
-          "action": {
-            "score": 61,
-            "credits": 2,
-            "examples": [
-              "The Wild Robot (97)",
-              "Space Jam: A New Legacy (25)"
-            ]
-          },
           "drama": {
             "score": 79,
             "credits": 11,
@@ -8177,11 +8061,10 @@
             ]
           },
           "animation": {
-            "score": 61,
-            "credits": 2,
+            "score": 95,
+            "credits": 1,
             "examples": [
-              "The Wild Robot (97)",
-              "Space Jam: A New Legacy (25)"
+              "The Wild Robot (97)"
             ]
           },
           "fantasy": {
@@ -8221,7 +8104,7 @@
         "Thriller"
       ],
       "skills": {
-        "action": 93,
+        "action": 40,
         "drama": 90,
         "comedy": 89,
         "thriller": 91,
@@ -8240,13 +8123,6 @@
         "asOf": "2026-08-23",
         "sampledCredits": 6,
         "genres": {
-          "action": {
-            "score": 93,
-            "credits": 1,
-            "examples": [
-              "Monos (93)"
-            ]
-          },
           "drama": {
             "score": 90,
             "credits": 4,
@@ -8300,7 +8176,7 @@
         "War"
       ],
       "skills": {
-        "action": 73,
+        "action": 76,
         "drama": 78,
         "comedy": 86,
         "thriller": 67,
@@ -8320,8 +8196,8 @@
         "sampledCredits": 18,
         "genres": {
           "action": {
-            "score": 73,
-            "credits": 4,
+            "score": 76,
+            "credits": 3,
             "examples": [
               "Dead of Winter (76)",
               "The Amateur (61)",
@@ -8555,13 +8431,13 @@
         "Drama"
       ],
       "skills": {
-        "action": 85,
+        "action": 40,
         "drama": 40,
         "comedy": 81,
         "thriller": 85,
         "horror": 40,
         "scifi": 40,
-        "animation": 89,
+        "animation": 92,
         "romance": 84,
         "fantasy": 69,
         "musicals": 89,
@@ -8574,13 +8450,6 @@
         "asOf": "2026-08-23",
         "sampledCredits": 8,
         "genres": {
-          "action": {
-            "score": 85,
-            "credits": 1,
-            "examples": [
-              "Dora and the Lost City of Gold (85)"
-            ]
-          },
           "comedy": {
             "score": 81,
             "credits": 7,
@@ -8598,11 +8467,10 @@
             ]
           },
           "animation": {
-            "score": 89,
-            "credits": 2,
+            "score": 92,
+            "credits": 1,
             "examples": [
-              "Encanto (92)",
-              "Dora and the Lost City of Gold (85)"
+              "Encanto (92)"
             ]
           },
           "romance": {
@@ -8814,7 +8682,7 @@
         "thriller": 66,
         "horror": 40,
         "scifi": 40,
-        "animation": 95,
+        "animation": 40,
         "romance": 40,
         "fantasy": 40,
         "musicals": 94,
@@ -8850,13 +8718,6 @@
             "examples": [
               "Shirley (88)",
               "The Lie (44)"
-            ]
-          },
-          "animation": {
-            "score": 95,
-            "credits": 1,
-            "examples": [
-              "Mixtape (100)"
             ]
           },
           "musicals": {
